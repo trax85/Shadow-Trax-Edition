@@ -1372,7 +1372,6 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
 	if (opts.flags != root->flags ||
 	    (opts.name && strcmp(opts.name, root->name))) {
 		ret = -EINVAL;
-		drop_parsed_module_refcounts(opts.subsys_mask);
 		goto out_unlock;
 	}
 
@@ -1387,7 +1386,6 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
 	if (ret) {
 		/* rebind_subsystems failed, re-populate the removed files */
 		cgroup_populate_dir(cgrp, false, removed_mask);
-		drop_parsed_module_refcounts(opts.subsys_mask);
 		goto out_unlock;
 	}
 
@@ -1402,6 +1400,8 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
 	mutex_unlock(&cgroup_root_mutex);
 	mutex_unlock(&cgroup_mutex);
 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
+	if (ret)
+		drop_parsed_module_refcounts(opts.subsys_mask);
 	return ret;
 }
 
