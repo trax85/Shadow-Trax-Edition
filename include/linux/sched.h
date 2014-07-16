@@ -1294,7 +1294,7 @@ struct load_weight {
 };
 
 struct sched_avg {
-	
+
 	u64 last_update_time, load_sum;
 	u32 util_sum, period_contrib;
 	unsigned long load_avg, util_avg;
@@ -1334,7 +1334,7 @@ struct sched_statistics {
 	u64			nr_wakeups_affine_attempts;
 	u64			nr_wakeups_passive;
 	u64			nr_wakeups_idle;
- 
+
         /* select_idle_sibling() */
  	u64			nr_wakeups_sis_attempts;
  	u64			nr_wakeups_sis_idle;
@@ -1444,7 +1444,7 @@ struct sched_rt_entity {
  	unsigned short on_list;
 
         struct hrtimer schedtune_timer;
-        
+
 	/* Accesses for these must be guarded by rq->lock of the task's rq */
 	bool schedtune_enqueued;
 	struct sched_rt_entity *back;
@@ -1567,7 +1567,7 @@ struct task_struct {
 	struct hlist_head preempt_notifiers;
 #endif
 
-	
+
 #ifdef CONFIG_BLK_DEV_IO_TRACE
 	unsigned int btrace_seq;
 #endif
@@ -1688,7 +1688,7 @@ struct task_struct {
 #endif
 	unsigned long nvcsw, nivcsw; /* context switch counts */
 	struct timespec start_time;		/* monotonic time in nsec */
- 	struct timespec real_start_time;	/* boot based time in nsec */
+ 	u64 real_start_time;	/* boot based time in nsec */
 /* mm fault and swap info: this can arguably be seen as either mm-specific or thread-specific */
 	unsigned long min_flt, maj_flt;
 
@@ -1754,7 +1754,7 @@ struct task_struct {
 
 	/* Protection of the PI data structures: */
 	raw_spinlock_t pi_lock;
-       
+
 	struct wake_q_node wake_q;
 
 #ifdef CONFIG_RT_MUTEXES
@@ -1960,7 +1960,7 @@ struct task_struct {
 	/* bitmask and counter of trace recursion */
 	unsigned long trace_recursion;
 #endif /* CONFIG_TRACING */
-#ifdef CONFIG_MEMCG /* memcg uses this to do batch job */ 
+#ifdef CONFIG_MEMCG /* memcg uses this to do batch job */
         struct memcg_batch_info {
  		int do_batch;	/* incremented when batch uncharge started */
  		struct mem_cgroup *memcg; /* target memcg of uncharge */
