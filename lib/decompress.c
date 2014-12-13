@@ -44,6 +44,7 @@ struct compress_format {
 
 static const struct compress_format compressed_formats[] __initconst = {
 	{ {0x1f, 0x8b}, "gzip", gunzip },
+	{ {0x1f, 0x9e}, "gzip", gunzip },
 	{ {0x42, 0x5a}, "bzip2", bunzip2 },
 	{ {0x5d, 0x00}, "lzma", unlzma },
 	{ {0xfd, 0x37}, "xz", unxz },
@@ -57,11 +58,8 @@ decompress_fn __init decompress_method(const unsigned char *inbuf, long len,
 {
 	const struct compress_format *cf;
 
-	if (len < 2) {
- 		if (name)
- 			*name = NULL;
+	if (len < 2)
 		return NULL;	/* Need at least this much... */
-        }
 
 	for (cf = compressed_formats; cf->name; cf++) {
 		if (!memcmp(inbuf, cf->magic, 2))
