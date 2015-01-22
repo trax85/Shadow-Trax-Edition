@@ -48,6 +48,7 @@ struct swap_info_struct;
 struct seq_file;
 struct fscrypt_info;
 struct fscrypt_operations;
+struct workqueue_struct;
 
 extern void __init inode_init(void);
 extern void __init inode_init_early(void);
@@ -65,8 +66,7 @@ struct buffer_head;
 typedef int (get_block_t)(struct inode *inode, sector_t iblock,
 			struct buffer_head *bh_result, int create);
 typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
-			ssize_t bytes, void *private, int ret,
-			bool is_async);
+			ssize_t bytes, void *private);
 
 #define MAY_EXEC		0x00000001
 #define MAY_WRITE		0x00000002
@@ -129,6 +129,11 @@ typedef void (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
 
 /* File was opened by fanotify and shouldn't generate fanotify events */
 #define FMODE_NONOTIFY		((__force fmode_t)0x1000000)
+
+/* File can be read using splice */
+#define FMODE_SPLICE_READ       ((__force fmode_t)0x8000000)
+/* File can be written using splice */
+#define FMODE_SPLICE_WRITE      ((__force fmode_t)0x10000000)
 
 /*
  * Flag for rw_copy_check_uvector and compat_rw_copy_check_uvector
@@ -420,7 +425,7 @@ struct address_space {
 	struct inode		*host;		/* owner: inode, block_device */
 	struct radix_tree_root	page_tree;	/* radix tree of all pages */
 	spinlock_t		tree_lock;	/* and lock protecting it */
-	atomic_t		i_mmap_writable;/* count VM_SHARED mappings */
+	unsigned int		i_mmap_writable;/* count VM_SHARED mappings */
 	struct rb_root		i_mmap;		/* tree of private and shared mappings */
 	struct list_head	i_mmap_nonlinear;/*list VM_NONLINEAR mappings */
 	struct mutex		i_mmap_mutex;	/* protect tree, count, list */
@@ -502,35 +507,10 @@ static inline int mapping_mapped(struct address_space *mapping)
  * Note that i_mmap_writable counts all VM_SHARED vmas: do_mmap_pgoff
  * marks vma as VM_SHARED if it is shared, and the file was opened for
  * writing i.e. vma may be mprotected writable even if now readonly.
- *
- * If i_mmap_writable is negative, no new writable mappings are allowed. You
- * can only deny writable mappings, if none exists right now.
  */
 static inline int mapping_writably_mapped(struct address_space *mapping)
 {
-	return atomic_read(&mapping->i_mmap_writable) > 0;
-}
-
-static inline int mapping_map_writable(struct address_space *mapping)
-{
-	return atomic_inc_unless_negative(&mapping->i_mmap_writable) ?
-		0 : -EPERM;
-}
-
-static inline void mapping_unmap_writable(struct address_space *mapping)
-{
-	atomic_dec(&mapping->i_mmap_writable);
-}
-
-static inline int mapping_deny_writable(struct address_space *mapping)
-{
-	return atomic_dec_unless_positive(&mapping->i_mmap_writable) ?
-		0 : -EBUSY;
-}
-
-static inline void mapping_allow_writable(struct address_space *mapping)
-{
-	atomic_inc(&mapping->i_mmap_writable);
+	return mapping->i_mmap_writable != 0;
 }
 
 /*
@@ -1362,10 +1342,13 @@ struct super_block {
 	/* Being remounted read-only */
 	int s_readonly_remount;
 
-        /*
- 	 * Indicates how deep in a filesystem stack this SB is
- 	 */
- 	int s_stack_depth;
+	/*
+	 * Indicates how deep in a filesystem stack this SB is
+	 */
+	int s_stack_depth;
+
+	/* AIO completions deferred from interrupt context */
+	struct workqueue_struct *s_dio_done_wq;
 };
 
 /* superblock cache pruning functions */
@@ -2134,7 +2117,6 @@ extern struct super_block *freeze_bdev(struct block_device *);
 extern void emergency_thaw_all(void);
 extern int thaw_bdev(struct block_device *bdev, struct super_block *sb);
 extern int fsync_bdev(struct block_device *);
-extern int sb_is_blkdev_sb(struct super_block *sb);
 #else
 static inline void bd_forget(struct inode *inode) {}
 static inline int sync_blockdev(struct block_device *bdev) { return 0; }
@@ -2154,14 +2136,9 @@ static inline int thaw_bdev(struct block_device *bdev, struct super_block *sb)
 static inline void iterate_bdevs(void (*f)(struct block_device *, void *), void *arg)
 {
 }
-static inline int sb_is_blkdev_sb(struct super_block *sb)
-{
- 	return 0;
-}
 #endif
 extern int sync_filesystem(struct super_block *);
 extern const struct file_operations def_blk_fops;
-extern void sync_filesystems(int wait);
 extern const struct file_operations def_chr_fops;
 extern const struct file_operations bad_sock_fops;
 #ifdef CONFIG_BLOCK
@@ -2779,13 +2756,6 @@ static inline void inode_has_no_xattr(struct inode *inode)
 {
 	if (!is_sxid(inode->i_mode) && (inode->i_sb->s_flags & MS_NOSEC))
 		inode->i_flags |= S_NOSEC;
-}
-
-static inline bool dir_relax(struct inode *inode)
-{
- 	mutex_unlock(&inode->i_mutex);
- 	mutex_lock(&inode->i_mutex);
- 	return !IS_DEADDIR(inode);
 }
 
 #endif /* _LINUX_FS_H */
