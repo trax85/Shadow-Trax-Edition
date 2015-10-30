@@ -82,10 +82,11 @@ static void copy_fdtable(struct fdtable *nfdt, struct fdtable *ofdt)
 	memset((char *)(nfdt->open_fds) + cpy, 0, set);
 	memcpy(nfdt->close_on_exec, ofdt->close_on_exec, cpy);
 	memset((char *)(nfdt->close_on_exec) + cpy, 0, set);
-        cpy = BITBIT_SIZE(ofdt->max_fds);
- 	set = BITBIT_SIZE(nfdt->max_fds) - cpy;
- 	memcpy(nfdt->full_fds_bits, ofdt->full_fds_bits, cpy);
- 	memset(cpy+(char *)nfdt->full_fds_bits, 0, set);
+
+	cpy = BITBIT_SIZE(ofdt->max_fds);
+	set = BITBIT_SIZE(nfdt->max_fds) - cpy;
+	memcpy(nfdt->full_fds_bits, ofdt->full_fds_bits, cpy);
+	memset(cpy+(char *)nfdt->full_fds_bits, 0, set);
 }
 
 static struct fdtable * alloc_fdtable(unsigned int nr)
@@ -130,8 +131,8 @@ static struct fdtable * alloc_fdtable(unsigned int nr)
 	fdt->open_fds = data;
 	data += nr / BITS_PER_BYTE;
 	fdt->close_on_exec = data;
-        data += nr / BITS_PER_BYTE;
- 	fdt->full_fds_bits = data;
+	data += nr / BITS_PER_BYTE;
+	fdt->full_fds_bits = data;
 
 	return fdt;
 
@@ -226,15 +227,15 @@ static inline void __clear_close_on_exec(int fd, struct fdtable *fdt)
 static inline void __set_open_fd(unsigned int fd, struct fdtable *fdt)
 {
 	__set_bit(fd, fdt->open_fds);
-        fd /= BITS_PER_LONG;
- 	if (!~fdt->open_fds[fd])
- 		__set_bit(fd, fdt->full_fds_bits);
+	fd /= BITS_PER_LONG;
+	if (!~fdt->open_fds[fd])
+		__set_bit(fd, fdt->full_fds_bits);
 }
 
 static inline void __clear_open_fd(unsigned int fd, struct fdtable *fdt)
 {
 	__clear_bit(fd, fdt->open_fds);
-        __clear_bit(fd / BITS_PER_LONG, fdt->full_fds_bits);
+	__clear_bit(fd / BITS_PER_LONG, fdt->full_fds_bits);
 }
 
 static int count_open_files(struct fdtable *fdt)
@@ -276,7 +277,7 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 	new_fdt->max_fds = NR_OPEN_DEFAULT;
 	new_fdt->close_on_exec = newf->close_on_exec_init;
 	new_fdt->open_fds = newf->open_fds_init;
-        new_fdt->full_fds_bits = newf->full_fds_bits_init;
+	new_fdt->full_fds_bits = newf->full_fds_bits_init;
 	new_fdt->fd = &newf->fd_array[0];
 
 	spin_lock(&oldf->file_lock);
@@ -320,7 +321,7 @@ struct files_struct *dup_fd(struct files_struct *oldf, int *errorp)
 
 	memcpy(new_fdt->open_fds, old_fdt->open_fds, open_files / 8);
 	memcpy(new_fdt->close_on_exec, old_fdt->close_on_exec, open_files / 8);
-        memcpy(new_fdt->full_fds_bits, old_fdt->full_fds_bits, BITBIT_SIZE(open_files));
+	memcpy(new_fdt->full_fds_bits, old_fdt->full_fds_bits, BITBIT_SIZE(open_files));
 
 	for (i = open_files; i != 0; i--) {
 		struct file *f = *old_fds++;
@@ -466,24 +467,24 @@ struct files_struct init_files = {
 		.fd		= &init_files.fd_array[0],
 		.close_on_exec	= init_files.close_on_exec_init,
 		.open_fds	= init_files.open_fds_init,
-                .full_fds_bits	= init_files.full_fds_bits_init,
+		.full_fds_bits	= init_files.full_fds_bits_init,
 	},
 	.file_lock	= __SPIN_LOCK_UNLOCKED(init_files.file_lock),
 };
 
 static unsigned long find_next_fd(struct fdtable *fdt, unsigned long start)
- {
- 	unsigned long maxfd = fdt->max_fds;
- 	unsigned long maxbit = maxfd / BITS_PER_LONG;
- 	unsigned long bitbit = start / BITS_PER_LONG;
+{
+	unsigned long maxfd = fdt->max_fds;
+	unsigned long maxbit = maxfd / BITS_PER_LONG;
+	unsigned long bitbit = start / BITS_PER_LONG;
 
- 	bitbit = find_next_zero_bit(fdt->full_fds_bits, maxbit, bitbit) * BITS_PER_LONG;
- 	if (bitbit > maxfd)
- 		return maxfd;
- 	if (bitbit > start)
- 		start = bitbit;
- 	return find_next_zero_bit(fdt->open_fds, maxfd, start);
- }
+	bitbit = find_next_zero_bit(fdt->full_fds_bits, maxbit, bitbit) * BITS_PER_LONG;
+	if (bitbit > maxfd)
+		return maxfd;
+	if (bitbit > start)
+		start = bitbit;
+	return find_next_zero_bit(fdt->open_fds, maxfd, start);
+}
 
 /*
  * allocate a file descriptor, mark it busy.
