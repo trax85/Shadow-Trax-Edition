@@ -631,9 +631,6 @@ endif
 
 # Disable all maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
-
-# Disable unused-constant-variable warnings
-KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
 # Disable format-truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 # Disable cpp
@@ -713,7 +710,7 @@ KBUILD_CFLAGS   += $(call cc-disable-warning, stringop-truncation)
 KBUILD_CFLAGS   += $(call cc-disable-warning, sizeof-pointer-memaccess)
 KBUILD_CFLAGS   += $(call cc-disable-warning, packed-not-aligned)
 KBUILD_CFLAGS   += $(call cc-disable-warning, stringop-overflow)
-
+KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
 endif
 
 ifdef CONFIG_FRAME_POINTER
