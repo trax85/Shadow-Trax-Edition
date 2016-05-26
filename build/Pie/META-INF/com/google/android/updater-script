@@ -64,17 +64,7 @@ if
  	file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
 then
 	ui_print("Flashing New thermals for Q..."); 
-  	package_extract_dir("thermal/new", "/system/system");
-	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
-  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config"); 
-  	unmount("/system/system");
-	ui_print("Finshed Flashing Thermals"); 
-endif;  
-if
-	file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
-then
-	ui_print("Flashing Old thermals for Q...");  
-	package_extract_dir("thermal/old", "/system/system");
+  	package_extract_dir("thermal/old", "/system/system");
 	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
 	set_perm(0, 0, 0755, "/system/system/vendor/lib/libthermalclient.so");
 	set_perm(0, 0, 0755, "/system/system/vendor/lib64/libthermalclient.so");
@@ -83,6 +73,26 @@ then
 	unmount("/system/system");
 	ui_print("Finshed Flashing Thermals"); 
 endif;  
+if
+	file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
+then
+	ui_print("Flashing Old thermals for Q...");  
+	package_extract_dir("thermal/new", "/system/system");
+	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
+  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config"); 
+  	unmount("/system/system");
+	ui_print("Finshed Flashing Thermals"); 
+endif;
+if
+	file_getprop("/tmp/aroma/thermal.prop","selected") == "3"
+then
+	ui_print("Flashing Old thermals for Q...");  
+	package_extract_dir("thermal/cpuonly", "/system/system");
+	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
+  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
+	unmount("/system/system");
+	ui_print("Finshed Flashing Thermals"); 
+endif;
 else
 if
   	file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
@@ -102,6 +112,16 @@ if
 then
 	ui_print("Flashing New thermals for Pie and lower..."); 
   	package_extract_dir("thermal/new", "/system");
+	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine"); 
+  	set_perm(0, 0, 0644, "/system/vendor/etc/thermal-engine.config");
+  	unmount("/system");
+	ui_print("Finshed Flashing Thermals"); 
+endif;
+if
+  	file_getprop("/tmp/aroma/thermal.prop","selected") == "3"
+then
+	ui_print("Flashing New thermals for Pie and lower..."); 
+  	package_extract_dir("thermal/cpuonly", "/system");
 	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine"); 
   	set_perm(0, 0, 0644, "/system/vendor/etc/thermal-engine.config");
   	unmount("/system");
