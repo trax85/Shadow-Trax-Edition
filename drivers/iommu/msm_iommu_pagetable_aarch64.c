@@ -58,7 +58,6 @@ static unsigned int iommu_max_va_size = CONFIG_IOMMU_MAX_VA;
 #define LL_SHIFT		12
 #define LL_OFFSET(va)		(((va) & 0x1FF000ULL) >> LL_SHIFT)
 
-
 #define IOMMU_MAX_VA_SZ		(1ULL << CONFIG_IOMMU_MAX_VA)
 #define FLSL_BASE_MASK		((IOMMU_MAX_VA_SZ - 1) & PAGE_MASK)
 #define FLSL_1G_BLOCK_MASK	((IOMMU_MAX_VA_SZ - 1) & ~(SZ_1G - 1))
@@ -559,20 +558,21 @@ static int __msm_iommu_pagetable_map_range(struct msm_iommu_pt *pt,
 				ops->get_length(cookie, len),
 				chunk_size);
 
-		/* First level */
 		if (iommu_max_va_size == 48) {
- 			/* First level */
- 			fl_offset = FL_OFFSET(va_to_map);
- 			fl_pte = pt->fl_table + fl_offset;
- 			ret = handle_1st_lvl(pt, fl_pte, pa,
- 					     chunk_size, up_at, lo_at);
-		if (ret)
- 				goto fail;
+			/* First level */
+			fl_offset = FL_OFFSET(va_to_map);
+			fl_pte = pt->fl_table + fl_offset;
+			ret = handle_1st_lvl(pt, fl_pte, pa,
+					     chunk_size, up_at, lo_at);
+
+			if (ret)
+				goto fail;
 
 		/* Second level */
-		sl_table = FOLLOW_TO_NEXT_TABLE(fl_pte);
- 		} else
- 			sl_table = pt->fl_table;
+			sl_table = FOLLOW_TO_NEXT_TABLE(fl_pte);
+		} else
+			sl_table = pt->fl_table;
+
 		sl_offset = SL_OFFSET(va_to_map);
 		sl_pte = sl_table + sl_offset;
 		ret = handle_2nd_lvl(pt, sl_pte, pa, chunk_size, up_at, lo_at);
@@ -795,19 +795,19 @@ static u64 clear_1st_level(u64 va, u64 *fl_pte, u64 len, u32 redirect,
 static u64 clear_in_chunks(struct msm_iommu_pt *pt, u64 va, u64 len, u32 silent)
 {
 	u64 *pte;
- 	u32 offset;
- 	u64 ret = 0;
+	u32 offset;
+	u64 ret = 0;
 
- 	if (iommu_max_va_size == 39) {
- 		offset = SL_OFFSET(va);
- 		pte = pt->fl_table + offset;
- 		ret = clear_2nd_level(va, pte, len, pt->redirect, silent);
- 	} else if (iommu_max_va_size == 48) {
- 		offset = FL_OFFSET(va);
- 		pte = pt->fl_table + offset;
- 		ret = clear_1st_level(va, pte, len, pt->redirect, silent);
- 	}
- 	return ret;
+	if (iommu_max_va_size == 39) {
+		offset = SL_OFFSET(va);
+		pte = pt->fl_table + offset;
+		ret = clear_2nd_level(va, pte, len, pt->redirect, silent);
+	} else if (iommu_max_va_size == 48) {
+		offset = FL_OFFSET(va);
+		pte = pt->fl_table + offset;
+		ret = clear_1st_level(va, pte, len, pt->redirect, silent);
+	}
+	return ret;
 }
 
 static void __msm_iommu_pagetable_unmap_range(struct msm_iommu_pt *pt,
@@ -935,7 +935,7 @@ void msm_iommu_flush_pagetable(struct msm_iommu_pt *pt, unsigned long va,
 
 	if (!pt->redirect)
 		flush_pagetable_level(virt_to_phys(fl_table),
- 				      IOMMU_PT_TOP_LVL, va, len);
+				      IOMMU_PT_TOP_LVL, va, len);
 }
 
 static phys_addr_t get_phys_from_va(unsigned long va, u64 *table, int level)
@@ -957,12 +957,12 @@ static phys_addr_t get_phys_from_va(unsigned long va, u64 *table, int level)
 		case 3:
 			pte = table + TL_OFFSET(va);
 			mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_2M - 1);
- 			section_mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_32M - 1);
+			section_mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_32M - 1);
 			break;
 		case 4:
 			pte = table + LL_OFFSET(va);
-						mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_4K - 1);
- 			section_mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_64K - 1);
+			mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_4K - 1);
+			section_mask = (IOMMU_MAX_VA_SZ - 1) & ~(SZ_64K - 1);
 			break;
 
 		default:
