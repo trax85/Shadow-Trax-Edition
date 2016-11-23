@@ -40,9 +40,9 @@
 #ifdef __KERNEL__
 #define STACK_TOP_MAX		TASK_SIZE_64
 #ifdef CONFIG_COMPAT
-#define AARCH32_VECTORS_BASE	0xffff0000
-#define STACK_TOP		(test_thread_flag_relaxed(TIF_32BIT) ? \
-				AARCH32_VECTORS_BASE : STACK_TOP_MAX)
+#define AARCH32_KUSER_HELPERS_BASE 0xffff0000
+#define STACK_TOP		(test_thread_flag(TIF_32BIT) ? \
+				AARCH32_KUSER_HELPERS_BASE : STACK_TOP_MAX)
 #else
 #define STACK_TOP		STACK_TOP_MAX
 #endif /* CONFIG_COMPAT */
@@ -183,6 +183,5 @@ static inline void spin_lock_prefetch(const void *x)
 #define HAVE_ARCH_PICK_MMAP_LAYOUT
 
 #endif
-#include <asm-generic/processor.h>
 
 #endif /* __ASM_PROCESSOR_H */
