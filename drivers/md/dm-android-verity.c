@@ -279,9 +279,7 @@ static void find_metadata_offset(struct fec_header *fec,
 		struct block_device *bdev, u64 *metadata_offset)
 {
 	u64 device_size;
-
 	device_size = i_size_read(bdev->bd_inode);
-
 	if (le32_to_cpu(fec->magic) == FEC_MAGIC)
 		*metadata_offset = le64_to_cpu(fec->inp_size) -
 					VERITY_METADATA_SIZE;
