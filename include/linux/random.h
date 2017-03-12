@@ -10,9 +10,9 @@
 #include <uapi/linux/random.h>
 
 struct random_ready_callback {
- 	struct list_head list;
- 	void (*func)(struct random_ready_callback *rdy);
- 	struct module *owner;
+	struct list_head list;
+	void (*func)(struct random_ready_callback *rdy);
+	struct module *owner;
 };
 
 extern void add_device_randomness(const void *, unsigned int);
@@ -97,6 +97,22 @@ static inline int arch_get_random_long(unsigned long *v)
 	return 0;
 }
 static inline int arch_get_random_int(unsigned int *v)
+{
+	return 0;
+}
+static inline int arch_has_random(void)
+{
+	return 0;
+}
+static inline int arch_get_random_seed_long(unsigned long *v)
+{
+	return 0;
+}
+static inline int arch_get_random_seed_int(unsigned int *v)
+{
+	return 0;
+}
+static inline int arch_has_random_seed(void)
 {
 	return 0;
 }
