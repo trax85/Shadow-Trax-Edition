@@ -1020,7 +1020,7 @@ generic_file_splice_write(struct pipe_inode_info *pipe, struct file *out,
 		.flags = flags,
 		.u.file = out,
 	};
-	ssize_t ret;
+	ssize_t ret = 0;
 
 	ret = generic_write_checks(out, ppos, &len, S_ISBLK(inode->i_mode));
 	if (ret)

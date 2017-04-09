@@ -794,7 +794,7 @@ static void handle_session_init_done(enum command_response cmd, void *data)
 
 static void handle_event_change(enum command_response cmd, void *data)
 {
-	struct msm_vidc_inst *inst;
+	struct msm_vidc_inst *inst = NULL;
 	struct hfi_device *hdev;
 	struct v4l2_control control = {0};
 	struct msm_vidc_cb_event *event_notify = data;
