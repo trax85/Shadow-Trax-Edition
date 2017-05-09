@@ -386,14 +386,14 @@ out:
 }
 
 struct sdcardfs_mount_private {
- 	struct vfsmount *mnt;
- 	const char *dev_name;
- 	void *raw_data;
+	struct vfsmount *mnt;
+	const char *dev_name;
+	void *raw_data;
 };
 
 static int __sdcardfs_fill_super(
- 	struct super_block *sb,
- 	void *_priv, int silent)
+	struct super_block *sb,
+	void *_priv, int silent)
 {
 	struct sdcardfs_mount_private *priv = _priv;
 
