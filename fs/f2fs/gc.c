@@ -937,7 +937,7 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync, bool background)
 	unsigned int segno;
 	int gc_type = sync ? FG_GC : BG_GC;
 	int sec_freed = 0;
-	int ret = -EINVAL;
+	int ret;
 	struct cp_control cpc;
 	struct gc_inode_list gc_list = {
 		.ilist = LIST_HEAD_INIT(gc_list.ilist),
@@ -946,8 +946,10 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync, bool background)
 
 	cpc.reason = __get_cp_reason(sbi);
 gc_more:
-	if (unlikely(!(sbi->sb->s_flags & MS_ACTIVE)))
+	if (unlikely(!(sbi->sb->s_flags & MS_ACTIVE))) {
+		ret = -EINVAL;
 		goto stop;
+	}
 	if (unlikely(f2fs_cp_error(sbi))) {
 		ret = -EIO;
 		goto stop;
@@ -966,6 +968,7 @@ gc_more:
 			gc_type = FG_GC;
 	}
 
+	ret = -EINVAL;
 	/* f2fs_balance_fs doesn't need to do BG_GC in critical path. */
 	if (gc_type == BG_GC && !background)
 		goto stop;
