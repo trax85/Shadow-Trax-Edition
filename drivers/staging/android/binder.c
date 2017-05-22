@@ -437,6 +437,7 @@ struct binder_ref_data {
  *               ref for deletion in binder_cleanup_ref, a non-NULL
  *               @node indicates the node must be freed
  * @death:       pointer to death notification (ref_death) if requested
+ *               (protected by @node->lock)
  *
  * Structure to track references from procA to target node (on procB). This
  * structure is unsafe to access without holding @proc->outer_lock.
@@ -470,7 +471,9 @@ enum binder_deferred_state {
  *                        this proc ordered by node->ptr
  *                        (protected by @inner_lock)
  * @refs_by_desc:         rbtree of refs ordered by ref->desc
+ *                        (protected by @outer_lock)
  * @refs_by_node:         rbtree of refs ordered by ref->node
+ *                        (protected by @outer_lock)
  * @pid                   PID of group_leader of process
  *                        (invariant after initialized)
  * @tsk                   task_struct for group_leader of process
@@ -493,11 +496,15 @@ enum binder_deferred_state {
  * @delivered_death:      list of delivered death notification
  *                        (protected by @inner_lock)
  * @max_threads:          cap on number of binder threads
+ *                        (protected by @inner_lock)
  * @requested_threads:    number of binder threads requested but not
  *                        yet started. In current implementation, can
  *                        only be 0 or 1.
+ *                        (protected by @inner_lock)
  * @requested_threads_started: number binder threads started
+ *                        (protected by @inner_lock)
  * @ready_threads:        number of threads waiting for proc work
+ *                        (protected by @inner_lock)
  * @tmp_ref:              temporary reference to indicate proc is in use
  *                        (protected by @inner_lock)
  * @default_priority:     default scheduler priority
@@ -1261,8 +1268,8 @@ static void binder_put_node(struct binder_node *node)
 	binder_dec_node_tmpref(node);
 }
 
-static struct binder_ref *binder_get_ref(struct binder_proc *proc,
-					 uint32_t desc, bool need_strong_ref)
+static struct binder_ref *binder_get_ref_olocked(struct binder_proc *proc,
+						 u32 desc, bool need_strong_ref)
 {
 	struct rb_node *n = proc->refs_by_desc.rb_node;
 	struct binder_ref *ref;
@@ -1285,7 +1292,7 @@ static struct binder_ref *binder_get_ref(struct binder_proc *proc,
 }
 
 /**
- * binder_get_ref_for_node() - get the ref associated with given node
+ * binder_get_ref_for_node_olocked() - get the ref associated with given node
  * @proc:	binder_proc that owns the ref
  * @node:	binder_node of target
  * @new_ref:	newly allocated binder_ref to be initialized or %NULL
@@ -1302,9 +1309,10 @@ static struct binder_ref *binder_get_ref(struct binder_proc *proc,
  *		new_ref. new_ref must be kfree'd by the caller in
  *		this case.
  */
-static struct binder_ref *binder_get_ref_for_node(struct binder_proc *proc,
-						  struct binder_node *node,
-						  struct binder_ref *new_ref)
+static struct binder_ref *binder_get_ref_for_node_olocked(
+					struct binder_proc *proc,
+					struct binder_node *node,
+					struct binder_ref *new_ref)
 {
 	struct binder_context *context = proc->context;
 	struct rb_node **p = &proc->refs_by_node.rb_node;
@@ -1367,7 +1375,7 @@ static struct binder_ref *binder_get_ref_for_node(struct binder_proc *proc,
 	return new_ref;
 }
 
-static void binder_cleanup_ref(struct binder_ref *ref)
+static void binder_cleanup_ref_olocked(struct binder_ref *ref)
 {
 	bool delete_node = false;
 
@@ -1410,17 +1418,17 @@ static void binder_cleanup_ref(struct binder_ref *ref)
 }
 
 /**
- * binder_inc_ref() - increment the ref for given handle
+ * binder_inc_ref_olocked() - increment the ref for given handle
  * @ref:         ref to be incremented
  * @strong:      if true, strong increment, else weak
  * @target_list: list to queue node work on
  *
- * Increment the ref.
+ * Increment the ref. @ref->proc->outer_lock must be held on entry
  *
  * Return: 0, if successful, else errno
  */
-static int binder_inc_ref(struct binder_ref *ref, int strong,
-			  struct list_head *target_list)
+static int binder_inc_ref_olocked(struct binder_ref *ref, int strong,
+				  struct list_head *target_list)
 {
 	int ret;
 
@@ -1449,12 +1457,9 @@ static int binder_inc_ref(struct binder_ref *ref, int strong,
  *
  * Decrement the ref.
  *
- * TODO: kfree is avoided here since an upcoming patch
- * will put this under a lock.
- *
  * Return: true if ref is cleaned up and ready to be freed
  */
-static bool binder_dec_ref(struct binder_ref *ref, int strong)
+static bool binder_dec_ref_olocked(struct binder_ref *ref, int strong)
 {
 	if (strong) {
 		if (ref->data.strong == 0) {
@@ -1478,13 +1483,7 @@ static bool binder_dec_ref(struct binder_ref *ref, int strong)
 		ref->data.weak--;
 	}
 	if (ref->data.strong == 0 && ref->data.weak == 0) {
-		binder_cleanup_ref(ref);
-		/*
-		 * TODO: we could kfree(ref) here, but an upcoming
-		 * patch will call this with a lock held, so we
-		 * return an indication that the ref should be
-		 * freed.
-		 */
+		binder_cleanup_ref_olocked(ref);
 		return true;
 	}
 	return false;
@@ -1509,7 +1508,8 @@ static struct binder_node *binder_get_node_from_ref(
 	struct binder_node *node;
 	struct binder_ref *ref;
 
-	ref = binder_get_ref(proc, desc, need_strong_ref);
+	binder_proc_lock(proc);
+	ref = binder_get_ref_olocked(proc, desc, need_strong_ref);
 	if (!ref)
 		goto err_no_ref;
 	node = ref->node;
@@ -1520,10 +1520,12 @@ static struct binder_node *binder_get_node_from_ref(
 	binder_inc_node_tmpref(node);
 	if (rdata)
 		*rdata = ref->data;
+	binder_proc_unlock(proc);
 
 	return node;
 
 err_no_ref:
+	binder_proc_unlock(proc);
 	return NULL;
 }
 
@@ -1563,24 +1565,27 @@ static int binder_update_ref_for_handle(struct binder_proc *proc,
 	struct binder_ref *ref;
 	bool delete_ref = false;
 
-	ref = binder_get_ref(proc, desc, strong);
+	binder_proc_lock(proc);
+	ref = binder_get_ref_olocked(proc, desc, strong);
 	if (!ref) {
 		ret = -EINVAL;
 		goto err_no_ref;
 	}
 	if (increment)
-		ret = binder_inc_ref(ref, strong, NULL);
+		ret = binder_inc_ref_olocked(ref, strong, NULL);
 	else
-		delete_ref = binder_dec_ref(ref, strong);
+		delete_ref = binder_dec_ref_olocked(ref, strong);
 
 	if (rdata)
 		*rdata = ref->data;
+	binder_proc_unlock(proc);
 
 	if (delete_ref)
 		binder_free_ref(ref);
 	return ret;
 
 err_no_ref:
+	binder_proc_unlock(proc);
 	return ret;
 }
 
@@ -1625,15 +1630,19 @@ static int binder_inc_ref_for_node(struct binder_proc *proc,
 	struct binder_ref *new_ref = NULL;
 	int ret = 0;
 
-	ref = binder_get_ref_for_node(proc, node, NULL);
+	binder_proc_lock(proc);
+	ref = binder_get_ref_for_node_olocked(proc, node, NULL);
 	if (!ref) {
+		binder_proc_unlock(proc);
 		new_ref = kzalloc(sizeof(*ref), GFP_KERNEL);
 		if (!new_ref)
 			return -ENOMEM;
-		ref = binder_get_ref_for_node(proc, node, new_ref);
+		binder_proc_lock(proc);
+		ref = binder_get_ref_for_node_olocked(proc, node, new_ref);
 	}
-	ret = binder_inc_ref(ref, strong, target_list);
+	ret = binder_inc_ref_olocked(ref, strong, target_list);
 	*rdata = ref->data;
+	binder_proc_unlock(proc);
 	if (new_ref && ref != new_ref)
 		/*
 		 * Another thread created the ref first so
@@ -2489,11 +2498,14 @@ static void binder_transaction(struct binder_proc *proc,
 			 * stays alive until the transaction is
 			 * done.
 			 */
-			ref = binder_get_ref(proc, tr->target.handle, true);
+			binder_proc_lock(proc);
+			ref = binder_get_ref_olocked(proc, tr->target.handle,
+						     true);
 			if (ref) {
 				binder_inc_node(ref->node, 1, 0, NULL);
 				target_node = ref->node;
 			}
+			binder_proc_unlock(proc);
 			if (target_node == NULL) {
 				binder_user_error("%d:%d got transaction to invalid handle\n",
 					proc->pid, thread->pid);
@@ -3232,6 +3244,7 @@ static int binder_thread_write(struct binder_proc *proc,
 			binder_debug(BINDER_DEBUG_THREADS,
 				     "%d:%d BC_REGISTER_LOOPER\n",
 				     proc->pid, thread->pid);
+			binder_inner_proc_lock(proc);
 			if (thread->looper & BINDER_LOOPER_STATE_ENTERED) {
 				thread->looper |= BINDER_LOOPER_STATE_INVALID;
 				binder_user_error("%d:%d ERROR: BC_REGISTER_LOOPER called after BC_ENTER_LOOPER\n",
@@ -3245,6 +3258,7 @@ static int binder_thread_write(struct binder_proc *proc,
 				proc->requested_threads_started++;
 			}
 			thread->looper |= BINDER_LOOPER_STATE_REGISTERED;
+			binder_inner_proc_unlock(proc);
 			break;
 		case BC_ENTER_LOOPER:
 			binder_debug(BINDER_DEBUG_THREADS,
@@ -3269,7 +3283,7 @@ static int binder_thread_write(struct binder_proc *proc,
 			uint32_t target;
 			binder_uintptr_t cookie;
 			struct binder_ref *ref;
-			struct binder_ref_death *death;
+			struct binder_ref_death *death = NULL;
 
 			if (get_user(target, (uint32_t __user *)ptr))
 				return -EFAULT;
@@ -3277,7 +3291,29 @@ static int binder_thread_write(struct binder_proc *proc,
 			if (get_user(cookie, (binder_uintptr_t __user *)ptr))
 				return -EFAULT;
 			ptr += sizeof(binder_uintptr_t);
-			ref = binder_get_ref(proc, target, false);
+			if (cmd == BC_REQUEST_DEATH_NOTIFICATION) {
+				/*
+				 * Allocate memory for death notification
+				 * before taking lock
+				 */
+				death = kzalloc(sizeof(*death), GFP_KERNEL);
+				if (death == NULL) {
+					WARN_ON(thread->return_error.cmd !=
+						BR_OK);
+					thread->return_error.cmd = BR_ERROR;
+					binder_enqueue_work(
+						thread->proc,
+						&thread->return_error.work,
+						&thread->todo);
+					binder_debug(
+						BINDER_DEBUG_FAILED_TRANSACTION,
+						"%d:%d BC_REQUEST_DEATH_NOTIFICATION failed\n",
+						proc->pid, thread->pid);
+					break;
+				}
+			}
+			binder_proc_lock(proc);
+			ref = binder_get_ref_olocked(proc, target, false);
 			if (ref == NULL) {
 				binder_user_error("%d:%d %s invalid ref %d\n",
 					proc->pid, thread->pid,
@@ -3285,6 +3321,8 @@ static int binder_thread_write(struct binder_proc *proc,
 					"BC_REQUEST_DEATH_NOTIFICATION" :
 					"BC_CLEAR_DEATH_NOTIFICATION",
 					target);
+				binder_proc_unlock(proc);
+				kfree(death);
 				break;
 			}
 
@@ -3298,31 +3336,20 @@ static int binder_thread_write(struct binder_proc *proc,
 				     ref->data.desc, ref->data.strong,
 				     ref->data.weak, ref->node->debug_id);
 
+			binder_node_lock(ref->node);
 			if (cmd == BC_REQUEST_DEATH_NOTIFICATION) {
 				if (ref->death) {
 					binder_user_error("%d:%d BC_REQUEST_DEATH_NOTIFICATION death notification already set\n",
 						proc->pid, thread->pid);
-					break;
-				}
-				death = kzalloc(sizeof(*death), GFP_KERNEL);
-				if (death == NULL) {
-					WARN_ON(thread->return_error.cmd !=
-						BR_OK);
-					thread->return_error.cmd = BR_ERROR;
-					binder_enqueue_work(
-						thread->proc,
-						&thread->return_error.work,
-						&thread->todo);
-					binder_debug(BINDER_DEBUG_FAILED_TRANSACTION,
-						     "%d:%d BC_REQUEST_DEATH_NOTIFICATION failed\n",
-						     proc->pid, thread->pid);
+					binder_node_unlock(ref->node);
+					binder_proc_unlock(proc);
+					kfree(death);
 					break;
 				}
 				binder_stats_created(BINDER_STAT_DEATH);
 				INIT_LIST_HEAD(&death->work.entry);
 				death->cookie = cookie;
 				ref->death = death;
-				binder_node_lock(ref->node);
 				if (ref->node->proc == NULL) {
 					ref->death->work.type = BINDER_WORK_DEAD_BINDER;
 					if (thread->looper &
@@ -3341,13 +3368,12 @@ static int binder_thread_write(struct binder_proc *proc,
 								&proc->wait);
 					}
 				}
-				binder_node_unlock(ref->node);
 			} else {
-				binder_node_lock(ref->node);
 				if (ref->death == NULL) {
 					binder_user_error("%d:%d BC_CLEAR_DEATH_NOTIFICATION death notification not active\n",
 						proc->pid, thread->pid);
 					binder_node_unlock(ref->node);
+					binder_proc_unlock(proc);
 					break;
 				}
 				death = ref->death;
@@ -3357,6 +3383,7 @@ static int binder_thread_write(struct binder_proc *proc,
 						(u64)death->cookie,
 						(u64)cookie);
 					binder_node_unlock(ref->node);
+					binder_proc_unlock(proc);
 					break;
 				}
 				ref->death = NULL;
@@ -3381,8 +3408,9 @@ static int binder_thread_write(struct binder_proc *proc,
 					death->work.type = BINDER_WORK_DEAD_BINDER_AND_CLEAR;
 				}
 				binder_inner_proc_unlock(proc);
-				binder_node_unlock(ref->node);
 			}
+			binder_node_unlock(ref->node);
+			binder_proc_unlock(proc);
 		} break;
 		case BC_DEAD_BINDER_DONE: {
 			struct binder_work *w;
@@ -3521,11 +3549,11 @@ retry:
 	binder_inner_proc_lock(proc);
 	wait_for_proc_work = thread->transaction_stack == NULL &&
 		binder_worklist_empty_ilocked(&thread->todo);
+	if (wait_for_proc_work)
+		proc->ready_threads++;
 	binder_inner_proc_unlock(proc);
 
 	thread->looper |= BINDER_LOOPER_STATE_WAITING;
-	if (wait_for_proc_work)
-		proc->ready_threads++;
 
 	binder_unlock(__func__);
 
@@ -3556,8 +3584,10 @@ retry:
 
 	binder_lock(__func__);
 
+	binder_inner_proc_lock(proc);
 	if (wait_for_proc_work)
 		proc->ready_threads--;
+	binder_inner_proc_unlock(proc);
 	thread->looper &= ~BINDER_LOOPER_STATE_WAITING;
 
 	if (ret)
@@ -3716,44 +3746,39 @@ retry:
 		case BINDER_WORK_CLEAR_DEATH_NOTIFICATION: {
 			struct binder_ref_death *death;
 			uint32_t cmd;
+			binder_uintptr_t cookie;
 
 			death = container_of(w, struct binder_ref_death, work);
 			if (w->type == BINDER_WORK_CLEAR_DEATH_NOTIFICATION)
 				cmd = BR_CLEAR_DEATH_NOTIFICATION_DONE;
 			else
 				cmd = BR_DEAD_BINDER;
-			/*
-			 * TODO: there is a race condition between
-			 * death notification requests and delivery
-			 * of the notifications. This will be handled
-			 * in a later patch.
-			 */
-			binder_inner_proc_unlock(proc);
-			if (put_user(cmd, (uint32_t __user *)ptr))
-				return -EFAULT;
-			ptr += sizeof(uint32_t);
-			if (put_user(death->cookie,
-				     (binder_uintptr_t __user *)ptr))
-				return -EFAULT;
-			ptr += sizeof(binder_uintptr_t);
-			binder_stat_br(proc, thread, cmd);
+			cookie = death->cookie;
+
 			binder_debug(BINDER_DEBUG_DEATH_NOTIFICATION,
 				     "%d:%d %s %016llx\n",
 				      proc->pid, thread->pid,
 				      cmd == BR_DEAD_BINDER ?
 				      "BR_DEAD_BINDER" :
 				      "BR_CLEAR_DEATH_NOTIFICATION_DONE",
-				      (u64)death->cookie);
-
+				      (u64)cookie);
 			if (w->type == BINDER_WORK_CLEAR_DEATH_NOTIFICATION) {
+				binder_inner_proc_unlock(proc);
 				kfree(death);
 				binder_stats_deleted(BINDER_STAT_DEATH);
 			} else {
-				binder_inner_proc_lock(proc);
 				binder_enqueue_work_ilocked(
 						w, &proc->delivered_death);
 				binder_inner_proc_unlock(proc);
 			}
+			if (put_user(cmd, (uint32_t __user *)ptr))
+				return -EFAULT;
+			ptr += sizeof(uint32_t);
+			if (put_user(cookie,
+				     (binder_uintptr_t __user *)ptr))
+				return -EFAULT;
+			ptr += sizeof(binder_uintptr_t);
+			binder_stat_br(proc, thread, cmd);
 			if (cmd == BR_DEAD_BINDER)
 				goto done; /* DEAD_BINDER notifications can cause transactions */
 		} break;
@@ -3847,19 +3872,22 @@ retry:
 done:
 
 	*consumed = ptr - buffer;
+	binder_inner_proc_lock(proc);
 	if (proc->requested_threads + proc->ready_threads == 0 &&
 	    proc->requested_threads_started < proc->max_threads &&
 	    (thread->looper & (BINDER_LOOPER_STATE_REGISTERED |
 	     BINDER_LOOPER_STATE_ENTERED)) /* the user-space code fails to */
 	     /*spawn a new thread if we leave this out */) {
 		proc->requested_threads++;
+		binder_inner_proc_unlock(proc);
 		binder_debug(BINDER_DEBUG_THREADS,
 			     "%d:%d BR_SPAWN_LOOPER\n",
 			     proc->pid, thread->pid);
 		if (put_user(BR_SPAWN_LOOPER, (uint32_t __user *)buffer))
 			return -EFAULT;
 		binder_stat_br(proc, thread, BR_SPAWN_LOOPER);
-	}
+	} else
+		binder_inner_proc_unlock(proc);
 	return 0;
 }
 
@@ -4239,12 +4267,19 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		if (ret)
 			goto err;
 		break;
-	case BINDER_SET_MAX_THREADS:
-		if (copy_from_user(&proc->max_threads, ubuf, sizeof(proc->max_threads))) {
+	case BINDER_SET_MAX_THREADS: {
+		int max_threads;
+
+		if (copy_from_user(&max_threads, ubuf,
+				   sizeof(max_threads))) {
 			ret = -EINVAL;
 			goto err;
 		}
+		binder_inner_proc_lock(proc);
+		proc->max_threads = max_threads;
+		binder_inner_proc_unlock(proc);
 		break;
+	}
 	case BINDER_SET_CONTEXT_MGR:
 		ret = binder_ioctl_set_ctx_mgr(filp);
 		if (ret)
@@ -4494,20 +4529,25 @@ static int binder_node_release(struct binder_node *node, int refs)
 
 	hlist_for_each_entry(ref, &node->refs, node_entry) {
 		refs++;
-
-		if (!ref->death)
+		/*
+		 * Need the node lock to synchronize
+		 * with new notification requests and the
+		 * inner lock to synchronize with queued
+		 * death notifications.
+		 */
+		binder_inner_proc_lock(ref->proc);
+		if (!ref->death) {
+			binder_inner_proc_unlock(ref->proc);
 			continue;
+		}
 
 		death++;
 
-		binder_inner_proc_lock(ref->proc);
-		if (list_empty(&ref->death->work.entry)) {
-			ref->death->work.type = BINDER_WORK_DEAD_BINDER;
-			binder_enqueue_work_ilocked(&ref->death->work,
-						    &ref->proc->todo);
-			wake_up_interruptible(&ref->proc->wait);
-		} else
-			BUG();
+		BUG_ON(!list_empty(&ref->death->work.entry));
+		ref->death->work.type = BINDER_WORK_DEAD_BINDER;
+		binder_enqueue_work_ilocked(&ref->death->work,
+					    &ref->proc->todo);
+		wake_up_interruptible(&ref->proc->wait);
 		binder_inner_proc_unlock(ref->proc);
 	}
 
@@ -4582,14 +4622,18 @@ static void binder_deferred_release(struct binder_proc *proc)
 	binder_inner_proc_unlock(proc);
 
 	outgoing_refs = 0;
+	binder_proc_lock(proc);
 	while ((n = rb_first(&proc->refs_by_desc))) {
 		struct binder_ref *ref;
 
 		ref = rb_entry(n, struct binder_ref, rb_node_desc);
 		outgoing_refs++;
-		binder_cleanup_ref(ref);
+		binder_cleanup_ref_olocked(ref);
+		binder_proc_unlock(proc);
 		binder_free_ref(ref);
+		binder_proc_lock(proc);
 	}
+	binder_proc_unlock(proc);
 
 	binder_release_work(proc, &proc->todo);
 	binder_release_work(proc, &proc->delivered_death);
@@ -4816,8 +4860,10 @@ static void print_binder_node_nilocked(struct seq_file *m,
 	}
 }
 
-static void print_binder_ref(struct seq_file *m, struct binder_ref *ref)
+static void print_binder_ref_olocked(struct seq_file *m,
+				     struct binder_ref *ref)
 {
+	WARN_ON(!spin_is_locked(&ref->proc->outer_lock));
 	binder_node_lock(ref->node);
 	seq_printf(m, "  ref %d: desc %d %snode %d s %d w %d d %pK\n",
 		   ref->data.debug_id, ref->data.desc,
@@ -4869,11 +4915,14 @@ static void print_binder_proc(struct seq_file *m,
 		binder_put_node(last_node);
 
 	if (print_all) {
+		binder_proc_lock(proc);
 		for (n = rb_first(&proc->refs_by_desc);
 		     n != NULL;
 		     n = rb_next(n))
-			print_binder_ref(m, rb_entry(n, struct binder_ref,
-						     rb_node_desc));
+			print_binder_ref_olocked(m, rb_entry(n,
+							    struct binder_ref,
+							    rb_node_desc));
+		binder_proc_unlock(proc);
 	}
 	binder_alloc_print_allocated(m, &proc->alloc);
 	binder_inner_proc_lock(proc);
@@ -5014,6 +5063,7 @@ static void print_binder_proc_stats(struct seq_file *m,
 	count = 0;
 	strong = 0;
 	weak = 0;
+	binder_proc_lock(proc);
 	for (n = rb_first(&proc->refs_by_desc); n != NULL; n = rb_next(n)) {
 		struct binder_ref *ref = rb_entry(n, struct binder_ref,
 						  rb_node_desc);
@@ -5021,6 +5071,7 @@ static void print_binder_proc_stats(struct seq_file *m,
 		strong += ref->data.strong;
 		weak += ref->data.weak;
 	}
+	binder_proc_unlock(proc);
 	seq_printf(m, "  refs: %d s %d w %d\n", count, strong, weak);
 
 	count = binder_alloc_get_allocated_count(&proc->alloc);
