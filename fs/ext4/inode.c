@@ -787,7 +787,7 @@ struct buffer_head *ext4_getblk(handle_t *handle, struct inode *inode,
 		 * problem.
 		 */
 		lock_buffer(bh);
-		BUFFER_TRACE(bh, "call get_create_access");
+//		BUFFER_TRACE(bh, "call get_create_access");
 		err = ext4_journal_get_create_access(handle, bh);
 		if (unlikely(err)) {
 			unlock_buffer(bh);
@@ -798,12 +798,12 @@ struct buffer_head *ext4_getblk(handle_t *handle, struct inode *inode,
 			set_buffer_uptodate(bh);
 		}
 		unlock_buffer(bh);
-		BUFFER_TRACE(bh, "call ext4_handle_dirty_metadata");
+//		BUFFER_TRACE(bh, "call ext4_handle_dirty_metadata");
 		err = ext4_handle_dirty_metadata(handle, inode, bh);
 		if (unlikely(err))
 			goto errout;
-	} else
-		BUFFER_TRACE(bh, "not a new buffer");
+	} //else
+//		BUFFER_TRACE(bh, "not a new buffer");
 	return bh;
 errout:
 	brelse(bh);
@@ -901,7 +901,7 @@ int do_journal_get_write_access(handle_t *handle,
 	 */
 	if (dirty)
 		clear_buffer_dirty(bh);
-	BUFFER_TRACE(bh, "get write access");
+//	BUFFER_TRACE(bh, "get write access");
 	ret = ext4_journal_get_write_access(handle, bh);
 	if (!ret && dirty)
 		ret = ext4_handle_dirty_metadata(handle, NULL, bh);
@@ -1761,7 +1761,7 @@ static int __ext4_journalled_writepage(struct page *page,
 	}
 
 	if (inline_data) {
-		BUFFER_TRACE(inode_bh, "get write access");
+//		BUFFER_TRACE(inode_bh, "get write access");
 		ret = ext4_journal_get_write_access(handle, inode_bh);
 
 		err = ext4_handle_dirty_metadata(handle, inode, inode_bh);
@@ -3425,15 +3425,15 @@ static int ext4_block_zero_page_range(handle_t *handle,
 		pos += blocksize;
 	}
 	if (buffer_freed(bh)) {
-		BUFFER_TRACE(bh, "freed: skip");
+//		BUFFER_TRACE(bh, "freed: skip");
 		goto unlock;
 	}
 	if (!buffer_mapped(bh)) {
-		BUFFER_TRACE(bh, "unmapped");
+//		BUFFER_TRACE(bh, "unmapped");
 		ext4_get_block(inode, iblock, bh, 0);
 		/* unmapped? It's a hole - nothing to do */
 		if (!buffer_mapped(bh)) {
-			BUFFER_TRACE(bh, "still unmapped");
+//			BUFFER_TRACE(bh, "still unmapped");
 			goto unlock;
 		}
 	}
@@ -3458,13 +3458,13 @@ static int ext4_block_zero_page_range(handle_t *handle,
 		}
 	}
 	if (ext4_should_journal_data(inode)) {
-		BUFFER_TRACE(bh, "get write access");
+//		BUFFER_TRACE(bh, "get write access");
 		err = ext4_journal_get_write_access(handle, bh);
 		if (err)
 			goto unlock;
 	}
 	zero_user(page, offset, length);
-	BUFFER_TRACE(bh, "zeroed end of block");
+//	BUFFER_TRACE(bh, "zeroed end of block");
 
 	if (ext4_should_journal_data(inode)) {
 		err = ext4_handle_dirty_metadata(handle, inode, bh);
@@ -4477,13 +4477,13 @@ static int ext4_do_update_inode(handle_t *handle,
 
 	spin_unlock(&ei->i_raw_lock);
 
-	BUFFER_TRACE(bh, "call ext4_handle_dirty_metadata");
+//	BUFFER_TRACE(bh, "call ext4_handle_dirty_metadata");
 	rc = ext4_handle_dirty_metadata(handle, NULL, bh);
 	if (!err)
 		err = rc;
 	ext4_clear_inode_state(inode, EXT4_STATE_NEW);
 	if (set_large_file) {
-		BUFFER_TRACE(EXT4_SB(sb)->s_sbh, "get write access");
+//		BUFFER_TRACE(EXT4_SB(sb)->s_sbh, "get write access");
 		err = ext4_journal_get_write_access(handle, EXT4_SB(sb)->s_sbh);
 		if (err)
 			goto out_brelse;
@@ -4950,7 +4950,7 @@ ext4_reserve_inode_write(handle_t *handle, struct inode *inode,
 
 	err = ext4_get_inode_loc(inode, iloc);
 	if (!err) {
-		BUFFER_TRACE(iloc->bh, "get_write_access");
+//		BUFFER_TRACE(iloc->bh, "get_write_access");
 		err = ext4_journal_get_write_access(handle, iloc->bh);
 		if (err) {
 			brelse(iloc->bh);
@@ -5096,7 +5096,7 @@ static int ext4_pin_inode(handle_t *handle, struct inode *inode)
 	if (handle) {
 		err = ext4_get_inode_loc(inode, &iloc);
 		if (!err) {
-			BUFFER_TRACE(iloc.bh, "get_write_access");
+//			BUFFER_TRACE(iloc.bh, "get_write_access");
 			err = jbd2_journal_get_write_access(handle, iloc.bh);
 			if (!err)
 				err = ext4_handle_dirty_metadata(handle,
