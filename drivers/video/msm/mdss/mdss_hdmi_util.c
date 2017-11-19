@@ -500,7 +500,7 @@ again:
 	DSS_REG_W_ND(ddc_ctrl->io, HDMI_DDC_CTRL, BIT(0) | BIT(20));
 
 	time_out_count = wait_for_completion_timeout(
-		&ddc_ctrl->ddc_sw_done, HZ/2);
+		&ddc_ctrl->ddc_sw_done, msecs_to_jiffies(500));
 	DSS_REG_W_ND(ddc_ctrl->io, HDMI_DDC_INT_CTRL, BIT(1));
 	if (!time_out_count) {
 		if (ddc_data->retry-- > 0) {
@@ -751,7 +751,7 @@ again:
 	DSS_REG_W_ND(ddc_ctrl->io, HDMI_DDC_CTRL, BIT(0) | BIT(21));
 
 	time_out_count = wait_for_completion_timeout(
-		&ddc_ctrl->ddc_sw_done, HZ/2);
+		&ddc_ctrl->ddc_sw_done, msecs_to_jiffies(500));
 
 	reg_val = DSS_REG_R(ddc_ctrl->io, HDMI_DDC_INT_CTRL);
 	DSS_REG_W_ND(ddc_ctrl->io, HDMI_DDC_INT_CTRL, reg_val & (~BIT(2)));
@@ -925,7 +925,7 @@ again:
 	DSS_REG_W_ND(ddc_ctrl->io, HDMI_DDC_CTRL, BIT(0) | BIT(20));
 
 	time_out_count = wait_for_completion_timeout(
-		&ddc_ctrl->ddc_sw_done, HZ/2);
+		&ddc_ctrl->ddc_sw_done, msecs_to_jiffies(500));
 
 	reg_val = DSS_REG_R(ddc_ctrl->io, HDMI_DDC_INT_CTRL);
 	DSS_REG_W_ND(ddc_ctrl->io, HDMI_DDC_INT_CTRL, reg_val & (~BIT(2)));
