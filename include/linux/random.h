@@ -57,7 +57,7 @@ static inline u32 __seed(u32 x, u32 m)
 
 
 /**
- * prandom_u32_max - returns a pseudo-random number in interval [0, ep_ro)
+ * prandom_u32_max_backport - returns a pseudo-random number in interval [0, ep_ro)
  * @ep_ro: right open interval endpoint
  *
  * Returns a pseudo-random number that is in interval [0, ep_ro). Note
@@ -68,7 +68,7 @@ static inline u32 __seed(u32 x, u32 m)
  *
  * Returns: pseudo-random number in interval [0, ep_ro)
  */
-static inline u32 prandom_u32_max(u32 ep_ro)
+static inline u32 prandom_u32_max_backport(u32 ep_ro)
 {
 	return (u32)(((u64) prandom_u32() * ep_ro) >> 32);
 }
