@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1869,14 +1869,12 @@ static int msm8x16_wcd_codec_enable_on_demand_supply(
 				 __func__, on_demand_supply_name[w->shift]);
 			goto out;
 		}
-		if (atomic_dec_return(&supply->ref) == 0){
+		if (atomic_dec_return(&supply->ref) == 0)
 			ret = regulator_disable(supply->supply);
-			if (ret)
-				dev_err(codec->dev, "%s: Failed to disable %s\n",
-					__func__,
-					on_demand_supply_name[w->shift]);
-		}		
- 		break;
+		if (ret)
+			dev_err(codec->dev, "%s: Failed to disable %s\n",
+				__func__, on_demand_supply_name[w->shift]);
+		break;
 	default:
 		break;
 	}
@@ -3911,6 +3909,8 @@ void wcd_imped_config(struct snd_soc_codec *codec,
 		switch (codec_version) {
 		case TOMBAK_1_0:
 		case TOMBAK_2_0:
+			pr_debug("%s: Default gain is set\n", __func__);
+			break;
 		case CONGA:
 			/*
 			 * For 32Ohm load and higher loads, Set 0x19E
