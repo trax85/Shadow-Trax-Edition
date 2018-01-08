@@ -122,12 +122,12 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 				return 0;
 			opts->reserved_mb = option;
 			break;
-                case Opt_gid_derivation:
- 			opts->gid_derivation = true;
- 			break;
-                case Opt_default_normal:
- 			opts->default_normal = true;
- 			break;
+		case Opt_gid_derivation:
+			opts->gid_derivation = true;
+			break;
+		case Opt_default_normal:
+			vfsopts->default_normal = true;
+			break;
 		/* unknown option */
 		default:
 			if (!silent)
