@@ -218,8 +218,8 @@ struct sdcardfs_mount_options {
 	gid_t fs_low_gid;
 	userid_t fs_user_id;
 	bool multiuser;
-        bool gid_derivation; 
-  	bool default_normal;
+	bool gid_derivation;
+	bool default_normal;
 	unsigned int reserved_mb;
 };
 
@@ -413,11 +413,11 @@ static inline void set_top(struct sdcardfs_inode_info *info,
 }
 
 static inline int get_gid(struct vfsmount *mnt,
-                struct super_block *sb,
+		struct super_block *sb,
 		struct sdcardfs_inode_data *data)
 {
 	struct sdcardfs_vfsmount_options *vfsopts = mnt->data;
- 	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(sb);
+	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(sb);
 
 	if (vfsopts->gid == AID_SDCARD_RW && !sbi->options.default_normal)
 		/* As an optimization, certain trusted system components only run

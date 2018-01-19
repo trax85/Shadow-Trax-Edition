@@ -833,7 +833,7 @@ static int sdcardfs_fillattr(struct vfsmount *mnt, struct inode *inode,
 {
 	struct sdcardfs_inode_info *info = SDCARDFS_I(inode);
 	struct sdcardfs_inode_data *top = top_data_get(info);
-        struct super_block *sb = inode->i_sb;
+	struct super_block *sb = inode->i_sb;
 
 	if (!top)
 		return -EINVAL;
