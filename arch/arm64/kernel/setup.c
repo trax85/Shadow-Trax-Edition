@@ -49,6 +49,7 @@
 #include <asm/fixmap.h>
 #include <asm/cputype.h>
 #include <asm/elf.h>
+#include <asm/cpufeature.h>
 #include <asm/cputable.h>
 #include <asm/cpu_ops.h>
 #include <asm/sections.h>
@@ -92,6 +93,9 @@ unsigned int compat_elf_hwcap2 __read_mostly;
 
 static const char *cpu_name;
 static const char *machine_name;
+#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
+bool sys_psci_bp_hardening_initialised;
+#endif
 phys_addr_t __fdt_pointer __initdata;
 
 /*
@@ -225,6 +229,19 @@ static void __maybe_unused install_bp_hardening_cb(bp_hardening_cb_t fn)
 {
 	__install_bp_hardening_cb(fn);
 }
+
+#include <linux/psci.h>
+
+void enable_psci_bp_hardening(void *data) {
+	if (psci_ops.get_version) {
+		switch(read_cpuid_part_number()) {
+		case ARM_CPU_PART_CORTEX_A57:
+		case ARM_CPU_PART_CORTEX_A72:
+			install_bp_hardening_cb(
+				  (bp_hardening_cb_t)psci_ops.get_version);
+		}
+	}
+}
 #endif	/* CONFIG_HARDEN_BRANCH_PREDICTOR */
 
 void __init setup_cpu_features(void)
@@ -234,20 +251,10 @@ void __init setup_cpu_features(void)
 	u32 cwg;
 	int cls;
 
-	cpu_info = lookup_processor_type(read_cpuid_id());
-	if (!cpu_info) {
-		printk("CPU configuration botched (ID %08x), unable to continue.\n",
-		       read_cpuid_id());
-		while (1);
-	}
-
-	cpu_name = cpu_info->cpu_name;
-
-	printk("CPU: %s [%08x] revision %d\n",
-	       cpu_name, read_cpuid_id(), read_cpuid_id() & 15);
-
-	sprintf(init_utsname()->machine, ELF_PLATFORM);
-	elf_hwcap = 0;
+#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
+	on_each_cpu(enable_psci_bp_hardening, NULL, true);
+	sys_psci_bp_hardening_initialised = true;
+#endif
 
 	/*
 	 * Check for sane CTR_EL0.CWG value.
