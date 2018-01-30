@@ -846,11 +846,11 @@ static int sdcardfs_fillattr(struct vfsmount *mnt, struct inode *inode,
 	stat->gid = make_kgid(&init_user_ns, get_gid(mnt, sb, top));
 	stat->rdev = inode->i_rdev;
 	stat->size = lower_stat->size;
- 	stat->atime = lower_stat->atime;
- 	stat->mtime = lower_stat->mtime;
- 	stat->ctime = lower_stat->ctime;
- 	stat->blksize = lower_stat->blksize;
- 	stat->blocks = lower_stat->blocks;
+	stat->atime = lower_stat->atime;
+	stat->mtime = lower_stat->mtime;
+	stat->ctime = lower_stat->ctime;
+	stat->blksize = lower_stat->blksize;
+	stat->blocks = lower_stat->blocks;
 	data_put(top);
 	return 0;
 }
