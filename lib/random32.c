@@ -28,7 +28,6 @@
 #include <linux/export.h>
 #include <linux/jiffies.h>
 #include <linux/random.h>
-#include <linux/timer.h>
 
 static DEFINE_PER_CPU(struct rnd_state, net_rand_state);
 
