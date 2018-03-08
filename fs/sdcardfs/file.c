@@ -18,7 +18,6 @@
  * General Public License.
  */
 
-#include <linux/fsnotify.h>
 #include "sdcardfs.h"
 #ifdef CONFIG_SDCARD_FS_FADV_NOACTIVE
 #include <linux/backing-dev.h>
@@ -107,10 +106,10 @@ static long sdcardfs_unlocked_ioctl(struct file *file, unsigned int cmd,
 				  unsigned long arg)
 {
 	long err = -ENOTTY;
-	struct file *lower_file; 
-        const struct cred *saved_cred = NULL;
- 	struct dentry *dentry = file->f_path.dentry;
- 	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(dentry->d_sb);
+	struct file *lower_file;
+	const struct cred *saved_cred = NULL;
+	struct dentry *dentry = file->f_path.dentry;
+	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(dentry->d_sb);
 
 	lower_file = sdcardfs_lower_file(file);
 
@@ -118,8 +117,8 @@ static long sdcardfs_unlocked_ioctl(struct file *file, unsigned int cmd,
 	if (!lower_file || !lower_file->f_op)
 		goto out;
 
-        /* save current_cred and override it */
- 	OVERRIDE_CRED(sbi, saved_cred, SDCARDFS_I(file_inode(file)));
+	/* save current_cred and override it */
+	OVERRIDE_CRED(sbi, saved_cred, SDCARDFS_I(file_inode(file)));
 
 	if (lower_file->f_op->unlocked_ioctl)
 		err = lower_file->f_op->unlocked_ioctl(lower_file, cmd, arg);
@@ -140,16 +139,17 @@ static long sdcardfs_compat_ioctl(struct file *file, unsigned int cmd,
 	long err = -ENOTTY;
 	struct file *lower_file;
 	const struct cred *saved_cred = NULL;
- 	struct dentry *dentry = file->f_path.dentry;
- 	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(dentry->d_sb);
+	struct dentry *dentry = file->f_path.dentry;
+	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(dentry->d_sb);
 
 	lower_file = sdcardfs_lower_file(file);
 
 	/* XXX: use vfs_ioctl if/when VFS exports it */
 	if (!lower_file || !lower_file->f_op)
 		goto out;
+
 	/* save current_cred and override it */
- 	OVERRIDE_CRED(sbi, saved_cred, SDCARDFS_I(file_inode(file)));
+	OVERRIDE_CRED(sbi, saved_cred, SDCARDFS_I(file_inode(file)));
 
 	if (lower_file->f_op->compat_ioctl)
 		err = lower_file->f_op->compat_ioctl(lower_file, cmd, arg);
@@ -263,7 +263,6 @@ static int sdcardfs_open(struct inode *inode, struct file *file)
 			fput(lower_file); /* fput calls dput for lower_dentry */
 		}
 	} else {
-                fsnotify_open(lower_file);
 		sdcardfs_set_lower_file(file, lower_file);
 	}
 
