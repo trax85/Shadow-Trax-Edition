@@ -895,7 +895,7 @@ repeat:
 	blk_finish_plug(&plug);
 
 	iter = 0;
-	congestion_wait(BLK_RW_SYNC, HZ/50);
+	congestion_wait(BLK_RW_SYNC, msecs_to_jiffies(20));
 
 	wait_event_interruptible(*q,
 		kthread_should_stop() || !list_empty(&dcc->discard_cmd_list));

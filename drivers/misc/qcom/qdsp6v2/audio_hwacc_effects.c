@@ -256,7 +256,7 @@ static int audio_effects_shared_ioctl(struct file *file, unsigned cmd,
 
 		rc = wait_event_timeout(effects->write_wait,
 					atomic_read(&effects->out_count),
-					WAIT_TIMEDOUT_DURATION_SECS * HZ);
+					WAIT_TIMEDOUT_DURATION_SECS * msecs_to_jiffies(1000));
 		if (!rc) {
 			pr_err("%s: write wait_event_timeout\n", __func__);
 			rc = -EFAULT;
@@ -317,7 +317,7 @@ static int audio_effects_shared_ioctl(struct file *file, unsigned cmd,
 
 		rc = wait_event_timeout(effects->read_wait,
 					atomic_read(&effects->in_count),
-					WAIT_TIMEDOUT_DURATION_SECS * HZ);
+					WAIT_TIMEDOUT_DURATION_SECS * msecs_to_jiffies(1000));
 		if (!rc) {
 			pr_err("%s: read wait_event_timeout\n", __func__);
 			rc = -EFAULT;
@@ -745,13 +745,13 @@ static int audio_effects_release(struct inode *inode, struct file *file)
 	if (effects->opened) {
 		rc = wait_event_timeout(effects->write_wait,
 					atomic_read(&effects->out_count),
-					WAIT_TIMEDOUT_DURATION_SECS * HZ);
+					WAIT_TIMEDOUT_DURATION_SECS * msecs_to_jiffies(1000));
 		if (!rc)
 			pr_err("%s: write wait_event_timeout failed\n",
 				__func__);
 		rc = wait_event_timeout(effects->read_wait,
 					atomic_read(&effects->in_count),
-					WAIT_TIMEDOUT_DURATION_SECS * HZ);
+					WAIT_TIMEDOUT_DURATION_SECS * msecs_to_jiffies(1000));
 		if (!rc)
 			pr_err("%s: read wait_event_timeout failed\n",
 				__func__);
