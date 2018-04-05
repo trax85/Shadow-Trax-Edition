@@ -799,7 +799,7 @@ int ipa_uc_monitor_holb(enum ipa_client_type ipa_client, bool enable)
 
 	ret = ipa_uc_send_cmd(cmd.raw32b,
 				IPA_CPU_2_HW_CMD_UPDATE_HOLB_MONITORING, 0,
-				false, IPA_TIMEOUT(10));
+				true, msecs_to_jiffies(10000));
 
 	return ret;
 }
