@@ -250,7 +250,6 @@ struct smbchg_chip {
 	struct work_struct		usb_set_online_work;
 	struct delayed_work		vfloat_adjust_work;
 	struct delayed_work		hvdcp_det_work;
-	struct delayed_work		reg_work;
 	spinlock_t			sec_access_lock;
 	struct mutex			therm_lvl_lock;
 	struct mutex			usb_set_online_lock;
@@ -4356,27 +4355,6 @@ static int force_9v_hvdcp(struct smbchg_chip *chip)
 	return rc;
 }
 
-static void dump_regs(struct smbchg_chip *chip);
-#define CHARGING_PERIOD_MS 500
-#define NOT_CHARGING_PERIOD_MS 1800
-static void smbchg_reg_work(struct work_struct *work)
-{
-	struct smbchg_chip *chip = container_of(work,
-				struct smbchg_chip,
-				reg_work.work);
-
-	dump_regs(chip);
-	if (chip->usb_present)
-		queue_delayed_work(system_power_efficient_wq,
-			&chip->reg_work,
-			CHARGING_PERIOD_MS * HZ);
-	else
-		queue_delayed_work(system_power_efficient_wq,
-			&chip->reg_work,
-			NOT_CHARGING_PERIOD_MS * HZ);
-}
-
-
 static void smbchg_hvdcp_det_work(struct work_struct *work)
 {
 	struct smbchg_chip *chip = container_of(work,
@@ -7451,73 +7429,6 @@ static int smbchg_parse_peripherals(struct smbchg_chip *chip)
 	return rc;
 }
 
-static u16 peripheral_base;
-static char log[256] = "";
-static char version[8] = "smb:01:";
-static inline void dump_reg(struct smbchg_chip *chip, u16 addr,
-		const char *name)
-{
-	u8 reg;
-	char reg_data[50] = "";
-
-	if (NULL == name) {
-		strcat(log, "\n");
-		//printk(log);
-		return;
-	}
-
-	smbchg_read(chip, &reg, addr, 1);
-	/* print one peripheral base registers in one line */
-	if (peripheral_base != (addr & ~PERIPHERAL_MASK)) {
-		peripheral_base = addr & ~PERIPHERAL_MASK;
-		memset(log, 0, sizeof(log));
-		sprintf(reg_data, "%s%04x ", version, peripheral_base);
-		strcat(log, reg_data);
-	}
-	memset(reg_data, 0, sizeof(reg_data));
-	sprintf(reg_data, "%02x ", reg);
-	strcat(log, reg_data);
-
-	pr_smb(PR_DUMP, "%s - %04X = %02X\n", name, addr, reg);
-}
-
-/* dumps useful registers for debug */
-static void dump_regs(struct smbchg_chip *chip)
-{
-	u16 addr;
-
-	/* charger peripheral */
-	for (addr = 0xB; addr <= 0x10; addr++)
-		dump_reg(chip, chip->chgr_base + addr, "CHGR Status");
-	for (addr = 0xF0; addr <= 0xFF; addr++)
-		dump_reg(chip, chip->chgr_base + addr, "CHGR Config");
-	dump_reg(chip, chip->chgr_base + addr, NULL);
-	/* battery interface peripheral */
-	dump_reg(chip, chip->bat_if_base + RT_STS, "BAT_IF Status");
-	dump_reg(chip, chip->bat_if_base + CMD_CHG_REG, "BAT_IF Command");
-	for (addr = 0xF0; addr <= 0xFB; addr++)
-		dump_reg(chip, chip->bat_if_base + addr, "BAT_IF Config");
-	dump_reg(chip, chip->bat_if_base + addr, NULL);
-	/* usb charge path peripheral */
-	for (addr = 0x7; addr <= 0x10; addr++)
-		dump_reg(chip, chip->usb_chgpth_base + addr, "USB Status");
-	dump_reg(chip, chip->usb_chgpth_base + CMD_IL, "USB Command");
-	for (addr = 0xF0; addr <= 0xF5; addr++)
-		dump_reg(chip, chip->usb_chgpth_base + addr, "USB Config");
-	dump_reg(chip, chip->usb_chgpth_base + addr, NULL);
-	/* dc charge path peripheral */
-	dump_reg(chip, chip->dc_chgpth_base + RT_STS, "DC Status");
-	for (addr = 0xF0; addr <= 0xF6; addr++)
-		dump_reg(chip, chip->dc_chgpth_base + addr, "DC Config");
-	dump_reg(chip, chip->dc_chgpth_base + addr, NULL);
-	/* misc peripheral */
-	dump_reg(chip, chip->misc_base + IDEV_STS, "MISC Status");
-	dump_reg(chip, chip->misc_base + RT_STS, "MISC Status");
-	for (addr = 0xF0; addr <= 0xF5; addr++)
-		dump_reg(chip, chip->misc_base + addr, "MISC CFG");
-	dump_reg(chip, chip->misc_base + RT_STS, NULL);
-}
-
 static int create_debugfs_entries(struct smbchg_chip *chip)
 {
 	struct dentry *ent;
@@ -7691,7 +7602,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 			smbchg_parallel_usb_en_work);
 	INIT_DELAYED_WORK(&chip->vfloat_adjust_work, smbchg_vfloat_adjust_work);
 	INIT_DELAYED_WORK(&chip->hvdcp_det_work, smbchg_hvdcp_det_work);
-	INIT_DELAYED_WORK(&chip->reg_work, smbchg_reg_work);
 	init_completion(&chip->src_det_lowered);
 	init_completion(&chip->src_det_raised);
 	init_completion(&chip->usbin_uv_lowered);
@@ -7740,8 +7650,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 		goto free_regulator;
 	}
 
-	/* get configs before the kernel */
-	dump_regs(chip);
 	rc = smbchg_hw_init(chip);
 	if (rc < 0) {
 		dev_err(&spmi->dev,
@@ -7825,8 +7733,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 		power_supply_set_present(chip->usb_psy, chip->usb_present);
 	}
 
-	queue_delayed_work(system_power_efficient_wq,
-		&chip->reg_work, 60 * HZ);
 	create_debugfs_entries(chip);
 	dev_info(chip->dev,
 		"SMBCHG successfully probe Charger version=%s Revision DIG:%d.%d ANA:%d.%d batt=%d dc=%d usb=%d\n",
