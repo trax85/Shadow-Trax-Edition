@@ -131,7 +131,7 @@ struct cpufreq_policy {
 	unsigned int		up_transition_delay_us;
 	unsigned int		down_transition_delay_us;
 
-	/* Cached frequency lookup from cpufreq_driver_resolve_freq. */
+	 /* Cached frequency lookup from cpufreq_driver_resolve_freq. */
 	unsigned int cached_target_freq;
 	int cached_resolved_idx;
 
@@ -706,8 +706,9 @@ static inline void acct_update_power(struct task_struct *p, cputime_t cputime)
 }
 
 #endif
+void msm_do_pm_boost(bool do_boost);
+
 struct sched_domain;
 unsigned long cpufreq_scale_freq_capacity(struct sched_domain *sd, int cpu);
-unsigned long cpufreq_scale_max_freq_capacity(struct sched_domain *sd, int cpu);
-unsigned long cpufreq_scale_min_freq_capacity(struct sched_domain *sd, int cpu);
+unsigned long cpufreq_scale_max_freq_capacity(int cpu);
 #endif /* _LINUX_CPUFREQ_H */
