@@ -19,7 +19,6 @@
 #include <sound/msm-audio-effects-q6-v2.h>
 #include <sound/msm-dts-eagle.h>
 
-
 #define MAX_CHANNELS_SUPPORTED		8
 #define WAIT_TIMEDOUT_DURATION_SECS	1
 
@@ -59,7 +58,8 @@ static void audio_effects_init_pp(struct audio_client *ac)
 	if (ret < 0)
 		pr_err("%s: Send SoftVolume Param failed ret=%d\n",
 			__func__, ret);
-        switch (ac->topology) {
+
+	switch (ac->topology) {
 	case ASM_STREAM_POSTPROC_TOPO_ID_HPX_MASTER:
 
 		ret = q6asm_set_softvolume_v2(ac, &softvol,
@@ -92,7 +92,8 @@ static void audio_effects_deinit_pp(struct audio_client *ac)
 		pr_err("%s: audio client null to deinit pp\n", __func__);
 		return;
 	}
-        switch (ac->topology) {
+
+	switch (ac->topology) {
 	case ASM_STREAM_POSTPROC_TOPO_ID_HPX_MASTER:
 		msm_dts_eagle_deinit_master_module(ac);
 		break;
@@ -195,7 +196,6 @@ static int audio_effects_shared_ioctl(struct file *file, unsigned cmd,
 			pr_err("%s: Read buffer Allocation failed rc = %d\n",
 				__func__, rc);
 			rc = -ENOMEM;
-			mutex_unlock(&effects->lock);
 			goto readbuf_fail;
 		}
 		atomic_set(&effects->out_count, effects->config.output.num_buf);
@@ -210,7 +210,6 @@ static int audio_effects_shared_ioctl(struct file *file, unsigned cmd,
 		if (rc < 0) {
 			pr_err("%s: pcm read block config failed\n", __func__);
 			rc = -EINVAL;
-			mutex_unlock(&effects->lock);
 			goto cfg_fail;
 		}
 		pr_debug("%s: dec: sample_rate: %d, num_channels: %d, bit_width: %d\n",
@@ -225,7 +224,6 @@ static int audio_effects_shared_ioctl(struct file *file, unsigned cmd,
 			pr_err("%s: pcm write format block config failed\n",
 				__func__);
 			rc = -EINVAL;
-			mutex_unlock(&effects->lock);
 			goto cfg_fail;
 		}
 
@@ -359,6 +357,7 @@ ioctl_fail:
 readbuf_fail:
 	q6asm_audio_client_buf_free_contiguous(IN,
 					effects->ac);
+	mutex_unlock(&effects->lock);
 	return rc;
 cfg_fail:
 	q6asm_audio_client_buf_free_contiguous(IN,
@@ -366,6 +365,7 @@ cfg_fail:
 	q6asm_audio_client_buf_free_contiguous(OUT,
 					effects->ac);
 	effects->buf_alloc = 0;
+	mutex_unlock(&effects->lock);
 	return rc;
 }
 
@@ -434,7 +434,8 @@ static long audio_effects_set_pp_param(struct q6audio_effects *effects,
 			      &(effects->audio_effects.topo_switch_vol),
 			      (long *)&values[1], SOFT_VOLUME_INSTANCE_2);
 		break;
-        case DTS_EAGLE_MODULE_ENABLE:
+
+	case DTS_EAGLE_MODULE_ENABLE:
 		pr_debug("%s: DTS_EAGLE_MODULE_ENABLE\n", __func__);
 		if (msm_audio_effects_is_effmodule_supp_in_top(
 			effects_module, effects->ac->topology)) {
