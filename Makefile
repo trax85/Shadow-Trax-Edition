@@ -366,11 +366,11 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = $(O3_OPTS) $(O3_OPTS2)
-AFLAGS_MODULE   = $(O3_OPTS) $(O3_OPTS2)
+CFLAGS_MODULE   =
+AFLAGS_MODULE   =
 LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= $(O3_OPTS) $(O3_OPTS2)
-AFLAGS_KERNEL	= $(O3_OPTS) $(O3_OPTS2)
+CFLAGS_KERNEL	=
+AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -397,12 +397,9 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
-		   -g0 -DNDEBUG -fmodulo-sched -fivopts \
- 		   -fmodulo-sched-allow-regmoves \
- 		   -fno-asynchronous-unwind-tables \
- 		   -mpc-relative-literal-loads \
 		   -Wno-format-security \
 		   -march=armv8-a+crypto+crc \
+		   -mfix-cortex-a53-843419 \
 		   -mcpu=cortex-a72.cortex-a53+crc+crypto \
 		   -fno-delete-null-pointer-checks \
 		   -Wno-deprecated-declarations \
