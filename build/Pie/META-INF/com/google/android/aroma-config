@@ -1,0 +1,146 @@
+ini_set("rom_name",             "Shadow O");
+ini_set("rom_version",          "v4.7");
+ini_set("rom_author",           "energyspear17@xda");
+ini_set("rom_device",           "Kenzo");
+ini_set("rom_date",             "January 1, 2018");
+
+ini_set("force_colorspace","rgba");
+#ini_set("dp","6");
+
+fontresload( "0", "ttf/Roboto-Regular.ttf", "12" );
+fontresload( "1", "ttf/Roboto-Regular.ttf", "16" ); 
+
+splash(2000, "shadow");
+
+theme("default");
+
+viewbox(
+    "\nShadow Kernel",
+
+    "<@center><b>\n" + ini_get("rom_device") + "</b>\n\n</@>" +
+    "\n\n\n\n  VERSION\t: <b><#selectbg_g>"+ini_get("rom_version")+"</#></b>\n" +
+    "  AUTHOR \t: <b><#selectbg_g>"+ini_get("rom_author")+"</#></b>\n" +
+    "  RELEASED\t: <b><#selectbg_g>"+ini_get("rom_date")+"</#></b>\n\n\n" +
+    "Press Next to Continue...",
+
+    "@welcome"
+);
+
+alert(
+  "NOTICE:",
+  "For best experience -\n\n1.Don't flash over other kernels. Ensure that you either have a previous version of Shadow or the kernel that came with your rom.\n\n2.Do not use any scripts to tune cpu governors, this kernel already does that for your cpu.\n\n",
+  "@warning",
+  "OK"
+);
+
+selectbox(
+  "\n\nSet your netlink mode","<@center><b>\n\n\n\n\n\n\nThis will set netlink value according to your rom.\n</b></@>","","netmode.prop",
+  "OLD mode","For NOS, ABC and MCAOSP",0,
+  "LOS mode","For Cardinal and PE",1
+);
+
+selectbox(
+  "\n\nDo you need dt2w ?","<@center><b>\n\n\n\n\n\n\nRemember !\n\nKeeping dt2w enabled will consume little more battery.\n</b></@>","","dt2w.prop",
+  "Yes, enable it (with vibration)","",0,
+  "Yes, enable it (without vibration)","",0,
+  "No, disable it (saves battery)","",1
+);
+
+selectbox(
+  "\n\nSet your profile","<@center><b>\n\n\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","profile.prop",
+  "Balanced (recommended)","",1,
+  "Battery (may cause lags)","",0,
+  "Performance (may yield poor backup)","",0
+);
+
+selectbox(
+  "\n\nSet your core mode","<@center><b>\n\n\n\n\n\n\nThis will set no. of cores according to your requirement.\n</b></@>","","cmode.prop",
+  "Quad-core mode","",0,
+  "Hexa-core mode","",1
+);
+
+selectbox(
+  "\n\n<@center>Apply UV to CPU and GPU ?\nWarning ! </@>","<@center><b>\n\n\n\n\n\n\nThis will change your stock voltages.\nSelect NO if you are unsure about this.\n</b></@>","","uv.prop",
+  "Yes, apply UV ","",0,
+  "No ","",1
+);
+
+selectbox(
+  "\n\n<@center>Select quick charging support\nWarning ! </@>","<@center><b>\n\n\n\n\n\n\nThis will set your max charging rate limit.\nThis does not affect users with stock charger.\n</b></@>","","crate.prop",
+  "2000 mA (default)","",1,
+  "2100 mA (quick)","",0,
+  "2400 mA (quick)","",0
+);
+
+selectbox(
+  "\n\nWant enhanced colors ?","<@center><b>\n\n\n\n\n\n\nIf you choose yes then display colors will be tuned. Keep livedisplay off to see real colors.\n</b></@>","","color.prop",
+  "Yes, enhanced colors (warm)","",0,
+  "Yes, enhanced colors (cool)","",0,
+  "Yes, enhanced colors (vivid)","",0,
+  "No, standard colors","",1
+);
+
+selectbox(
+  "\n\nWant old thermal engine ?","<@center><b>\n\n\n\n\n\n\nIf you have any slow charging issue then only it is recommended to select yes here.\n</b></@>","","thermal.prop",
+  "Yes, old thermal","",0,
+  "No, new thermal","",0,
+  "No, keep rom's default","",1
+);
+
+checkbox(
+  "\nOther settings","<@center><b>\nSelect the mods you want to install</b>\n\n</@>","","mods.prop",
+  "Disable fsync","Faster fileystem performance, but risk of data loss",0,
+  "USB fastcharge","Increase charge current while charging via USB",0,
+  "Audio mod capability","Disable audio codec power gating",0,
+  "New Jack Detection","Enable this if you have headset jack issues",0
+);
+
+menubox(
+  "\nShadow Installer",
+  "<@center>\nReady to install\n\n</@>",
+  "",
+  "menu.prop",
+  "Install Shadow","","@install",
+  "Abort installation","","@trash"
+);
+
+if prop("menu.prop","selected")=="2"
+then
+  exit("");
+endif;
+
+setvar("retstatus",
+install(
+  "\nInstalling",
+  "<@center>\nInstalling Shadow Kernel\nPlease wait</@>",
+  "")
+);
+
+ini_set("text_next", "Finish");
+
+if getvar("retstatus")=="0" then
+checkviewbox(
+    "Installation Completed",
+  
+    "<#selectbg_g><b>Congratulations...</b></#>\n\n"+
+    "<b>"+ini_get("rom_name")+"</b> has been installed into your device.\n\n"+
+    "Installer Status: "+getvar("retstatus")+"\n\n",
+	
+    "@welcome",
+
+    "Reboot your device now.",
+
+    "0",
+
+    "reboot_it"
+);
+  
+else
+   viewbox("Installation Failed","\n\nInstaller Status: "+ getvar("retstatus"),"@warning");
+endif;
+
+if
+  getvar("reboot_it")=="1"
+then
+  reboot("onfinish");
+endif;

@@ -1,0 +1,73 @@
+ui_print(" ");
+ui_print("===================================");
+ui_print(" ");
+ui_print("Extracting Files");
+set_progress(0.1);
+package_extract_dir("tools", "/tmp");
+ui_print(" ");
+ui_print("Setting Permissions");
+set_progress(0.3);
+set_perm(0, 0, 0777, "/tmp/mkbootimg");
+set_perm(0, 0, 0777, "/tmp/unpackbootimg");
+set_perm(0, 0, 0777, "/tmp/flash_kernel.sh");
+set_perm(0, 0, 0777, "/tmp/edit_ramdisk.sh");
+set_perm(0, 0, 0777, "/tmp/shadow.sh");
+set_perm(0, 0, 0777, "/tmp/init.spectrum.sh");
+set_perm(0, 0, 0777, "/tmp/fstab.qcom");
+set_perm(0, 0, 0777, "/tmp/init.qcom.post_boot.sh");
+set_perm(0, 0, 0777, "/tmp/gxfingerprint.default.so");
+set_perm(0, 0, 0755, "/tmp/cpio");
+set_perm(0, 0, 0755, "/tmp/busybox");
+ui_print(" ");
+ui_print("Occupying Device...");
+set_progress(0.4);
+run_program("/tmp/edit_ramdisk.sh");
+mount("ext4", "EMMC", "/dev/block/bootdevice/by-name/system", "/system");
+run_program("/tmp/flash_kernel.sh");
+ui_print(" ");
+ui_print("Summoning Shadow Kernel");
+run_program("/tmp/aroma/sleep","500");
+delete("/system/etc/init.d/99DarknessTweaks");
+package_extract_dir("system", "/system");
+set_perm(0, 0, 0755, "/system/etc/init.d/98FSTrim");
+set_perm(0, 0, 0755, "/system/xbin/busybox");
+set_perm(0, 0, 0644, "/system/vendor/lib/hw/power.msm8952.so");
+set_perm(0, 0, 0644, "/system/vendor/lib/hw/power.default.so");
+set_perm(0, 0, 0644, "/system/vendor/lib64/hw/power.msm8952.so");
+set_perm(0, 0, 0644, "/system/vendor/lib64/hw/power.default.so");
+if
+  file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
+then
+package_extract_dir("thermal/old", "/system");
+set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
+set_perm(0, 0, 0644, "/system/vendor/lib/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalioctl.so");
+endif;
+if
+  file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
+then
+package_extract_dir("thermal/new", "/system");
+set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
+set_perm(0, 0, 0644, "/system/vendor/lib/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalioctl.so");
+endif;
+unmount("/system");
+ui_print(" ");
+ui_print("Resurrecting kernel powers");
+set_progress(0.7);
+delete("/tmp/boot.img");
+delete("/tmp/mkbootimg");
+delete("/tmp/unpackbootimg");
+delete("/tmp/flash_kernel.sh");
+delete("/tmp/edit_ramdisk.sh");
+set_progress(0.8);
+ui_print(" ");
+ui_print("Shadow occupied your device !");
+ui_print(" ");
+ui_print("Dark rule begins...");
+set_progress(1.0);
+ui_print(" ");
+ui_print("===================================");
+ui_print(" ");
