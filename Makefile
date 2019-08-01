@@ -628,8 +628,8 @@ LDFLAGS		+= -plugin LLVMgold.so
 # use llvm-ar for building symbol tables from IR files, and llvm-dis instead
 # of objdump for processing symbol versions and exports
 LLVM_AR		:= llvm-ar
-LLVM_DIS	:= llvm-dis
-export LLVM_AR LLVM_DIS
+LLVM_NM		:= llvm-nm
+export LLVM_AR LLVM_NM
 endif
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
@@ -771,6 +771,32 @@ endif
 # We trigger additional mismatches with less inlining
 ifdef CONFIG_DEBUG_SECTION_MISMATCH
 KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
+endif
+
+ifdef CONFIG_LTO_CLANG
+ifdef CONFIG_THINLTO
+lto-clang-flags	:= -flto=thin
+LDFLAGS		+= --thinlto-cache-dir=.thinlto-cache
+else
+lto-clang-flags	:= -flto
+endif
+lto-clang-flags += -fvisibility=default $(call cc-option, -fsplit-lto-unit)
+
+# allow disabling only clang LTO where needed
+DISABLE_LTO_CLANG := -fno-lto
+export DISABLE_LTO_CLANG
+endif
+
+ifdef CONFIG_LTO
+lto-flags	:= $(lto-clang-flags)
+KBUILD_CFLAGS	+= $(lto-flags)
+
+DISABLE_LTO	:= $(DISABLE_LTO_CLANG)
+export DISABLE_LTO
+
+# LDFINAL_vmlinux and LDFLAGS_FINAL_vmlinux can be set to override
+# the linker and flags for vmlinux_link.
+export LDFINAL_vmlinux LDFLAGS_FINAL_vmlinux
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
@@ -980,6 +1006,23 @@ prepare0: archprepare FORCE
 
 # All the preparing..
 prepare: prepare0
+
+# Make sure we're using a supported toolchain with LTO_CLANG
+ifdef CONFIG_LTO_CLANG
+  ifneq ($(call clang-ifversion, -ge, 0500, y), y)
+	@echo Cannot use CONFIG_LTO_CLANG: requires clang 5.0 or later >&2 && exit 1
+  endif
+  ifneq ($(call gold-ifversion, -ge, 112000000, y), y)
+	@echo Cannot use CONFIG_LTO_CLANG: requires GNU gold 1.12 or later >&2 && exit 1
+  endif
+endif
+# Make sure compiler supports LTO flags
+ifdef lto-flags
+  ifeq ($(call cc-option, $(lto-flags)),)
+	@echo Cannot use CONFIG_LTO: $(lto-flags) not supported by compiler \
+		>&2 && exit 1
+  endif
+endif
 
 # Generate some files
 # ---------------------------------------------------------------------------
@@ -1422,7 +1465,8 @@ clean: $(clean-dirs)
 		-o -name '*.symtypes' -o -name 'modules.order' \
 		-o -name modules.builtin -o -name '.tmp_*.o.*' \
 		-o -name '*.ll' \
-		-o -name '*.gcno' \) -type f -print | xargs rm -f
+		-o -name '*.gcno' \
+		-o -name '*.*.symversions' \) -type f -print | xargs rm -f
 
 # Generate tags for editors
 # ---------------------------------------------------------------------------
