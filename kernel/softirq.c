@@ -97,7 +97,7 @@ static void wakeup_softirqd(void)
  * where hardirqs are disabled legitimately:
  */
 #ifdef CONFIG_TRACE_IRQFLAGS
-static void __local_bh_disable(unsigned long ip, unsigned int cnt)
+void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
 {
 	unsigned long flags;
 
@@ -105,47 +105,35 @@ static void __local_bh_disable(unsigned long ip, unsigned int cnt)
 
 	raw_local_irq_save(flags);
 	/*
-	 * The preempt tracer hooks into add_preempt_count and will break
+	 * The preempt tracer hooks into preempt_count_add and will break
 	 * lockdep because it calls back into lockdep after SOFTIRQ_OFFSET
 	 * is set and before current->softirq_enabled is cleared.
 	 * We must manually increment preempt_count here and manually
 	 * call the trace_preempt_off later.
 	 */
-	add_preempt_count_notrace(cnt);
+
+	__preempt_count_add(cnt);
 	/*
 	 * Were softirqs turned off above:
 	 */
-//	if (softirq_count() == cnt)
-//		trace_softirqs_off(ip);
+	if (softirq_count() == (cnt & SOFTIRQ_MASK))
+		trace_softirqs_off(ip);
 	raw_local_irq_restore(flags);
 
-//	if (preempt_count() == cnt)
-//		trace_preempt_off(CALLER_ADDR0, get_parent_ip(CALLER_ADDR1));
+	if (preempt_count() == cnt)
+		trace_preempt_off(CALLER_ADDR0, get_parent_ip(CALLER_ADDR1));
 }
-#else /* !CONFIG_TRACE_IRQFLAGS */
-static inline void __local_bh_disable(unsigned long ip, unsigned int cnt)
-{
-	add_preempt_count(cnt);
-	barrier();
-}
+EXPORT_SYMBOL(__local_bh_disable_ip);
 #endif /* CONFIG_TRACE_IRQFLAGS */
-
-void local_bh_disable(void)
-{
-	__local_bh_disable((unsigned long)__builtin_return_address(0),
-				SOFTIRQ_DISABLE_OFFSET);
-}
-
-EXPORT_SYMBOL(local_bh_disable);
 
 static void __local_bh_enable(unsigned int cnt)
 {
 	WARN_ON_ONCE(in_irq());
 	WARN_ON_ONCE(!irqs_disabled());
 
-//	if (softirq_count() == cnt)
-//		trace_softirqs_on((unsigned long)__builtin_return_address(0));
-	sub_preempt_count(cnt);
+	if (softirq_count() == (cnt & SOFTIRQ_MASK))
+		trace_softirqs_on(_RET_IP_);
+	preempt_count_sub(cnt);
 }
 
 /*
@@ -160,7 +148,7 @@ void _local_bh_enable(void)
 
 EXPORT_SYMBOL(_local_bh_enable);
 
-static inline void _local_bh_enable_ip(unsigned long ip)
+void __local_bh_enable_ip(unsigned long ip, unsigned int cnt)
 {
 	WARN_ON_ONCE(in_irq() || irqs_disabled());
 #ifdef CONFIG_TRACE_IRQFLAGS
@@ -169,35 +157,24 @@ static inline void _local_bh_enable_ip(unsigned long ip)
 	/*
 	 * Are softirqs going to be turned on now:
 	 */
-//	if (softirq_count() == SOFTIRQ_DISABLE_OFFSET)
-//		trace_softirqs_on(ip);
+	if (softirq_count() == SOFTIRQ_DISABLE_OFFSET)
+		trace_softirqs_on(ip);
 	/*
 	 * Keep preemption disabled until we are done with
 	 * softirq processing:
  	 */
-	sub_preempt_count(SOFTIRQ_DISABLE_OFFSET - 1);
+	preempt_count_sub(cnt - 1);
 
 	if (unlikely(!in_interrupt() && local_softirq_pending()))
 		do_softirq();
 
-	dec_preempt_count();
+	preempt_count_dec();
 #ifdef CONFIG_TRACE_IRQFLAGS
 	local_irq_enable();
 #endif
 	preempt_check_resched();
 }
-
-void local_bh_enable(void)
-{
-	_local_bh_enable_ip((unsigned long)__builtin_return_address(0));
-}
-EXPORT_SYMBOL(local_bh_enable);
-
-void local_bh_enable_ip(unsigned long ip)
-{
-	_local_bh_enable_ip(ip);
-}
-EXPORT_SYMBOL(local_bh_enable_ip);
+EXPORT_SYMBOL(__local_bh_enable_ip);
 
 /*
  * We restart softirq processing for at most MAX_SOFTIRQ_RESTART times,
@@ -215,18 +192,14 @@ EXPORT_SYMBOL(local_bh_enable_ip);
 #define MAX_SOFTIRQ_TIME  msecs_to_jiffies(2)
 #define MAX_SOFTIRQ_RESTART 10
 
-
-#define long_softirq_pending()	(local_softirq_pending() & LONG_SOFTIRQ_MASK)
-#define defer_for_rt() (long_softirq_pending() && cpupri_check_rt())
-
 asmlinkage void __do_softirq(void)
 {
+	struct softirq_action *h;
+	__u32 pending;
 	unsigned long end = jiffies + MAX_SOFTIRQ_TIME;
+	int cpu;
 	unsigned long old_flags = current->flags;
 	int max_restart = MAX_SOFTIRQ_RESTART;
-	struct softirq_action *h;
-	__u32 pending, pending_now, pending_delay, pending_mask;
-	int softirq_bit;
 
 	/*
 	 * Mask out PF_MEMALLOC s current task context is borrowed for the
@@ -235,76 +208,56 @@ asmlinkage void __do_softirq(void)
 	 */
 	current->flags &= ~PF_MEMALLOC;
 
-	/*
-	 * If this is not the ksoftirqd thread,
-	 * and there is an RT task that is running or is waiting to run,
-	 * delay handling the long-running softirq handlers by leaving
-	 * them for the ksoftirqd thread.
-	 */
-	if (current != __this_cpu_read(ksoftirqd) &&
-	    cpu_has_rt_task(smp_processor_id()))
-		pending_mask = LONG_SOFTIRQ_MASK;
-	else
-		pending_mask = 0;
 	pending = local_softirq_pending();
-	pending_delay = pending & pending_mask;
-	pending_now   = pending & ~pending_mask;
 	account_irq_enter_time(current);
 
-	__local_bh_disable((unsigned long)__builtin_return_address(0),
-				SOFTIRQ_OFFSET);
+	__local_bh_disable_ip(_RET_IP_, SOFTIRQ_OFFSET);
 	lockdep_softirq_enter();
+
+	cpu = smp_processor_id();
 restart:
 	/* Reset the pending bitmask before enabling irqs */
-	set_softirq_pending(pending_delay);
-        __this_cpu_write(active_softirqs, pending);
+	set_softirq_pending(0);
+	__this_cpu_write(active_softirqs, pending);
 
 	local_irq_enable();
 
 	h = softirq_vec;
 
-	while ((softirq_bit = ffs(pending_now))) {
-		unsigned int vec_nr;
-		int prev_count;
+	do {
+		if (pending & 1) {
+			unsigned int vec_nr = h - softirq_vec;
+			int prev_count = preempt_count();
 
-		h += softirq_bit - 1;
+			kstat_incr_softirqs_this_cpu(vec_nr);
 
-		vec_nr = h - softirq_vec;
-		prev_count = preempt_count();
+			trace_softirq_entry(vec_nr);
+			h->action(h);
+			trace_softirq_exit(vec_nr);
+			if (unlikely(prev_count != preempt_count())) {
+				printk(KERN_ERR "huh, entered softirq %u %s %p"
+				       "with preempt_count %08x,"
+				       " exited with %08x?\n", vec_nr,
+				       softirq_to_name[vec_nr], h->action,
+				       prev_count, preempt_count());
+				preempt_count() = prev_count;
+			}
 
-		kstat_incr_softirqs_this_cpu(vec_nr);
-
-//		trace_softirq_entry(vec_nr);
-		h->action(h);
-//		trace_softirq_exit(vec_nr);
-		if (unlikely(prev_count != preempt_count())) {
-			pr_err("huh, entered softirq %u %s %p with preempt_count %08x, exited with %08x?\n",
-			       vec_nr, softirq_to_name[vec_nr], h->action,
-			       prev_count, preempt_count());
-            preempt_count() = prev_count;
+			rcu_bh_qs(cpu);
 		}
 		h++;
-		pending_now >>= softirq_bit;
-	}
+		pending >>= 1;
+	} while (pending);
 
 	__this_cpu_write(active_softirqs, 0);
 	local_irq_disable();
 
 	pending = local_softirq_pending();
-	pending_delay = pending & pending_mask;
-	pending_now   = pending & ~pending_mask;
 	if (pending) {
-		if (pending_now && time_before(jiffies, end) &&
-		    !defer_for_rt() &&
-		    !need_resched() && --max_restart)
+		if (time_before(jiffies, end) && !need_resched() &&
+		    --max_restart)
 			goto restart;
 
-		/*
-		 * Wake up ksoftirqd to handle remaining softirq's, either
-		 * because we are delaying a subset (pending_delayed)
-		 * to avoid interrupting an RT task, or because we have
-		 * exhausted the time limit.
-		 */
 		wakeup_softirqd();
 	}
 
@@ -312,7 +265,6 @@ restart:
 
 	account_irq_exit_time(current);
 	__local_bh_enable(SOFTIRQ_OFFSET);
-	WARN_ON_ONCE(in_interrupt());
 	tsk_restore_flags(current, old_flags, PF_MEMALLOC);
 }
 
@@ -359,7 +311,7 @@ void irq_enter(void)
 
 static inline void invoke_softirq(void)
 {
-	if (!force_irqthreads && !defer_for_rt()) {
+	if (!force_irqthreads) {
 		/*
 		 * We can safely execute softirq on the current stack if
 		 * it is the irq stack, because it should be near empty
@@ -399,8 +351,8 @@ void irq_exit(void)
 #endif
 
 	account_irq_exit_time(current);
-//	trace_hardirq_exit();
-	sub_preempt_count(HARDIRQ_OFFSET);
+	trace_hardirq_exit();
+	preempt_count_sub(HARDIRQ_OFFSET);
 	if (!in_interrupt() && local_softirq_pending())
 		invoke_softirq();
 
@@ -439,7 +391,7 @@ void raise_softirq(unsigned int nr)
 
 void __raise_softirq_irqoff(unsigned int nr)
 {
-//	trace_softirq_raise(nr);
+	trace_softirq_raise(nr);
 	or_softirq_pending(1UL << nr);
 }
 
@@ -745,7 +697,7 @@ static void takeover_tasklets(unsigned int cpu)
 }
 #endif /* CONFIG_HOTPLUG_CPU */
 
-static int __cpuinit cpu_callback(struct notifier_block *nfb,
+static int cpu_callback(struct notifier_block *nfb,
 				  unsigned long action,
 				  void *hcpu)
 {
@@ -760,7 +712,7 @@ static int __cpuinit cpu_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block __cpuinitdata cpu_nfb = {
+static struct notifier_block cpu_nfb = {
 	.notifier_call = cpu_callback
 };
 
