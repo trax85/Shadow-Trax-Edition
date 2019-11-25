@@ -390,6 +390,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-memset-transposed-args \
 		   -Wno-discarded-array-qualifiers -std=gnu89 \
 		   -Wno-tautological-compare -Wno-array-bounds \
+                   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 \
 		   -Wno-nonnull
 
 KBUILD_AFLAGS_KERNEL :=
