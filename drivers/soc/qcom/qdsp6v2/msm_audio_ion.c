@@ -481,7 +481,6 @@ static int msm_audio_ion_get_phys(struct ion_client *client,
 	return rc;
 }
 
-
 u32 msm_audio_ion_get_smmu_sid_mode32(void)
 {
 	if (msm_audio_ion_data.smmu_enabled)
@@ -498,6 +497,13 @@ u32 populate_upper_32_bits(ion_phys_addr_t pa)
 		return upper_32_bits(pa);
 }
 
+u32 msm_audio_populate_upper_32_bits(ion_phys_addr_t pa)
+{
+	if (sizeof(ion_phys_addr_t) == sizeof(u32))
+		return msm_audio_ion_get_smmu_sid_mode32();
+	else
+		return upper_32_bits(pa);
+}
 static int msm_audio_ion_probe(struct platform_device *pdev)
 {
 	int rc = 0;
