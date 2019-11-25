@@ -28,7 +28,7 @@
 #include "slim-msm.h"
 
 #define MSM_SLIM_NAME	"msm_slim_ctrl"
-#define SLIM_ROOT_FREQ 24576000
+#define SLIM_ROOT_FREQ 24600000
 
 #define QC_MSM_DEVS	5
 
@@ -92,8 +92,8 @@ enum mgr_intr {
 
 enum frm_cfg {
 	FRM_ACTIVE	= 1,
-	CLK_GEAR	= 10,
-	ROOT_FREQ	= 31,
+	CLK_GEAR	= 11,
+	ROOT_FREQ	= 22,
 	REF_CLK_GEAR	= 15,
 	INTR_WAKE	= 19,
 };

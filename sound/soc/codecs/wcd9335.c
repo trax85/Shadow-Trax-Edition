@@ -99,7 +99,7 @@
 	(TASHA_CPE_SS_ERR_STATUS_WDOG_BITE | \
 	 TASHA_CPE_SS_ERR_STATUS_MEM_ACCESS)
 
-#define SLIM_BW_CLK_GEAR_9 6200000
+#define SLIM_BW_CLK_GEAR_9 24600000
 #define SLIM_BW_UNVOTE 0
 
 #define CPE_FLL_CLK_75MHZ 75000000
@@ -157,8 +157,8 @@ enum {
 };
 
 enum tasha_sido_voltage {
-	SIDO_VOLTAGE_SVS_MV = 950,
-	SIDO_VOLTAGE_NOMINAL_MV = 1100,
+	SIDO_VOLTAGE_SVS_MV = 1050,
+	SIDO_VOLTAGE_NOMINAL_MV = 1350,
 };
 
 static int dig_core_collapse_enable = 1;
