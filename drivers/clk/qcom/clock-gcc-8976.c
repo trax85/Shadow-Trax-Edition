@@ -139,7 +139,7 @@ static struct pll_vote_clk gpll2_clk_src = {
 	.status_mask = BIT(17),
 	.base = &virt_bases[GCC_BASE],
 	.c = {
-		.rate = 932000000,
+		.rate = 1049000000,
 		.parent = &xo_clk_src.c,
 		.dbg_name = "gpll2_clk_src",
 		.ops = &clk_ops_pll_vote,
@@ -154,7 +154,7 @@ static struct pll_vote_clk gpll3_clk_src = {
 	.status_mask = BIT(17),
 	.base = &virt_bases[GCC_BASE],
 	.c = {
-		.rate = 1100000000,
+		.rate = 1140880000,
 		.parent = &xo_clk_src.c,
 		.dbg_name = "gpll3_clk_src",
 		.ops = &clk_ops_pll_vote,
@@ -171,10 +171,10 @@ static struct pll_config_regs gpll3_regs = {
 	.base = &virt_bases[GCC_BASE],
 };
 
-/* GPLL3 at 1100MHz, main output enabled. */
+/* GPLL3 at 1130.88MHz, main output enabled. */
 static struct pll_config gpll3_config = {
 	.l = 57,
-	.m = 7,
+	.m = 8,
 	.n = 24,
 	.vco_val = 0x0,
 	.vco_mask = BM(21, 20),
@@ -212,7 +212,7 @@ static struct pll_vote_clk gpll6_clk_src = {
 	.status_mask = BIT(17),
 	.base = &virt_bases[GCC_BASE],
 	.c = {
-		.rate = 1080000000,
+		.rate = 1480000000,
 		.parent = &xo_clk_src.c,
 		.dbg_name = "gpll6_clk_src",
 		.ops = &clk_ops_pll_vote,
@@ -919,9 +919,9 @@ static struct clk_freq_tbl ftbl_vfe0_clk_src[] = {
 	F( 200000000,          gpll0,    4,    0,     0),
 	F( 266666667,          gpll0,    3,    0,     0),
 	F( 300000000,      gpll4_out,    4,    0,     0),
-	F( 320000000,          gpll0,  2.5,    0,     0),
+	F( 350000000,      gpll2_aux,  2.5,    0,     0),
 	F( 400000000,          gpll0,    2,    0,     0),
-	F( 466000000,      gpll2_aux,    2,    0,     0),
+	F( 512600000,      gpll2_aux,  1.5,    0,     0),
 	F_END
 };
 
@@ -935,8 +935,8 @@ static struct rcg_clk vfe0_clk_src = {
 		.dbg_name = "vfe0_clk_src",
 		.ops = &clk_ops_rcg,
 		VDD_DIG_FMAX_MAP5(LOWER, 160000000, LOW, 300000000,
-		NOMINAL, 320000000, NOM_PLUS, 400000000,
-		HIGH, 466000000),
+		NOMINAL, 350000000, NOM_PLUS, 400000000,
+		HIGH,  512600000),
 		CLK_INIT(vfe0_clk_src.c),
 	},
 };
@@ -951,9 +951,9 @@ static struct clk_freq_tbl ftbl_vfe1_clk_src[] = {
 	F( 200000000,          gpll0,    4,    0,     0),
 	F( 266666667,          gpll0,    3,    0,     0),
 	F( 300000000,      gpll4_out,    4,    0,     0),
-	F( 320000000,          gpll0,  2.5,    0,     0),
+	F( 350000000,      gpll2_aux,  2.5,    0,     0),
 	F( 400000000,          gpll0,    2,    0,     0),
-	F( 466000000,      gpll2_aux,    2,    0,     0),
+	F( 512600000,      gpll2_aux,  1.5,    0,     0),
 	F_END
 };
 
@@ -967,8 +967,8 @@ static struct rcg_clk vfe1_clk_src = {
 		.dbg_name = "vfe1_clk_src",
 		.ops = &clk_ops_rcg,
 		VDD_DIG_FMAX_MAP5(LOWER, 160000000, LOW, 300000000,
-		NOMINAL, 320000000, NOM_PLUS, 400000000,
-		HIGH, 466000000),
+		NOMINAL, 350000000, NOM_PLUS, 400000000,
+		HIGH, 512600000),
 		CLK_INIT(vfe1_clk_src.c),
 	},
 };
@@ -1301,12 +1301,13 @@ static struct clk_freq_tbl ftbl_gfx3d_clk_src[] = {
 	F( 266666667,          gpll0,    3,    0,     0),
 	F( 300000000,    gpll4_gfx3d,    4,    0,     0),
 	F( 366670000,          gpll3,    3,    0,     0),
-	F( 390000000,          gpll0,    2,    0,     0),
-	F( 395000000,    gpll6_gfx3d,  2.5,    0,     0),
-	F( 432000000,    gpll4_gfx3d,  2.5,    0,     0),
-	F( 480000000,          gpll3,    2,    0,     0),
-	F( 550000000,    gpll4_gfx3d,    2,    0,     0),
+	F( 480000000,          gpll0,    2,    0,     0),
+	F( 550000000,    gpll6_gfx3d,  2.5,    0,     0),
+	F( 600000000,    gpll4_gfx3d,  2.5,    0,     0),
+	F( 623330000,          gpll3,    2,    0,     0),
+	F( 660000000,    gpll4_gfx3d,    2,    0,     0),
 	F( 710000000,    gpll2_gfx3d,  1.5,    0,     0),
+        F( 753333333,          gpll3,  1.5,    0,     0),
 	F_END
 };
 
@@ -2568,8 +2569,8 @@ static struct branch_clk gcc_oxili_gfx3d_clk = {
 		.dbg_name = "gcc_oxili_gfx3d_clk",
 		.parent = &gfx3d_clk_src.c,
 		VDD_DIG_FMAX_MAP5(LOWER, 300000000, LOW, 366670000,
-				NOMINAL, 395000000, NOM_PLUS, 480000000,
-				HIGH, 710000000),
+				NOMINAL, 366670000, NOM_PLUS, 480000000,
+				HIGH, 753333333),
 		.ops = &clk_ops_branch,
 		CLK_INIT(gcc_oxili_gfx3d_clk.c),
 	},
