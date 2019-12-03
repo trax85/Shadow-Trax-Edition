@@ -338,6 +338,7 @@ struct mdss_mdp_mixer {
 
 struct mdss_mdp_format_params {
 	u32 format;
+        u32 flag;
 	u8 is_yuv;
 
 	u8 frame_format;
@@ -352,6 +353,7 @@ struct mdss_mdp_format_params {
 	u8 tile;
 	u8 bits[MAX_PLANES];
 	u8 element[MAX_PLANES];
+        u8 unpack_dx_format;	/*1 for 10 bit format otherwise 0 */
 };
 
 struct mdss_mdp_plane_sizes {

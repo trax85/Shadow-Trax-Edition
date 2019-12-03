@@ -591,12 +591,14 @@ static ssize_t mdss_fb_get_panel_info(struct device *dev,
 	struct msm_fb_data_type *mfd = fbi->par;
 	struct mdss_panel_info *pinfo = mfd->panel_info;
 	int ret;
-
+        printk("Get panel INFO\N");
 	ret = scnprintf(buf, PAGE_SIZE,
 			"pu_en=%d\nxstart=%d\nwalign=%d\nystart=%d\nhalign=%d\n"
 			"min_w=%d\nmin_h=%d\nroi_merge=%d\ndyn_fps_en=%d\n"
 			"min_fps=%d\nmax_fps=%d\npanel_name=%s\n"
 			"primary_panel=%d\nis_pluggable=%d\n"
+                        "is_hdr_enabled=%d\n"
+			"peak_brightness=%d\nblackness_level=%d\n"
 			"is_cec_supported=%d\nis_pingpong_split=%d\n",
 			pinfo->partial_update_enabled, pinfo->xstart_pix_align,
 			pinfo->width_pix_align, pinfo->ystart_pix_align,
@@ -604,8 +606,18 @@ static ssize_t mdss_fb_get_panel_info(struct device *dev,
 			pinfo->min_height, pinfo->partial_update_roi_merge,
 			pinfo->dynamic_fps, pinfo->min_fps, pinfo->max_fps,
 			pinfo->panel_name, pinfo->is_prim_panel,
-			pinfo->is_pluggable, pinfo->is_cec_supported,
-			is_pingpong_split(mfd));
+			pinfo->is_pluggable, pinfo->is_cec_supported,is_pingpong_split(mfd),
+                        pinfo->hdr_properties.hdr_enabled,
+			pinfo->hdr_properties.peak_brightness,
+			pinfo->hdr_properties.blackness_level,
+			pinfo->hdr_properties.display_primaries[0],
+			pinfo->hdr_properties.display_primaries[1],
+			pinfo->hdr_properties.display_primaries[2],
+			pinfo->hdr_properties.display_primaries[3],
+			pinfo->hdr_properties.display_primaries[4],
+			pinfo->hdr_properties.display_primaries[5],
+			pinfo->hdr_properties.display_primaries[6],
+			pinfo->hdr_properties.display_primaries[7]);
 
 	return ret;
 }
