@@ -514,9 +514,9 @@
 			qcom,switch-freq-khz = <800>;
 			qcom,ovp-mv = <29500>;
 			qcom,ilim-ma = <980>;
-			qcom,boost-duty-ns = <26>;
+			qcom,boost-duty-ns = <24>;
 			qcom,mod-freq-khz = <9600>;
-			qcom,dim-mode = "hybrid";
+			qcom,dim-mode = "analog";
 			qcom,dim-method = "linear";
 			qcom,hyb-thres = <625>;
 			qcom,sync-dly-us = <800>;
