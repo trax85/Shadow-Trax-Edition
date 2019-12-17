@@ -1456,9 +1456,12 @@ select_task_rq_rt(struct task_struct *p, int sd_flag, int flags)
 		 * destination CPU is not running a lower priority task.
  		 */
 
-		if (target != -1 &&
-		    (may_not_preempt ||
-		     p->prio < cpu_rq(target)->rt.highest_prio.curr))
+		/*
+ 		* Don't bother moving it if the destination CPU is
+ 		* not running a lower priority task.
+ 		*/
+  		if (target != -1 &&
+  		 	p->prio < cpu_rq(target)->rt.highest_prio.curr)
 			cpu = target;
 	}
 	*per_cpu_ptr(&incoming_rt_task, cpu) = true;
