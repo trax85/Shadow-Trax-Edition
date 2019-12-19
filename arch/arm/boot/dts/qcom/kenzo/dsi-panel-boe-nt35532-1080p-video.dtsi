@@ -15,7 +15,6 @@
 		qcom,mdss-dsi-panel-name = "boe nt35532 1080p video mode dsi panel";
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
 		qcom,mdss-dsi-panel-framerate = <66>;
-                qcom,mdss-tear-check-frame-rate = <68>;
 		qcom,mdss-dsi-virtual-channel-id = <0>;
 		qcom,mdss-dsi-stream = <0>;
 		qcom,mdss-dsi-panel-width = <1080>;
