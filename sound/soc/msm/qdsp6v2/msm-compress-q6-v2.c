@@ -184,7 +184,8 @@ struct msm_compr_audio {
 	spinlock_t lock;
 };
 
-const u32 compr_codecs[] = {SND_AUDIOCODEC_AC3, SND_AUDIOCODEC_EAC3};
+const u32 compr_codecs[] = {
+ 	SND_AUDIOCODEC_AC3, SND_AUDIOCODEC_EAC3, SND_AUDIOCODEC_DTS};
 
 static unsigned int supported_sample_rates[] = {
 	8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000,
@@ -693,6 +694,7 @@ static void populate_codec_list(struct msm_compr_audio *prtd)
 	prtd->compr_cap.codecs[9] = SND_AUDIOCODEC_VORBIS;
 	prtd->compr_cap.codecs[10] = SND_AUDIOCODEC_ALAC;
 	prtd->compr_cap.codecs[11] = SND_AUDIOCODEC_APE;
+        prtd->compr_cap.codecs[12] = SND_AUDIOCODEC_DTS;
  	prtd->compr_cap.codecs[13] = SND_AUDIOCODEC_APTX;
 }
 
@@ -923,6 +925,10 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 			pr_err("%s: CMD Format block failed ret %d\n",
 					__func__, ret);
 		break;
+        case FORMAT_DTS:
+ 		pr_debug("SND_AUDIOCODEC_DTS\n");
+ 		/* no media format block needed */
+ 		break;
 
  	case FORMAT_APTX:
  		pr_debug("SND_AUDIOCODEC_APTX\n");

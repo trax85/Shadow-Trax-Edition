@@ -51,6 +51,7 @@
 #define FORMAT_APE          0x0019
 #define FORMAT_G711_ALAW_FS 0x001a
 #define FORMAT_G711_MLAW_FS 0x001b
+#define FORMAT_DTS          0x001c
 #define FORMAT_APTX         0x001d
 
 #define ENCDEC_SBCBITRATE   0x0001
