@@ -365,9 +365,12 @@
 			compatible = "qcom,qpnp-regulator";
 			reg = <0x2000 0x100>;
 			regulator-name = "pm8004_s5";
+                        qcom,init-smps-mode = <1>;
+                        qcom,init-quiet-mode = <1>;
 			regulator-min-microvolt = <500000>;
 			regulator-max-microvolt = <1165000>;
 			qcom,auto-mode-enable = <1>;
+                        qcom,ocp-enable = <2>;
 			qcom,enable-time = <500>;
 		};
 	};
@@ -599,10 +602,10 @@
 
 		qcom,cpr-voltage-ceiling =
 				<785000 850000 885000 935000 1035000
-				1035000 1155000 1180000 1185000>;
+				1035000 1155000 1175000 1180000>;
 		qcom,cpr-voltage-floor =
 				<710000 725000 740000 770000 830000
-				840000 950000 1010000 1075000>;
+				840000 910000 1000000 1050000>;
 		vdd-gfx-supply = <&pm8004_s5>;
 
 		vdd-mx-supply = <&pm8950_s6_level_ao>;
