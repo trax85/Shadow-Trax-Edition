@@ -343,8 +343,9 @@ static struct afe_param_id_clip_bank_sel clip_bank_sel = {
 };
 
 #define WCD9330_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
-			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
-			SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000)
+			SNDRV_PCM_RATE_32000 |  SNDRV_PCM_RATE_44100 | \
+ SNDRV_PCM_RATE_48000 |  SNDRV_PCM_RATE_96000 | \
+ SNDRV_PCM_RATE_192000)
 
 #define NUM_DECIMATORS 10
 #define NUM_INTERPOLATORS 8
@@ -361,10 +362,13 @@ static struct afe_param_id_clip_bank_sel clip_bank_sel = {
 #define TOMTOM_MCLK_CLK_12P288MHZ 12288000
 #define TOMTOM_MCLK_CLK_9P6MHZ 9600000
 
-#define TOMTOM_FORMATS_S16_S24_LE (SNDRV_PCM_FMTBIT_S16_LE | \
-			SNDRV_PCM_FMTBIT_S24_LE)
+# define TOMTOM_FORMATS_S16_S24_LE (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FORMAT_S16_LE | \
+ SNDRV_PCM_FORMAT_S24_LE |  SNDRV_PCM_FMTBIT_S24_LE |  \
+ SNDRV_PCM_FMTBIT_S24_3LE |  SNDRV_PCM_FORMAT_S24_LE )
 
-#define TOMTOM_FORMATS (SNDRV_PCM_FMTBIT_S16_LE)
+# define TOMTOM_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FORMAT_S16_LE | \
+ SNDRV_PCM_FORMAT_S24_LE |  SNDRV_PCM_FMTBIT_S24_LE | \
+ SNDRV_PCM_FMTBIT_S24_3LE |  SNDRV_PCM_FORMAT_S24_LE)
 
 #define TOMTOM_SLIM_PGD_PORT_INT_TX_EN0 (TOMTOM_SLIM_PGD_PORT_INT_EN0 + 2)
 #define TOMTOM_ZDET_BOX_CAR_AVG_LOOP_COUNT 1
@@ -748,8 +752,8 @@ static int tomtom_update_uhqa_mode(struct snd_soc_codec *codec, int path)
 	if (((tomtom_get_sample_rate(codec, path) & 0xE0) == 0xA0) &&
 		(tomtom_compare_bit_format(codec, 24))) {
 		tomtom_p->uhqa_mode = 1;
-	} else {
-		tomtom_p->uhqa_mode = 0;
+	} else if (( tomtom_compare_bit_format (codec, 16 ))) {
+                tomtom_p-> uhqa_mode = 1 ;
 	}
 	dev_dbg(codec->dev, "%s: uhqa_mode=%d", __func__, tomtom_p->uhqa_mode);
 	return ret;
@@ -5861,6 +5865,7 @@ static void tomtom_set_rxsb_port_format(struct snd_pcm_hw_params *params,
 		tomtom_p->dai[dai->id].bit_width = 16;
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
+        case SNDRV_PCM_FORMAT_S24_3LE:
 		bit_sel = 0x0;
 		tomtom_p->dai[dai->id].bit_width = 24;
 		break;
@@ -5920,6 +5925,7 @@ static void tomtom_set_tx_sb_port_format(struct snd_pcm_hw_params *params,
 		tomtom_p->dai[dai->id].bit_width = 16;
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
+        case SNDRV_PCM_FORMAT_S24_3LE:
 		bit_sel = 0x0;
 		tomtom_p->dai[dai->id].bit_width = 24;
 		break;
@@ -6034,6 +6040,7 @@ static int tomtom_hw_params(struct snd_pcm_substream *substream,
 			tomtom->dai[dai->id].bit_width = 16;
 			break;
 		case SNDRV_PCM_FORMAT_S24_LE:
+                case SNDRV_PCM_FORMAT_S24_3LE:
 			tomtom->dai[dai->id].bit_width = 24;
 			i2s_bit_mode = 0x00;
 			break;
@@ -6134,7 +6141,7 @@ static struct snd_soc_dai_driver tomtom_dai[] = {
 		.capture = {
 			.stream_name = "AIF1 Capture",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -6162,7 +6169,7 @@ static struct snd_soc_dai_driver tomtom_dai[] = {
 		.capture = {
 			.stream_name = "AIF2 Capture",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -6190,7 +6197,7 @@ static struct snd_soc_dai_driver tomtom_dai[] = {
 		.capture = {
 			.stream_name = "AIF3 Capture",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 48000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -6235,7 +6242,7 @@ static struct snd_soc_dai_driver tomtom_i2s_dai[] = {
 		.playback = {
 			.stream_name = "AIF1 Playback",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -6249,7 +6256,7 @@ static struct snd_soc_dai_driver tomtom_i2s_dai[] = {
 		.capture = {
 			.stream_name = "AIF1 Capture",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -6263,7 +6270,7 @@ static struct snd_soc_dai_driver tomtom_i2s_dai[] = {
 		.playback = {
 			.stream_name = "AIF2 Playback",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -6277,7 +6284,7 @@ static struct snd_soc_dai_driver tomtom_i2s_dai[] = {
 		.capture = {
 			.stream_name = "AIF2 Capture",
 			.rates = WCD9330_RATES,
-			.formats = TOMTOM_FORMATS,
+			.formats =  TOMTOM_FORMATS_S16_S24_LE,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
