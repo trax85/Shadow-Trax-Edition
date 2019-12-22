@@ -27,12 +27,4 @@
         echo "16384,20992,24064,30720,46080,66560" > /sys/module/lowmemorykiller/parameters/minfree
 	echo 10 > /proc/sys/vm/dirty_background_ratio
     fi
-
-	Mode=`cat /init.shadow.rc | grep zrammode`
-	Mo=${Mode:11:1}
-	if [ $Mo -eq 1 ] || [ $Mo -eq 3 ]; then
-	echo 536870912 > /sys/block/zram0/disksize
-	mkswap /dev/block/zram0
-	swapon /dev/block/zram0
-	fi
-
+    echo "0" /sys/kernel/alessa_plug

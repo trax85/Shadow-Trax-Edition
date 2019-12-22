@@ -35,8 +35,7 @@ alert(
 
 selectbox(
   "\n\nSet your netlink mode","<@center><b>\n\n\n\n\n\n\nThis will set netlink value according to your rom.\n</b></@>","","netmode.prop",
-  "OLD mode","For NOS, ABC and MCAOSP",0,
-  "LOS mode","For Cardinal and PE",1
+  "LOS mode","Pie",1
 );
 
 selectbox(

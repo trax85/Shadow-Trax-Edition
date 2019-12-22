@@ -178,8 +178,8 @@ if [ $PROFILE == 1 ]; then
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 0" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 100" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1440000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads \"50 1017600:60 1190400:70 1305600:80 1382400:90 1401600:95\"" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 0" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads \"99\"" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 40000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 0" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 0" >> $CONFIGFILE
@@ -187,7 +187,7 @@ echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0" >> $CONFIG
 elif [ $PROFILE == 2 ]; then
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/go_hispeed_load 99" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/above_hispeed_delay 30000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/hispeed_freq 1305600" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/hispeed_freq 0" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/min_sample_time 45000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/timer_rate 40000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/max_freq_hysteresis 0" >> $CONFIGFILE
@@ -200,8 +200,8 @@ elif [ $PROFILE == 3 ]; then
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay \"25000\"" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 95" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1440000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads \"40 1017600:50 1190400:60 1305600:70 1382400:80 1401600:90\"" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 0" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads \"99\"" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1" >> $CONFIGFILE
@@ -217,7 +217,7 @@ if [ $PROFILE == 1 ]; then
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay \"19000 1382400:39000\"" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 90" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate 20000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1382400" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1113600" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads \"85 1382400:90 1747200:95\"" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 0" >> $CONFIGFILE
@@ -226,7 +226,7 @@ echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0" >> $CONFIG
 elif [ $PROFILE == 2 ]; then
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/go_hispeed_load 99" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/above_hispeed_delay 25000" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/hispeed_freq 1056000" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/hispeed_freq 1113600" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/min_sample_time 30000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/timer_rate 40000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/max_freq_hysteresis 0" >> $CONFIGFILE
@@ -267,11 +267,11 @@ echo "write /sys/module/cpu_boost/parameters/input_boost_ms 55" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# SET IO SCHEDULER" >> $CONFIGFILE
 if [ $PROFILE == 1 ]; then
-echo "setprop sys.io.scheduler \"maple\"" >> $CONFIGFILE
+echo "setprop sys.io.scheduler \"zen\"" >> $CONFIGFILE
 elif [ $PROFILE == 2 ]; then
-echo "setprop sys.io.scheduler \"maple\"" >> $CONFIGFILE
+echo "setprop sys.io.scheduler \"fiops\"" >> $CONFIGFILE
 elif [ $PROFILE == 3 ]; then
-echo "setprop sys.io.scheduler \"maple\"" >> $CONFIGFILE
+echo "setprop sys.io.scheduler \"fiops\"" >> $CONFIGFILE
 fi
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
@@ -338,8 +338,8 @@ echo "" >> $CONFIGFILE
 VOLT=$(cat /tmp/aroma/uv.prop | cut -d '=' -f2)
 if [ $VOLT == 1 ]; then
 echo "# CPU & GPU UV" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 900 920 980 1020\"" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 740 800 900 960 1000 1030 1040 1050 760 780 850 890 950 1000 1020 1020\"" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 900 950 1020 1075\"" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 720 800 900 960 1000 1030 1040 1050 760 750 850 890 950 1000 1020 1020\"" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 fi
 echo "# RUN USERTWEAKS SERVICE" >> $CONFIGFILE
