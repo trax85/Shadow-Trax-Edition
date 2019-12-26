@@ -59,9 +59,6 @@
 #define FPC1020_RESET_HIGH2_US 1250
 #define FPC_TTW_HOLD_TIME 1000
 
-#ifdef CONFIG_MSM_HOTPLUG
-extern void msm_hotplug_resume_timeout(void);
-#endif
 
 struct vreg_config {
 	char *name;
@@ -253,14 +250,6 @@ static const struct attribute_group attribute_group = {
 	.attrs = attributes,
 };
 
-#ifdef CONFIG_MSM_HOTPLUG
-static void __cpuinit msm_hotplug_resume_call(struct work_struct *msm_hotplug_resume_call_work)
-{
-	msm_hotplug_resume_timeout();
-}
-static __refdata DECLARE_WORK(msm_hotplug_resume_call_work, msm_hotplug_resume_call);
-#endif
-
 static int fpc1020_input_init(struct fpc1020_data * fpc1020)
 {
 	int ret;
@@ -302,25 +291,14 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 
 	if (fpc1020->wakeup_enabled) {
 		wake_lock_timeout(&fpc1020->ttw_wl, msecs_to_jiffies(FPC_TTW_HOLD_TIME));
-#ifdef CONFIG_MSM_HOTPLUG
-		if (msm_enabled && msm_hotplug_scr_suspended &&
-		   !msm_hotplug_fingerprint_called) {
-			msm_hotplug_fingerprint_called = true;
-			schedule_work(&msm_hotplug_resume_call_work);
-		}
-#endif
 	}
 
 	sysfs_notify(&fpc1020->dev->kobj, NULL, dev_attr_irq.attr.name);
 
 /* On touch the fp sensor, boost the cpu even if screen is on */
-#ifdef CONFIG_MSM_HOTPLUG
-	if (fp_bigcore_boost) {
-#endif
+
 		sched_set_boost(1);
-#ifdef CONFIG_MSM_HOTPLUG
-	}
-#endif
+
 	if (!is_display_on()) {
 		sched_set_boost(1);
 		input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 1);
@@ -329,13 +307,9 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 		input_sync(fpc1020->input_dev);
 		sched_set_boost(0);
 	}
-#ifdef CONFIG_MSM_HOTPLUG
-	if (fp_bigcore_boost) {
-#endif
+
 		sched_set_boost(0);
-#ifdef CONFIG_MSM_HOTPLUG
-	}
-#endif
+
 
 	return IRQ_HANDLED;
 }
