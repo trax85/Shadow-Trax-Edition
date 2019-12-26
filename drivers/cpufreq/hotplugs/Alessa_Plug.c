@@ -77,7 +77,7 @@ struct notifier_block lcd_worker;
 static int sampling_time = DEF_SAMPLING_MS;
 static int load_threshold = CPU_LOAD_THRESHOLD;
 
-static int alessa_HP_enabled = 1;//To enable or disable hotplug
+static int alessa_HP_enabled = 0;//To enable or disable hotplug
 static int touch_boost_enabled = TOUCH_BOOST_ENABLED; //To enable Touch boost
 
 //Resume
