@@ -22,7 +22,7 @@ on property:persist.spectrum.profile=0
     write /sys/devices/system/cpu/cpu5/online 1
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1536000
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1401000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 0
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 100
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 15000
@@ -61,9 +61,7 @@ on property:persist.spectrum.profile=0
     write /sys/module/msm_thermal/parameters/enabled y
     write /sys/module/msm_thermal/parameters/temp_threshold 45
     write /sys/module/msm_thermal/parameters/core_limit_temp_degC 60
-    write /proc/sys/vm/swappiness 0
     write /proc/sys/vm/vfs_cache_pressure 100
-    write /sys/kernel/alessa_plug/hotplug_enabled 0
     
 
 # Performance
@@ -115,9 +113,7 @@ on property:persist.spectrum.profile=1
     write /sys/module/msm_thermal/parameters/enabled y
     write /sys/module/msm_thermal/parameters/temp_threshold 60
     write /sys/module/msm_thermal/parameters/core_limit_temp_degC 75
-    write /proc/sys/vm/swappiness 0
     write /proc/sys/vm/vfs_cache_pressure 100
-    write /sys/kernel/alessa_plug/hotplug_enabled 0
     
 
 # Battery
@@ -175,7 +171,6 @@ on property:persist.spectrum.profile=2
     write /sys/module/msm_thermal/parameters/enabled y
     write /sys/module/msm_thermal/parameters/temp_threshold 40
     write /sys/module/msm_thermal/parameters/core_limit_temp_degC 60
-    write /proc/sys/vm/swappiness 0
     write /proc/sys/vm/vfs_cache_pressure 50
     
 
@@ -192,10 +187,10 @@ on property:persist.spectrum.profile=3
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1536000
     write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 883200
-    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1843200
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 2016000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 75
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 25000
-    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1440000
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1536000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 20000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
