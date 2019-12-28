@@ -715,7 +715,7 @@ config STATE_NOTIFIER
 
 config INTELLI_HOTPLUG
  	bool "Enable intelli-plug cpu hotplug driver"
- 	default y
+ 	default n
  	help
  	  Generic Intelli-plug cpu hotplug driver for ARM SOCs
 
