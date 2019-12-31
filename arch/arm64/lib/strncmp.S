@@ -64,6 +64,7 @@ limit_wd	.req	x13
 mask		.req	x14
 endloop		.req	x15
 
+     .p2align 6
 ENTRY(strncmp)
 	cbz	limit, .Lret0
 	eor	tmp1, src1, src2
