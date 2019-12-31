@@ -1669,6 +1669,8 @@ static ssize_t mdss_mdp_show_capabilities(struct device *dev,
 		SPRINT(" src_split");
 	if (mdata->has_rot_dwnscale)
 		SPRINT(" rotator_downscale");
+        if (mdss_has_quirk(mdata, MDSS_QUIRK_HDR_SUPPORT_ENABLED))
+ 		SPRINT(" hdr");
 	SPRINT("\n");
 
 	return cnt;

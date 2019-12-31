@@ -597,9 +597,9 @@ static ssize_t mdss_fb_get_panel_info(struct device *dev,
 			"min_w=%d\nmin_h=%d\nroi_merge=%d\ndyn_fps_en=%d\n"
 			"min_fps=%d\nmax_fps=%d\npanel_name=%s\n"
 			"primary_panel=%d\nis_pluggable=%d\n"
+			"is_cec_supported=%d\nis_pingpong_split=%d\n"
                         "is_hdr_enabled=%d\n"
-			"peak_brightness=%d\nblackness_level=%d\n"
-			"is_cec_supported=%d\nis_pingpong_split=%d\n",
+			"peak_brightness=%d\nblackness_level=%d\n",
 			pinfo->partial_update_enabled, pinfo->xstart_pix_align,
 			pinfo->width_pix_align, pinfo->ystart_pix_align,
 			pinfo->height_pix_align, pinfo->min_width,
