@@ -53,6 +53,7 @@
 
 		qcom,initial-pwrlevel = <4>;
 
+                qcom,popp-enable;
 		qcom,idle-timeout = <80>; //msecs
 		qcom,strtstp-sleepwake;
 
