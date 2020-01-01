@@ -371,7 +371,7 @@
 			regulator-min-microvolt = <500000>;
 			regulator-max-microvolt = <1165000>;
                         qcom,auto-mode-enable = <0>; //Disables automatic selection
-		                    qcom,hpm-enable = <1>; //Set to high power mode  
+		                    qcom,hpm-enable = <1>; //Set to high power mode
                         qcom,ocp-enable = <0>; //Disables Over Current Protection
 			qcom,enable-time = <500>;
 		};
