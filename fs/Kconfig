@@ -282,5 +282,10 @@ config DYNAMIC_FSYNC
   	help
   	  An experimental file sync control using Android's early suspend / late resume drivers
 
+config REBOOT_AUTO_FSYNC
+ 	bool "automatic file sync on reboot/panic"
+ 	default y
+ 	help
+ 	  Force automatic file sync on power off, reboot, panic/freeze
 
 endmenu
