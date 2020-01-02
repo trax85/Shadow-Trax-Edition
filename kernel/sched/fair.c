@@ -3214,7 +3214,7 @@ unsigned int cpu_temp(int cpu)
 
 #else	/* CONFIG_SCHED_HMP */
 
-#define sysctl_sched_enable_power_aware 0
+#define sysctl_sched_enable_power_aware 1
 
 static inline int task_will_fit(struct task_struct *p, int cpu)
 {
