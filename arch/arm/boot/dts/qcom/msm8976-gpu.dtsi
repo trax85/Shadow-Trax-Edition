@@ -53,7 +53,7 @@
 
 		qcom,initial-pwrlevel = <4>;
 
-                qcom,popp-enable;
+                //qcom,popp-enable;
 		qcom,idle-timeout = <80>; //msecs
 		qcom,strtstp-sleepwake;
 
@@ -107,7 +107,7 @@
 				<26 512 0 6451200>, /* 8. 806.4  MHz */
 				<26 512 0 7449600>, /* 9. 931.2  MHz */
 				<26 512 0 8727680>, /*10. 1066.0  MHz */
-        <26 512 0 10368000>;/*11.*/ 
+                                <26 512 0 10368000>;/*11.*/ 
 		/* GDSC oxili regulators */
 		vddcx-supply = <&gdsc_oxili_cx>;
 		vdd-supply = <&gdsc_oxili_gx>;
