@@ -68,6 +68,18 @@ enum data_block_types {
 	USE_EXTENDED_TAG
 };
 
+enum extended_data_block_types {
+	VIDEO_CAPABILITY_DATA_BLOCK = 0x0,
+	VENDOR_SPECIFIC_VIDEO_DATA_BLOCK = 0x01,
+	HDMI_VIDEO_DATA_BLOCK = 0x04,
+	HDR_STATIC_METADATA_DATA_BLOCK = 0x06,
+	Y420_VIDEO_DATA_BLOCK = 0x0E,
+	VIDEO_FORMAT_PREFERENCE_DATA_BLOCK = 0x0D,
+	Y420_CAPABILITY_MAP_DATA_BLOCK = 0x0F,
+	VENDOR_SPECIFIC_AUDIO_DATA_BLOCK = 0x11,
+	INFOFRAME_DATA_BLOCK = 0x20,
+};
+
 struct hdmi_edid_sink_data {
 	u32 disp_mode_list[HDMI_VFRMT_MAX];
 	u32 disp_3d_mode_list[HDMI_VFRMT_MAX];
@@ -82,6 +94,7 @@ struct hdmi_edid_ctrl {
 	u8 it_scan_info;
 	u8 ce_scan_info;
 	u8 cea_blks;
+        u8 deep_color;
 	u16 physical_address;
 	u32 video_resolution; /* selected by user */
 	u32 sink_mode; /* HDMI or DVI */
@@ -95,9 +108,11 @@ struct hdmi_edid_ctrl {
 	int sadb_size;
 	u8 edid_buf[MAX_EDID_SIZE];
 	char vendor_id[EDID_VENDOR_ID_SIZE];
+        bool hdr_supported;
 
 	struct hdmi_edid_sink_data sink_data;
 	struct hdmi_edid_init_data init_data;
+        struct hdmi_edid_hdr_data hdr_data;
 };
 
 static int hdmi_edid_reset_parser(struct hdmi_edid_ctrl *edid_ctrl)
@@ -270,6 +285,30 @@ u32 hdmi_edid_get_video_modes(void *data, u32 *mode_cnt, u32 *modes)
 
 	return 0;
 }
+
+/**
+ * hdmi_edid_get_deep_color() - get deep color info supported by sink
+ * @input: edid parser data
+ *
+ * This API returns deep color for different formats supported by sink.
+ * Deep color support for Y444 (BIT(0)), RGB30 (BIT(1)), RGB36 (BIT(2),
+ * RGB 48 (BIT(3)), Y420_30 (BIT(4)), Y420_36 (BIT(5)), Y420_48 (BIT(6))
+ * is provided in a 8 bit integer. The MSB 8 bits are not used.
+ *
+ * Return: deep color data.
+ */
+u8 hdmi_edid_get_deep_color(void *input)
+{
+	struct hdmi_edid_ctrl *edid_ctrl = (struct hdmi_edid_ctrl *)input;
+
+	if (!edid_ctrl) {
+		DEV_ERR("%s: invalid input\n", __func__);
+		return 0;
+	}
+
+	return edid_ctrl->deep_color;
+}
+
 
 static ssize_t hdmi_edid_sysfs_rda_modes(struct device *dev,
 	struct device_attribute *attr, char *buf)
@@ -1289,6 +1328,31 @@ static void hdmi_edid_get_extended_video_formats(
 		}
 	}
 } /* hdmi_edid_get_extended_video_formats */
+
+/**
+ * hdmi_edid_get_hdr_data() - get the HDR capabiliies of the sink
+ * @input: edid parser data
+ *
+ * This API returns HDR info associated with the sink:
+ * electro-optical transfer function, static metadata descriptor,
+ * desired content max luminance data, desired content max
+ * frame-average luminance data, and desired content min luminance
+ * data.
+ *
+ * Return: HDR data.
+ */
+void hdmi_edid_get_hdr_data(void *input,
+		struct hdmi_edid_hdr_data **hdr_data)
+{
+	struct hdmi_edid_ctrl *edid_ctrl = (struct hdmi_edid_ctrl *)input;
+
+	if (!edid_ctrl) {
+		DEV_ERR("%s: invalid input\n", __func__);
+		return;
+	}
+
+	*hdr_data = &edid_ctrl->hdr_data;
+}
 
 static void hdmi_edid_parse_et3(struct hdmi_edid_ctrl *edid_ctrl,
 	const u8 *edid_blk0)

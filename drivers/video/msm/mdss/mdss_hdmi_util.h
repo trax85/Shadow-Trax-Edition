@@ -247,6 +247,13 @@ enum hdmi_tx_feature_type {
 	HDMI_TX_FEAT_MAX,
 };
 
+enum hdmi_hdr_op {
+ 	HDR_UNSUPPORTED_OP,
+ 	HDR_SEND_INFO,
+ 	HDR_CLEAR_INFO
+};
+
+
 struct hdmi_tx_ddc_ctrl {
 	struct dss_io_data *io;
 	struct completion ddc_sw_done;
@@ -287,5 +294,6 @@ int hdmi_ddc_isr(struct hdmi_tx_ddc_ctrl *);
 int hdmi_ddc_write(struct hdmi_tx_ddc_ctrl *, struct hdmi_tx_ddc_data *);
 int hdmi_ddc_read_seg(struct hdmi_tx_ddc_ctrl *, struct hdmi_tx_ddc_data *);
 int hdmi_ddc_read(struct hdmi_tx_ddc_ctrl *, struct hdmi_tx_ddc_data *);
+u8 hdmi_hdr_get_ops(u8 curr_state, u8 new_state);
 
 #endif /* __HDMI_UTIL_H__ */
