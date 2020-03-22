@@ -6,10 +6,10 @@ config MSM_HOTPLUG
 	  The MSM hotplug driver controls on-/offlining of additional cores based
 	  on current cpu load.
 
-config INTELLI_PLUG
+config INTELLI_PLUG_HOTPLUG
 	   bool "Hotplug for Razor Reborn"
 	   depends on MSM_RUN_QUEUE_STATS
-	   default y
+	   default n
 	   help
 
 config MAKO_HOTPLUG

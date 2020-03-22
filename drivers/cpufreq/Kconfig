@@ -573,3 +573,4 @@ endmenu
 
 endif
 endmenu
+source "drivers/cpufreq/hotplugs/Kconfig"
