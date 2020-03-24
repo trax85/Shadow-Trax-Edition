@@ -98,8 +98,7 @@ struct request {
 	struct call_single_data csd;
 
 	struct request_queue *q;
-
-	unsigned int cmd_flags;
+        u64 cmd_flags;
 	enum rq_cmd_type_bits cmd_type;
 	unsigned long atomic_flags;
 
@@ -121,6 +120,7 @@ struct request {
 	union {
 		struct rb_node rb_node;	/* sort/lookup */
 		void *completion_data;
+                unsigned long fifo_time;
 	};
 
 	/*
