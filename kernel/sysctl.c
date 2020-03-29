@@ -280,6 +280,7 @@ static int max_extfrag_threshold = 1000;
 #endif
 
 static struct ctl_table kern_table[] = {
+#if 0        
         {
  		.procname	= "sched_boost",
  		.data		= &sysctl_sched_boost,
@@ -289,6 +290,7 @@ static struct ctl_table kern_table[] = {
  		.extra1         = &zero,
  		.extra2		= &three,
  	},
+#endif
 	{
 		.procname	= "sched_child_runs_first",
 		.data		= &sysctl_sched_child_runs_first,
@@ -296,7 +298,6 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
-#ifndef CONFIG_SCHED_HMP
 	{
 		.procname	= "sched_capacity_margin",
  		.data		= &sysctl_sched_capacity_margin,
@@ -304,7 +305,6 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
-#endif
 /*	{
 		.procname	= "sched_wakeup_load_threshold",
 		.data		= &sysctl_sched_wakeup_load_threshold,
@@ -507,6 +507,7 @@ static struct ctl_table kern_table[] = {
 		.proc_handler	= sched_hmp_proc_update_handler,
 	},
 #endif
+#if 0
 	{
 		.procname	= "sched_boost",
 		.data		= &sysctl_sched_boost,
@@ -514,6 +515,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_boost_handler,
 	},
+#endif
 	{
 		.procname	= "sched_enable_power_aware",
 		.data		= &sysctl_sched_enable_power_aware,
@@ -552,6 +554,7 @@ static struct ctl_table kern_table[] = {
 		.extra1		= &min_sched_granularity_ns,
 		.extra2		= &max_sched_granularity_ns,
 	},
+#if 0
         {
  		.procname	= "sched_is_big_little",
  		.data		= &sysctl_sched_is_big_little,
@@ -739,6 +742,21 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &one,
+	},
+#endif
+#ifdef CONFIG_SCHED_TUNE
+	{
+ 		.procname	= "sched_cfs_boost",
+ 		.data		= &sysctl_sched_cfs_boost,
+ 		.maxlen		= sizeof(sysctl_sched_cfs_boost),
+#ifdef CONFIG_CGROUP_SCHEDTUNE
+ 		.mode		= 0444,
+#else
+ 		.mode		= 0644,
+#endif
+ 		.proc_handler	= &sysctl_sched_cfs_boost_handler,
+ 		.extra1		= &zero,
+ 		.extra2		= &one_hundred,
 	},
 #endif
 #ifdef CONFIG_PROVE_LOCKING
@@ -1942,7 +1960,7 @@ static struct ctl_table fs_table[] = {
 		.mode		= 0555,
 		.child		= inotify_table,
 	},
-#endif	
+#endif
 #ifdef CONFIG_EPOLL
 	{
 		.procname	= "epoll",
