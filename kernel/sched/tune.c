@@ -12,8 +12,98 @@
 #include "sched.h"
 #include "tune.h"
 
+#ifdef CONFIG_CGROUP_SCHEDTUNE
+static bool schedtune_initialized = false;
+#endif
+
 unsigned int sysctl_sched_cfs_boost __read_mostly = 0;
 
+
+extern struct target_nrg schedtune_target_nrg;
+
+/* Performance Boost region (B) threshold params */
+static int perf_boost_idx;
+
+/* Performance Constraint region (C) threshold params */
+static int perf_constrain_idx;
+
+/**
+ * Performance-Energy (P-E) Space thresholds constants
+ */
+struct threshold_params {
+ 	int nrg_gain;
+ 	int cap_gain;
+};
+
+/*
+ * System specific P-E space thresholds constants
+ */
+static struct threshold_params
+threshold_gains[] = {
+ 	{ 0, 5 }, /*   < 10% */
+ 	{ 1, 5 }, /*   < 20% */
+ 	{ 2, 5 }, /*   < 30% */
+ 	{ 3, 5 }, /*   < 40% */
+ 	{ 4, 5 }, /*   < 50% */
+ 	{ 5, 4 }, /*   < 60% */
+ 	{ 5, 3 }, /*   < 70% */
+ 	{ 5, 2 }, /*   < 80% */
+ 	{ 5, 1 }, /*   < 90% */
+ 	{ 5, 0 }  /* <= 100% */
+};
+
+static int
+__schedtune_accept_deltas(int nrg_delta, int cap_delta,
+ 			  int perf_boost_idx, int perf_constrain_idx)
+{
+ 	int payoff = -INT_MAX;
+        int gain_idx = -1;
+ 
+        /* Performance Boost (B) region */
+ 	if (nrg_delta >= 0 && cap_delta > 0)
+ 		gain_idx = perf_boost_idx;
+
+ 	/* Performance Constraint (C) region */
+ 	else if (nrg_delta < 0 && cap_delta <= 0)
+ 		gain_idx = perf_constrain_idx;
+
+ 	/* Default: reject schedule candidate */
+ 	if (gain_idx == -1)
+ 	 return payoff;
+
+        /*
+ 	 * Evaluate "Performance Boost" vs "Energy Increase"
+ 	 *
+ 	 * - Performance Boost (B) region
+ 	 *
+ 	 *   Condition: nrg_delta > 0 && cap_delta > 0
+ 	 *   Payoff criteria:
+ 	 *     cap_gain / nrg_gain  < cap_delta / nrg_delta =
+ 	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
+ 	 *   Note that since both nrg_gain and nrg_delta are positive, the
+ 	 *   inequality does not change. Thus:
+ 	 *
+ 	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
+ 	 *
+ 	 * - Performance Constraint (C) region
+ 	 *
+ 	 *   Condition: nrg_delta < 0 && cap_delta < 0
+ 	 *   payoff criteria:
+ 	 *     cap_gain / nrg_gain  > cap_delta / nrg_delta =
+ 	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
+ 	 *   Note that since nrg_gain > 0 while nrg_delta < 0, the
+ 	 *   inequality change. Thus:
+ 	 *
+ 	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
+ 	 *
+ 	 * This means that, in case of same positive defined {cap,nrg}_gain
+ 	 * for both the B and C regions, we can use the same payoff formula
+ 	 * where a positive value represents the accept condition.
+ 	 */
+ 	payoff  = cap_delta * threshold_gains[gain_idx].nrg_gain;
+ 	payoff -= nrg_delta * threshold_gains[gain_idx].cap_gain;
+        return payoff;
+}
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 #define DYNAMIC_BOOST_SLOTS_COUNT 5
@@ -26,165 +116,9 @@ struct boost_slot {
  	struct list_head list;
  	int idx;
 };
-static struct schedtune *st_ta;
+//static struct schedtune *st_ta;
 
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
-
-/* Performance Boost region (B) threshold params */
-static int perf_boost_idx;
-
-/* Performance Constraint region (C) threshold params */
-static int perf_constrain_idx;
-
-/**
- * Performance-Energy (P-E) Space thresholds constants
- */
-struct threshold_params {
-	int nrg_gain;
-	int cap_gain;
-};
-
-/*
- * System specific P-E space thresholds constants
- */
-static struct threshold_params
-threshold_gains[] = {
-	{ 0, 4 }, /* >=  0% */
-	{ 1, 4 }, /* >= 10% */
-	{ 2, 4 }, /* >= 20% */
-	{ 3, 4 }, /* >= 30% */
-	{ 4, 4 }, /* >= 40% */
-	{ 4, 3 }, /* >= 50% */
-	{ 4, 2 }, /* >= 60% */
-	{ 4, 1 }, /* >= 70% */
-	{ 4, 0 }, /* >= 80% */
-	{ 4, 0 }  /* >= 90% */
-};
-
-/*
- * System energy normalization constants
- */
-struct target_nrg {
-	unsigned long min_power;
-	unsigned long max_power;
-	unsigned long nrg_shift;
-	unsigned long nrg_mult;
-};
-
-/*
- * Target specific system energy normalization constants
- * NOTE: These values are specific for ARM TC2 and they are derived from the
- *       energy model data defined in: arch/arm/kernel/topology.c
- */
-static struct target_nrg
-schedtune_target_nrg = {
-
-	/*
-	 * TC2 Min CPUs power:
-	 * all CPUs idle, all clusters in deep idle:
-	 *   0 * 3 + 0 * 2 + 10 + 25
-	 */
-	.min_power = 35,
-
-	/*
-	 * TC2 Max CPUs power:
-	 * all CPUs fully utilized while running at max OPP:
-	 *   1024 * 3 + 6997 * 2 + 4905 + 15200
-	 */
-
-	.max_power = 37171,
-
-	/*
-	 * Fast integer division by constant:
-	 *  Constant   : Max - Min       (C) = 37171 - 35 = 37136
-	 *  Precision  : 0.1%            (P) = 0.1
-	 *  Reference  : C * 100 / P     (R) = 3713600
-	 *
-	 * Thus:
-	 *  Shift bifs : ceil(log(R,2))  (S) = 26
-	 *  Mult const : round(2^S/C)    (M) = 1807
-	 *
-	 * This allows to compute the normalized energy:
-	 *   system_energy / C
-	 * as:
-	 *   (system_energy * M) >> S
-	 */
-	.nrg_shift = 26,	/* S */
-	.nrg_mult  = 1807,	/* M */
-};
-
-/*
- * System energy normalization
- * Returns the normalized value, in the range [0..SCHED_LOAD_SCALE],
- * corresponding to the specified energy variation.
- */
-int
-schedtune_normalize_energy(int energy_diff)
-{
-	long long normalized_nrg = energy_diff;
-	int max_delta;
-
-	/* Check for boundaries */
-	max_delta  = schedtune_target_nrg.max_power;
-	max_delta -= schedtune_target_nrg.min_power;
-	WARN_ON(abs(energy_diff) >= max_delta);
-
-	/* Scale by energy magnitude */
-	normalized_nrg <<= SCHED_LOAD_SHIFT;
-
-	/* Normalize on max energy for target platform */
-	normalized_nrg  *= schedtune_target_nrg.nrg_mult;
-	normalized_nrg >>= schedtune_target_nrg.nrg_shift;
-
-	return normalized_nrg;
-}
-
-static int
-__schedtune_accept_deltas(int nrg_delta, int cap_delta,
-		int perf_boost_idx, int perf_constrain_idx) {
-	int energy_payoff;
-
-	/* Performance Boost (B) region */
-	if (nrg_delta > 0 && cap_delta > 0) {
-		/*
-		 * energy_payoff criteria:
-		 *    cap_delta / nrg_delta > cap_gain / nrg_gain
-		 * which is:
-		 *    nrg_delta * cap_gain < cap_delta * nrg_gain
-		 */
-		energy_payoff  = cap_delta * threshold_gains[perf_boost_idx].nrg_gain;
-		energy_payoff -= nrg_delta * threshold_gains[perf_boost_idx].cap_gain;
-
-		trace_sched_tune_filter(
-				threshold_gains[perf_boost_idx].nrg_gain,
-				threshold_gains[perf_boost_idx].cap_gain,
-				energy_payoff, 8);
-
-		return energy_payoff;
-	}
-
-	/* Performance Constraint (C) region */
-	if (nrg_delta < 0 && cap_delta < 0) {
-		/*
-		 * energy_payoff criteria:
-		 *    cap_delta / nrg_delta < cap_gain / nrg_gain
-		 * which is:
-		 *    nrg_delta * cap_gain > cap_delta * nrg_gain
-		 */
-		energy_payoff  = nrg_delta * threshold_gains[perf_constrain_idx].cap_gain;
-		energy_payoff -= cap_delta * threshold_gains[perf_constrain_idx].nrg_gain;
-
-		trace_sched_tune_filter(
-				threshold_gains[perf_constrain_idx].nrg_gain,
-				threshold_gains[perf_constrain_idx].cap_gain,
-				energy_payoff, 6);
-
-		return energy_payoff;
-	}
-
-	/* Default: reject schedule candidate */
-	return -INT_MAX;
-}
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
 
@@ -280,34 +214,32 @@ root_schedtune = {
 };
 
 int
-schedtune_accept_deltas(int nrg_delta, int cap_delta, struct task_struct *task) {
-	struct schedtune *ct;
-	int perf_boost_idx;
-	int perf_constrain_idx;
+schedtune_accept_deltas(int nrg_delta, int cap_delta,
+ 			struct task_struct *task)
+{
+ 	struct schedtune *ct;
+ 	int perf_boost_idx;
+ 	int perf_constrain_idx;
 
-	/* Optimal (O) region */
-	if (nrg_delta < 0 && cap_delta > 0) {
-		trace_sched_tune_filter(0, 0, 1, 0);
-		return INT_MAX;
-	}
+ 	/* Optimal (O) region */
+ 	if (nrg_delta < 0 && cap_delta > 0)
+ 		return INT_MAX;
 
-	/* Suboptimal (S) region */
-	if (nrg_delta > 0 && cap_delta < 0) {
-		trace_sched_tune_filter(0, 0, -1, 5);
-		return -INT_MAX;
-	}
+ 	/* Suboptimal (S) region */
+ 	if (nrg_delta > 0 && cap_delta < 0)
+ 		return -INT_MAX;
 
-	/* Get task specific perf Boost/Constraints indexes */
-	rcu_read_lock();
-	ct = task_schedtune(task);
-	perf_boost_idx = ct->perf_boost_idx;
-	perf_constrain_idx = ct->perf_constrain_idx;
-	rcu_read_unlock();
+ 	/* Get task specific perf Boost/Constraints indexes */
+ 	rcu_read_lock();
+ 	ct = task_schedtune(task);
+ 	perf_boost_idx = ct->perf_boost_idx;
+ 	perf_constrain_idx = ct->perf_constrain_idx;
+ 	rcu_read_unlock();
 
-	return __schedtune_accept_deltas(nrg_delta, cap_delta,
-			perf_boost_idx, perf_constrain_idx);
-
+ 	return __schedtune_accept_deltas(nrg_delta, cap_delta,
+ 			perf_boost_idx, perf_constrain_idx);
 }
+
 
 /*
  * Maximum number of boost groups to support
@@ -320,7 +252,7 @@ schedtune_accept_deltas(int nrg_delta, int cap_delta, struct task_struct *task) 
  *    implementation especially for the computation of the per-CPU boost
  *    value
  */
-#define BOOSTGROUPS_COUNT 16
+#define BOOSTGROUPS_COUNT 5
 
 /* Array of configured boostgroups */
 static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
@@ -341,23 +273,25 @@ static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
 struct boost_groups {
 	/* Maximum boost value for all RUNNABLE tasks on a CPU */
 	bool idle;
-	unsigned boost_max;
+	int boost_max;
 	struct {
 		/* The boost for tasks on that boost group */
-		unsigned boost;
+		int boost;
 		/* Count of RUNNABLE tasks on that boost group */
 		unsigned tasks;
 	} group[BOOSTGROUPS_COUNT];
+        /* CPU's boost group locking */
+ 	raw_spinlock_t lock;
 };
 
 /* Boost groups affecting each CPU in the system */
-DEFINE_PER_CPU(struct boost_groups, cpu_boost_groups);
+static DEFINE_PER_CPU(struct boost_groups, cpu_boost_groups);
 
 static void
 schedtune_cpu_update(int cpu)
 {
 	struct boost_groups *bg;
-	unsigned boost_max;
+	int boost_max;
 	int idx;
 
 	bg = &per_cpu(cpu_boost_groups, cpu);
@@ -374,7 +308,10 @@ schedtune_cpu_update(int cpu)
 
 		boost_max = max(boost_max, bg->group[idx].boost);
 	}
-
+        /* Ensures boost_max is non-negative when all cgroup boost values
+ 	 * are neagtive. Avoids under-accounting of cpu capacity which may cause
+ 	 * task stacking and frequency spikes.*/
+ 	boost_max = max(boost_max, 0);
 	bg->boost_max = boost_max;
 }
 
@@ -421,119 +358,213 @@ schedtune_boostgroup_update(int idx, int boost)
 	return 0;
 }
 
+#define ENQUEUE_TASK  1
+#define DEQUEUE_TASK -1
+
 void
 schedtune_idle(int cpu)
 {
-	int idx;
-	struct boost_groups *bg;
+	struct boost_groups *bg = &per_cpu(cpu_boost_groups, cpu);
+ 	int tasks = bg->group[idx].tasks + task_count;
 
-	bg = &per_cpu(cpu_boost_groups, cpu);
-	if (!bg->idle) {
-		bg->idle = true;
-		for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx) {
-			bg->group[idx].tasks = 0;
-		}
-	}
+        /* Update boosted tasks count while avoiding to make it negative */
+        bg->group[idx].tasks = max(0, tasks);
+	/* Boost group activation or deactivation on that RQ */
+ 	if (tasks == 1 || tasks == 0)
+ 		schedtune_cpu_update(cpu);
 }
 
 static inline void
 schedtune_tasks_update(struct task_struct *p, int cpu, int idx, int task_count)
 {
-	struct boost_groups *bg;
-	int tasks;
+ 	struct boost_groups *bg;
+ 	int tasks;
 
-	bg = &per_cpu(cpu_boost_groups, cpu);
-	bg->idle = false;
+ 	bg = &per_cpu(cpu_boost_groups, cpu);
 
-	/* Update boosted tasks count while avoiding to make it negative */
-	if (task_count < 0 && bg->group[idx].tasks <= -task_count)
-		bg->group[idx].tasks = 0;
-	else
-		bg->group[idx].tasks += task_count;
+ 	/* Update boosted tasks count while avoiding to make it negative */
+ 	if (task_count < 0 && bg->group[idx].tasks <= -task_count)
+ 		bg->group[idx].tasks = 0;
+ 	else
+ 		bg->group[idx].tasks += task_count;
 
-	/* Boost group activation or deactivation on that RQ */
-	tasks = bg->group[idx].tasks;
-	if (tasks == 1 || tasks == 0)
-		schedtune_cpu_update(cpu);
-
-	trace_sched_tune_tasks_update(p, cpu, tasks, idx,
-			bg->group[idx].boost, bg->boost_max);
+ 	/* Boost group activation or deactivation on that RQ */
+ 	tasks = bg->group[idx].tasks;
+ 	if (tasks == 1 || tasks == 0)
+ 		schedtune_cpu_update(cpu);
 }
 
 /*
- * NOTE: This function must be called while holding the lock on the CPU RQ
- */
+  * NOTE: This function must be called while holding the lock on the CPU RQ
+  */
 void schedtune_enqueue_task(struct task_struct *p, int cpu)
 {
-	struct schedtune *st;
-	int idx;
+        struct boost_groups *bg = &per_cpu(cpu_boost_groups, cpu);
+ 	unsigned long irq_flags;
+ 	struct schedtune *st;
+ 	int idx;
 
-	/*
-	 * When a task is marked PF_EXITING by do_exit() it's going to be
-	 * dequeued and enqueued multiple times in the exit path.
-	 * Thus we avoid any further update, since we do not want to change
-	 * CPU boosting while the task is exiting.
-	 */
-	if (p->flags & PF_EXITING)
-		return;
+        if (!unlikely(schedtune_initialized))
+ 		return;
+ 	/*
+ 	 * When a task is marked PF_EXITING by do_exit() it's going to be
+ 	 * dequeued and enqueued multiple times in the exit path.
+ 	 * Thus we avoid any further update, since we do not want to change
+ 	 * CPU boosting while the task is exiting.
+ 	 */
+ 	if (p->flags & PF_EXITING)
+ 		return;
 
-	/* Get task boost group */
-	rcu_read_lock();
-	st = task_schedtune(p);
-	idx = st->idx;
-	rcu_read_unlock();
+ 	/*
+ 	 * Boost group accouting is protected by a per-cpu lock and requires
+ 	 * interrupt to be disabled to avoid race conditions for example on
+ 	 * do_exit()::cgroup_exit() and task migration.
+ 	 */
+ 	raw_spin_lock_irqsave(&bg->lock, irq_flags);
+ 	rcu_read_lock();
 
-	schedtune_tasks_update(p, cpu, idx, 1);
+ 	st = task_schedtune(p);
+ 	idx = st->idx;
+
+        schedtune_tasks_update(p, cpu, idx, ENQUEUE_TASK);
+
+ 	rcu_read_unlock();
+ 
+        raw_spin_unlock_irqrestore(&bg->lock, irq_flags);
+}
+
+static int schedtune_can_attach(struct cgroup *cgrp,
+ 			  struct cgroup_taskset *tset)
+{
+ 	struct task_struct *task;
+ 	struct boost_groups *bg;
+ 	unsigned long irq_flags;
+ 	unsigned int cpu;
+ 	struct rq *rq;
+ 	int src_bg; /* Source boost group index */
+ 	int dst_bg; /* Destination boost group index */
+ 	int tasks;
+
+ 	if (!unlikely(schedtune_initialized))
+ 		return 0;
+
+ 	cgroup_taskset_for_each(task, cgrp, tset) {
+
+ 		/*
+ 		 * Lock the CPU's RQ the task is enqueued to avoid race
+ 		 * conditions with migration code while the task is being
+ 		 * accounted
+ 		 */
+ 		rq = lock_rq_of(task, &irq_flags);
+
+ 		if (!task->on_rq) {
+ 			unlock_rq_of(rq, task, &irq_flags);
+ 			continue;
+ 		}
+
+ 		/*
+ 		 * Boost group accouting is protected by a per-cpu lock and requires
+ 		 * interrupt to be disabled to avoid race conditions on...
+ 		 */
+ 		cpu = cpu_of(rq);
+ 		bg = &per_cpu(cpu_boost_groups, cpu);
+ 		raw_spin_lock(&bg->lock);
+
+ 		dst_bg = cgroup_st(cgrp)->idx;
+ 		src_bg = task_schedtune(task)->idx;
+
+ 		/*
+ 		 * Current task is not changing boostgroup, which can
+ 		 * happen when the new hierarchy is in use.
+ 		 */
+ 		if (unlikely(dst_bg == src_bg)) {
+ 			raw_spin_unlock(&bg->lock);
+ 			unlock_rq_of(rq, task, &irq_flags);
+ 			continue;
+ 		}
+
+ 		/*
+ 		 * This is the case of a RUNNABLE task which is switching its
+ 		 * current boost group.
+ 		 */
+
+ 	/* Move task from src to dst boost group */
+ 		tasks = bg->group[src_bg].tasks - 1;
+ 		bg->group[src_bg].tasks = max(0, tasks);
+ 		bg->group[dst_bg].tasks += 1;
+
+ 		raw_spin_unlock(&bg->lock);
+ 		unlock_rq_of(rq, task, &irq_flags);
+
+ 		/* Update CPU boost group */
+ 		if (bg->group[src_bg].tasks == 0 || bg->group[dst_bg].tasks == 1)
+ 			schedtune_cpu_update(task_cpu(task));
+
+ 	}
+
+ 	return 0;
+}
+
+static void schedtune_cancel_attach(struct cgroup *cgrp,
+ 			     struct cgroup_taskset *tset)
+{
+ 	/* This can happen only if SchedTune controller is mounted with
+ 	 * other hierarchies ane one of them fails. Since usually SchedTune is
+ 	 * mouted on its own hierarcy, for the time being we do not implement
+ 	 * a proper rollback mechanism */
+ 	WARN(1, "SchedTune cancel attach not implemented");
 }
 
 /*
- * NOTE: This function must be called while holding the lock on the CPU RQ
- */
+  * NOTE: This function must be called while holding the lock on the CPU RQ
+*/
 void schedtune_dequeue_task(struct task_struct *p, int cpu)
 {
-	struct schedtune *st;
-	int idx;
+ 	struct schedtune *st;
+ 	int idx;
 
-	/*
-	 * When a task is marked PF_EXITING by do_exit() it's going to be
-	 * dequeued and enqueued multiple times in the exit path.
-	 * Thus we avoid any further update, since we do not want to change
-	 * CPU boosting while the task is exiting.
-	 * The last dequeue will be done by cgroup exit() callback.
-	 */
-	if (p->flags & PF_EXITING)
-		return;
+ 	/*
+ 	 * When a task is marked PF_EXITING by do_exit() it's going to be
+ 	 * dequeued and enqueued multiple times in the exit path.
+ 	 * Thus we avoid any further update, since we do not want to change
+ 	 * CPU boosting while the task is exiting.
+ 	 * The last dequeue will be done by cgroup exit() callback.
+ 	 */
+ 	if (p->flags & PF_EXITING)
+ 		return;
 
-	/* Get task boost group */
-	rcu_read_lock();
-	st = task_schedtune(p);
-	idx = st->idx;
-	rcu_read_unlock();
+ 	/* Get task boost group */
+ 	rcu_read_lock();
+ 	st = task_schedtune(p);
+ 	idx = st->idx;
+ 	rcu_read_unlock();
 
-	schedtune_tasks_update(p, cpu, idx, -1);
-}
-
-int schedtune_taskgroup_boost(struct task_struct *p)
-{
-	struct schedtune *ct;
-	int task_boost;
-
-	rcu_read_lock();
-	ct = task_schedtune(p);
-	task_boost = ct->boost;
-	rcu_read_unlock();
-
-	return task_boost;
+ 	schedtune_tasks_update(p, cpu, idx, -1);
 }
 
 int schedtune_cpu_boost(int cpu)
 {
-	struct boost_groups *bg;
-	bg = &per_cpu(cpu_boost_groups, cpu);
-	return 	bg->boost_max;
+ 	struct boost_groups *bg;
+
+ 	bg = &per_cpu(cpu_boost_groups, cpu);
+ 	return bg->boost_max;
 }
 
-static u64
+int schedtune_task_boost(struct task_struct *p)
+{
+ 	struct schedtune *st;
+ 	int task_boost;
+
+ 	/* Get task boost value */
+ 	rcu_read_lock();
+ 	st = task_schedtune(p);
+ 	task_boost = st->boost;
+ 	rcu_read_unlock();
+
+ 	return task_boost;
+}
+
+static s64
 boost_read(struct cgroup *cgrp, struct cftype *cft)
 {
 	struct schedtune *st = cgroup_st(cgrp);
@@ -547,7 +578,7 @@ boost_write(struct cgroup *cgrp, struct cftype *cft,
 	struct schedtune *st = cgroup_st(cgrp);
 	int err = 0;
 
-	if (boost < 0 || boost > 100) {
+	if (boost < -100 || boost > 100) {
 		err = -EINVAL;
 		goto out;
 	}
@@ -645,13 +676,6 @@ static struct cftype files[] = {
  		.read_s64 = sched_boost_read,
  		.write_s64 = sched_boost_write,
 	},
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
- 	{
- 		.name = "dynamic_boost",
- 		.read_s64 = dynamic_boost_read,
- 		.write_s64 = dynamic_boost_write,
- 	},
-#endif // CONFIG_DYNAMIC_STUNE_BOOST
 	{ }	/* terminate */
 };
 
@@ -677,22 +701,21 @@ schedtune_boostgroup_init(struct schedtune *st)
 	return 0;
 }
 
-static int
-schedtune_init(void)
+#ifdef CONFIG_SCHED_TUNE
+extern unsigned int sysctl_sched_cfs_boost;
+int sysctl_sched_cfs_boost_handler(struct ctl_table *table, int write,
+ 				   void __user *buffer, size_t *length,
+ 				   loff_t *ppos);
+static inline unsigned int get_sysctl_sched_cfs_boost(void)
 {
-	struct boost_groups *bg;
-	int cpu;
-
-	/* Initialize the per CPU boost groups */
-	for_each_possible_cpu(cpu) {
-		bg = &per_cpu(cpu_boost_groups, cpu);
-		memset(bg, 0 , sizeof(struct boost_groups));
-	}
-
-	pr_info("  schedtune configured to support %d boost groups\n",
-			BOOSTGROUPS_COUNT);
-	return 0;
+ 	return sysctl_sched_cfs_boost;
 }
+#else
+static inline unsigned int get_sysctl_sched_cfs_boost(void)
+{
+ 	return 0;
+}
+#endif
 
 static struct cgroup_subsys_state *
 schedtune_css_alloc(struct cgroup *cgrp)
@@ -700,18 +723,15 @@ schedtune_css_alloc(struct cgroup *cgrp)
 	struct schedtune *st;
 	int idx;
 
-	if (!cgrp->parent) {
-		schedtune_init();
+	if (!parent_css)
 		return &root_schedtune.css;
-	}
 
 	/* Allows only single level hierachies */
-#if 0
+
 	if (cgrp->parent != (void *)&root_schedtune.css) {
 		pr_err("Nested SchedTune boosting groups not allowed\n");
 		return ERR_PTR(-ENOMEM);
 	}
-#endif
 	/* Allows only a limited number of boosting groups */
 	for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx)
 		if (allocated_group[idx] == NULL)
@@ -746,6 +766,7 @@ schedtune_boostgroup_release(struct schedtune *st)
  	/* Free dynamic boost slots */
  	boost_slots_release(st);
 #endif // CONFIG_DYNAMIC_STUNE_BOOST
+
 	/* Reset this group boost */
 	schedtune_boostgroup_update(st->idx, 0);
 
@@ -784,258 +805,55 @@ struct cgroup_subsys schedtune_subsys = {
 	.css_free	= schedtune_css_free,
 	.exit		= schedtune_exit,
 	.allow_attach	= schedtune_allow_attach,
+        .can_attach     = schedtune_can_attach,
+ 	.cancel_attach  = schedtune_cancel_attach,
 	.base_cftypes	= files,
 	.subsys_id      = schedtune_subsys_id,
 	.early_init	= 1,
 };
 
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-static struct schedtune *getSchedtune(char *st_name)
+struct cgroup_subsys schedtune_cgrp_subsys = {
+	.css_alloc	= schedtune_css_alloc,
+	.css_free	= schedtune_css_free,
+	.legacy_cftypes	= files,
+ 	.early_init	= 1,
+};
+
+static inline void
+schedtune_init_cgroups(void)
 {
- 	int idx;
+ 	struct boost_groups *bg;
+ 	int cpu;
 
- 	for (idx = 1; idx < BOOSTGROUPS_COUNT; ++idx) {
- 		char name_buf[NAME_MAX + 1];
- 		struct schedtune *st = allocated_group[idx];
-
- 		if (!st) {
- 			pr_warn("SCHEDTUNE: Could not find %s\n", st_name);
- 			break;
- 		}
-
- 		cgroup_name(st->css.cgroup, name_buf, sizeof(name_buf));
- 		if (strncmp(name_buf, st_name, strlen(st_name)) == 0)
- 			return st;
+ 	/* Initialize the per CPU boost groups */
+ 	for_each_possible_cpu(cpu) {
+ 		bg = &per_cpu(cpu_boost_groups, cpu);
+ 		memset(bg, 0, sizeof(struct boost_groups));
+                raw_spin_lock_init(&bg->lock);
  	}
 
- 	return NULL;
+ 	pr_info("schedtune: configured to support %d boost groups\n",
+ 		BOOSTGROUPS_COUNT);
 }
-
-static int dynamic_boost(int boost)
-{
- 	int ret;
- 	/* Backup boost_default */
-	int boost_default_backup = st_ta->boost_default;
-
-	ret = boost_write(&st_ta->css, NULL, boost);
-
- 	/* Restore boost_default */
-	st_ta->boost_default = boost_default_backup;
-
- 	return ret;
-}
-
-static inline bool is_valid_boost_slot(int slot)
- {
- 	return slot >= 0 && slot < DYNAMIC_BOOST_SLOTS_COUNT;
- }
-
-static int activate_boost_slot(int boost, int *slot)
-{
- 	int ret = 0;
-        struct boost_slot *curr_slot;
- 	struct list_head *head;
- 	*slot = -1;
-
- 	mutex_lock(&boost_slot_mutex);
-        /* Check for slots in available_boost_slots */
-	if (list_empty(&(st_ta->available_boost_slots.list))) {
- 		ret = -EINVAL;
- 		goto exit;
- 	}
-
- 	/*
- 	 * Move one slot from available_boost_slots to active_boost_slots
- 	 */
-
- 	/* Get first slot from available_boost_slots */
-	head = &(st_ta->available_boost_slots.list);
- 	curr_slot = list_first_entry(head, struct boost_slot, list);
-
- 	/* Store slot value and boost value*/
- 	*slot = curr_slot->idx;
-	st_ta->slot_boost[*slot] = boost;
-
- 	/* Delete slot from available_boost_slots */
- 	list_del(&curr_slot->list);
- 	kfree(curr_slot);
-
- 	/* Create new slot with same value at tail of active_boost_slots */
- 	curr_slot = kmalloc(sizeof(*curr_slot), GFP_KERNEL);
- 	curr_slot->idx = *slot;
- 	list_add_tail(&(curr_slot->list),
-		&(st_ta->active_boost_slots.list));
-
- exit:
- 	mutex_unlock(&boost_slot_mutex);
- 	return ret;
- }
-
-static int deactivate_boost_slot(int slot)
- {
- 	int ret = 0;
- 	struct boost_slot *curr_slot, *next_slot;
-
- 	mutex_lock(&boost_slot_mutex);
-
- 	if (!is_valid_boost_slot(slot)) {
- 		ret = -EINVAL;
- 		goto exit;
- 	}
-
- 	/* Delete slot from active_boost_slots */
- 	list_for_each_entry_safe(curr_slot, next_slot,
-				 &(st_ta->active_boost_slots.list), list) {
- 		if (curr_slot->idx == slot) {
-			st_ta->slot_boost[slot] = 0;
- 			list_del(&curr_slot->list);
- 			kfree(curr_slot);
-
- 			/* Create same slot at tail of available_boost_slots */
- 			curr_slot = kmalloc(sizeof(*curr_slot), GFP_KERNEL);
- 			curr_slot->idx = slot;
- 			list_add_tail(&(curr_slot->list),
-				      &(st_ta->available_boost_slots.list));
-
- 			goto exit;
- 		}
- 	}
-
- 	/* Reaching here means that we did not find the slot to delete */
- 	ret = -EINVAL;
-
- exit:
- 	mutex_unlock(&boost_slot_mutex);
- 	return ret;
- }
-
-static int max_active_boost(void)
- {
- 	struct boost_slot *slot;
- 	int max_boost;
-
- 	mutex_lock(&boost_slot_mutex);
-
- 	mutex_lock(&stune_boost_mutex);
-        /* Set initial value to default boost */
-	max_boost = st_ta->boost_default;
-
- 	/* Check for active boosts */
-	if (list_empty(&(st_ta->active_boost_slots.list))) {
- 		goto exit;
- 	}
-
- 	/* Get largest boost value */
- 	list_for_each_entry(slot, &(st_ta->active_boost_slots.list), list) {
- 		int boost = st_ta->slot_boost[slot->idx];
- 		if (boost > max_boost)
- 			max_boost = boost;
- 	}
-
- exit:
- 	mutex_unlock(&stune_boost_mutex);
- 	mutex_unlock(&boost_slot_mutex);
-
- 	return max_boost;
- }
-
-static int _do_stune_boost(int boost, int *slot)
- {
- 	int ret = 0;
-
- 	/* Try to obtain boost slot */
-	ret = activate_boost_slot(boost, slot);
-
- 	/* Check if boost slot obtained successfully */
- 	if (ret)
- 		return -EINVAL;
-
- 	/* Boost if new value is greater than current */
-        mutex_lock(&stune_boost_mutex);
- 	if (boost > st_ta->boost)
- 		ret = dynamic_boost(boost);
-
- 	mutex_unlock(&stune_boost_mutex);
-
- 	return ret;
-}
-
-int reset_stune_boost(int slot)
-{
-	int ret = 0;
-	int boost = 0;
-
-
-        if (!st_ta)
-		return -EINVAL;
-
-	ret = deactivate_boost_slot(slot);
-	if (ret) {
-		return -EINVAL;
-	}
-	/* Find next largest active boost or reset to default */
-	boost = max_active_boost();
-
-	mutex_lock(&stune_boost_mutex);
-	/* Boost only if value changed */
-	if (boost != st_ta->boost)
- 		ret = dynamic_boost(boost);
-	mutex_unlock(&stune_boost_mutex);
-
-	return ret;
-}
-
-int do_stune_sched_boost(int *slot)
-{
-	st_ta = getSchedtune("top-app");
- 	if (!st_ta)
-		return -EINVAL;
-
-	return _do_stune_boost(st_ta->sched_boost, slot);
-}
-
-int do_stune_boost(int boost, int *slot)
-{
-	st_ta = getSchedtune("top-app");
- 	if (!st_ta)
-		return -EINVAL;
-
-	return _do_stune_boost(boost, slot);
-}
-
-int get_sched_boost(void)
-{
-	st_ta = getSchedtune("top-app");
- 	if (!st_ta)
-		return -EINVAL;
-
-        return st_ta->sched_boost;
-}
-
-#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
-
 
 #else /* CONFIG_CGROUP_SCHEDTUNE */
 
 int
-schedtune_accept_deltas(int nrg_delta, int cap_delta) {
+schedtune_accept_deltas(int nrg_delta, int cap_delta,
+ 			struct task_struct *task)
+{
+ 	/* Optimal (O) region */
+ 	if (nrg_delta < 0 && cap_delta > 0)
+ 		return INT_MAX;
 
-	/* Optimal (O) region */
-	if (nrg_delta < 0 && cap_delta > 0) {
-		trace_printk("schedtune_filter: region=O ngain=0 pgain=0 nrg_payoff=-1");
-		return INT_MAX;
-	}
+ 	/* Suboptimal (S) region */
+ 	if (nrg_delta > 0 && cap_delta < 0)
+ 		return -INT_MAX;
 
-	/* Suboptimal (S) region */
-	if (nrg_delta > 0 && cap_delta < 0) {
-		trace_printk("schedtune_filter: region=S ngain=0 pgain=0 nrg_payoff=1");
-		return -INT_MAX;
-	}
-
-	return __schedtune_accept_deltas(nrg_delta, cap_delta,
-			perf_boost_idx, perf_constrain_idx);
-
+ 	return __schedtune_accept_deltas(nrg_delta, cap_delta,
+ 			perf_boost_idx, perf_constrain_idx);
 }
+
 
 #endif /* CONFIG_CGROUP_SCHEDTUNE */
 
@@ -1059,3 +877,157 @@ sysctl_sched_cfs_boost_handler(struct ctl_table *table, int write,
 	return 0;
 }
 
+#ifdef CONFIG_SCHED_DEBUG
+static void
+schedtune_test_nrg(unsigned long delta_pwr)
+{
+ 	unsigned long test_delta_pwr;
+ 	unsigned long test_norm_pwr;
+ 	int idx;
+
+ 	/*
+ 	 * Check normalization constants using some constant system
+ 	 * energy values
+ 	 */
+ 	pr_info("schedtune: verify normalization constants...\n");
+ 	for (idx = 0; idx < 6; ++idx) {
+ 		test_delta_pwr = delta_pwr >> idx;
+
+ 		/* Normalize on max energy for target platform */
+ 		test_norm_pwr = reciprocal_divide(
+ 					test_delta_pwr << SCHED_LOAD_SHIFT,
+ 					schedtune_target_nrg.rdiv);
+
+ 		pr_info("schedtune: max_pwr/2^%d: %4lu => norm_pwr: %5lu\n",
+ 			idx, test_delta_pwr, test_norm_pwr);
+ 	}
+}
+#else
+#define schedtune_test_nrg(delta_pwr)
+#endif
+
+/*
+ * Compute the min/max power consumption of a cluster and all its CPUs
+ */
+static void
+schedtune_add_cluster_nrg(
+ 		struct sched_domain *sd,
+ 		struct sched_group *sg,
+ 		struct target_nrg *ste)
+{
+ 	struct sched_domain *sd2;
+ 	struct sched_group *sg2;
+
+ 	struct cpumask *cluster_cpus;
+ 	char str[32];
+
+ 	unsigned long min_pwr;
+ 	unsigned long max_pwr;
+ 	int cpu;
+
+ 	/* Get Cluster energy using EM data for the first CPU */
+ 	cluster_cpus = sched_group_cpus(sg);
+ 	snprintf(str, 32, "CLUSTER[%*pbl]",
+ 		 cpumask_pr_args(cluster_cpus));
+
+ 	min_pwr = sg->sge->idle_states[sg->sge->nr_idle_states - 1].power;
+ 	max_pwr = sg->sge->cap_states[sg->sge->nr_cap_states - 1].power;
+ 	pr_info("schedtune: %-17s min_pwr: %5lu max_pwr: %5lu\n",
+ 		str, min_pwr, max_pwr);
+
+ 	/*
+ 	 * Keep track of this cluster's energy in the computation of the
+ 	 * overall system energy
+ 	 */
+ 	ste->min_power += min_pwr;
+ 	ste->max_power += max_pwr;
+
+ 	/* Get CPU energy using EM data for each CPU in the group */
+ 	for_each_cpu(cpu, cluster_cpus) {
+ 		/* Get a SD view for the specific CPU */
+ 		for_each_domain(cpu, sd2) {
+ 			/* Get the CPU group */
+ 			sg2 = sd2->groups;
+ 			min_pwr = sg2->sge->idle_states[sg2->sge->nr_idle_states - 1].power;
+ 			max_pwr = sg2->sge->cap_states[sg2->sge->nr_cap_states - 1].power;
+
+ 			ste->min_power += min_pwr;
+ 			ste->max_power += max_pwr;
+
+ 			snprintf(str, 32, "CPU[%d]", cpu);
+ 			pr_info("schedtune: %-17s min_pwr: %5lu max_pwr: %5lu\n",
+ 				str, min_pwr, max_pwr);
+
+ 			/*
+ 			 * Assume we have EM data only at the CPU and
+ 			 * the upper CLUSTER level
+ 			 */
+ 			BUG_ON(!cpumask_equal(
+ 				sched_group_cpus(sg),
+ 				sched_group_cpus(sd2->parent->groups)
+ 				));
+ 			break;
+ 		}
+ 	}
+}
+
+/*
+  * Initialize the constants required to compute normalized energy.
+  * The values of these constants depends on the EM data for the specific
+  * target system and topology.
+  * Thus, this function is expected to be called by the code
+  * that bind the EM to the topology information.
+ */
+static int
+schedtune_init(void)
+{
+ 	struct target_nrg *ste = &schedtune_target_nrg;
+ 	unsigned long delta_pwr = 0;
+ 	struct sched_domain *sd;
+ 	struct sched_group *sg;
+
+ 	pr_info("schedtune: init normalization constants...\n");
+ 	ste->max_power = 0;
+ 	ste->min_power = 0;
+
+ 	rcu_read_lock();
+
+ 	/*
+ 	 * When EAS is in use, we always have a pointer to the highest SD
+ 	 * which provides EM data.
+ 	 */
+ 	sd = rcu_dereference(per_cpu(sd_ea, cpumask_first(cpu_online_mask)));
+ 	if (!sd) {
+ 		pr_info("schedtune: no energy model data\n");
+ 		goto nodata;
+ 	}
+
+ 	sg = sd->groups;
+ 	do {
+ 		schedtune_add_cluster_nrg(sd, sg, ste);
+ 	} while (sg = sg->next, sg != sd->groups);
+
+ 	rcu_read_unlock();
+
+ 	pr_info("schedtune: %-17s min_pwr: %5lu max_pwr: %5lu\n",
+ 		"SYSTEM", ste->min_power, ste->max_power);
+
+ 	/* Compute normalization constants */
+ 	delta_pwr = ste->max_power - ste->min_power;
+ 	ste->rdiv = reciprocal_value(delta_pwr);
+ 	pr_info("schedtune: using normalization constants mul: %u sh1: %u sh2: %u\n",
+ 		ste->rdiv.m, ste->rdiv.sh1, ste->rdiv.sh2);
+
+ 	schedtune_test_nrg(delta_pwr);
+#ifdef CONFIG_CGROUP_SCHEDTUNE
+ 	schedtune_init_cgroups();
+#else
+ 	pr_info("schedtune: configured to support global boosting only\n");
+#endif
+        return 0;
+
+nodata:
+ 	rcu_read_unlock();
+ 	return -EINVAL;
+}
+postcore_initcall(schedtune_init);

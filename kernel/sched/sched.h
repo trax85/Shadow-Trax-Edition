@@ -345,6 +345,7 @@ struct cfs_rq {
 #endif
 
 #ifdef CONFIG_SMP
+        struct sched_avg avg;
 	/*
 	 * CFS Load tracking
 	 * Under CFS, load is tracked on a per-entity basis and aggregated up.
@@ -619,6 +620,7 @@ struct rq {
 	int post_schedule;
 	int active_balance;
 	int push_cpu;
+        struct task_struct *push_task;
 	struct cpu_stop_work active_balance_work;
 	/* cpu of this runqueue: */
 	int cpu;
@@ -1188,19 +1190,23 @@ static const u32 prio_to_wmult[40] = {
  /*  15 */ 119304647, 148102320, 186737708, 238609294, 286331153,
 };
 
-#define ENQUEUE_WAKEUP		1
-#define ENQUEUE_HEAD		2
+#define DEQUEUE_SLEEP		0x01
+#define DEQUEUE_SAVE		0x02 /* matches ENQUEUE_RESTORE */
+#define DEQUEUE_MOVE		0x04 /* matches ENQUEUE_MOVE */
+#define DEQUEUE_IDLE		0x80 /* The last dequeue before IDLE */
+
+#define ENQUEUE_WAKEUP		0x01
+#define ENQUEUE_RESTORE		0x02
+#define ENQUEUE_MOVE		0x04
+
+#define ENQUEUE_HEAD		0x08
+#define ENQUEUE_REPLENISH	0x10
 #ifdef CONFIG_SMP
-#define ENQUEUE_WAKING		4	/* sched_class::task_waking was called */
+#define ENQUEUE_WAKING		0x20
 #else
-#define ENQUEUE_WAKING		0
+#define ENQUEUE_WAKING		0x00
 #endif
-#define ENQUEUE_MIGRATING	8
-#define ENQUEUE_REPLENISH	16
-
-#define DEQUEUE_SLEEP		1
-#define DEQUEUE_MIGRATING	2
-
+#define ENQUEUE_WAKEUP_NEW	0x40
 #define RETRY_TASK		((void *)-1UL)
 
 struct sched_class {
@@ -1548,6 +1554,68 @@ static inline int hrtick_enabled(struct rq *rq)
 
 #endif /* CONFIG_SCHED_HRTICK */
 
+#ifdef CONFIG_CPU_FREQ_GOV_SCHED
+#define capacity_max SCHED_CAPACITY_SCALE
+extern unsigned int capacity_margin;
+extern struct static_key __sched_freq;
+
+static inline bool sched_freq(void)
+{
+	return static_key_false(&__sched_freq);
+}
+
+/*
+ * sched_capacity_reqs expects capacity requests to be normalised.
+ * All capacities should sum to the range of 0-1024.
+ */
+DECLARE_PER_CPU(struct sched_capacity_reqs, cpu_sched_capacity_reqs);
+void update_cpu_capacity_request(int cpu, bool request);
+
+static inline void set_cfs_cpu_capacity(int cpu, bool request,
+					unsigned long capacity)
+{
+	struct sched_capacity_reqs *scr = &per_cpu(cpu_sched_capacity_reqs, cpu);
+
+	if (scr->cfs == capacity)
+		return;
+	scr->cfs = capacity;
+	update_cpu_capacity_request(cpu, request);
+}
+
+static inline void set_rt_cpu_capacity(int cpu, bool request,
+				       unsigned long capacity)
+{
+	struct sched_capacity_reqs *scr = &per_cpu(cpu_sched_capacity_reqs, cpu);
+
+	if (scr->rt == capacity)
+		return;
+	scr->rt = capacity;
+	update_cpu_capacity_request(cpu, request);
+}
+
+static inline void set_dl_cpu_capacity(int cpu, bool request,
+				       unsigned long capacity)
+{
+	struct sched_capacity_reqs *scr = &per_cpu(cpu_sched_capacity_reqs, cpu);
+
+	if (scr->dl == capacity)
+		return;
+	scr->dl = capacity;
+	update_cpu_capacity_request(cpu, request);
+}
+#else
+static inline bool sched_freq(void) { return false; }
+static inline void set_cfs_cpu_capacity(int cpu, bool request,
+					unsigned long capacity)
+{ }
+static inline void set_rt_cpu_capacity(int cpu, bool request,
+				       unsigned long capacity)
+{ }
+static inline void set_dl_cpu_capacity(int cpu, bool request,
+				       unsigned long capacity)
+{ }
+#endif
+
 #ifdef CONFIG_SMP
 extern void sched_avg_update(struct rq *rq);
 extern unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu);
@@ -1564,7 +1632,22 @@ static inline void sched_avg_update(struct rq *rq) { }
 static inline void gov_cfs_update_cpu(int cpu) {}
 #endif
 
+#ifndef arch_scale_min_freq_capacity
+static __always_inline
+unsigned long arch_scale_min_freq_capacity(struct sched_domain *sd, int cpu)
+{
+	/*
+	 * Multiplied with any capacity value, this scale factor will return
+	 * 0, which represents an un-capped state
+	 */
+	return 0;
+}
+#endif
+
 extern void start_bandwidth_timer(struct hrtimer *period_timer, ktime_t period);
+
+extern struct rq *lock_rq_of(struct task_struct *p, unsigned long *flags);
+extern void unlock_rq_of(struct rq *rq, struct task_struct *p, unsigned long *flags);
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_PREEMPT

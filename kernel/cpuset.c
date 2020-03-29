@@ -2149,6 +2149,12 @@ static void schedule_cpuset_propagate_hotplug(struct cpuset *cs)
 	if (!queue_work(cpuset_propagate_hotplug_wq, &cs->hotplug_work))
 		css_put(&cs->css);
 }
+static bool force_rebuild;
+
+void cpuset_force_rebuild(void)
+{
+	force_rebuild = true;
+}
 
 /**
  * cpuset_hotplug_workfn - handle CPU/memory hotunplug for a cpuset

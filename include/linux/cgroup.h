@@ -72,6 +72,9 @@ struct cgroup_subsys_state {
 	 */
 	struct cgroup *cgroup;
 
+        /* PI: the parent css */
+	struct cgroup_subsys_state *parent;
+
 	/*
 	 * State maintained by the cgroup system to allow subsystems
 	 * to be "busy". Should be accessed via css_get(),
@@ -594,6 +597,7 @@ struct cgroup_subsys {
 	 * True if this subsys uses ID. ID is not available before cgroup_init()
 	 * (not available in early_init time.)
 	 */
+        struct cftype *legacy_cftypes;	/* for the legacy hierarchies */
 	bool use_id;
 
 	/*

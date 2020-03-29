@@ -36,6 +36,14 @@ extern int nr_cpu_ids;
 #define nr_cpumask_bits	NR_CPUS
 #endif
 
+/**
+ * cpumask_pr_args - printf args to output a cpumask
+ * @maskp: cpumask to be printed
+ *
+ * Can be used to provide arguments for '%*pb[l]' when printing a cpumask.
+ */
+#define cpumask_pr_args(maskp)		nr_cpu_ids, cpumask_bits(maskp)
+
 /*
  * The following particular system cpumasks and operations manage
  * possible, present, active and online cpus.

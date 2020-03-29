@@ -1001,7 +1001,7 @@ TRACE_EVENT(sched_load_avg_task,
  		__entry->pid			= tsk->pid;
  		__entry->cpu			= task_cpu(tsk);
  		__entry->load			= avg->load_avg_contrib;
- 		__entry->utilization		= avg->utilization_avg_contrib;
+ 		__entry->utilization		= avg->util_avg;
  		__entry->runnable_avg_sum	= avg->runnable_avg_sum;
  		__entry->running_avg_sum	= avg->running_avg_sum;
  		__entry->avg_period		= avg->avg_period;
@@ -1145,7 +1145,7 @@ TRACE_EVENT(sched_load_avg_cpu,
   */
 TRACE_EVENT(sched_boost_task,
 
- 	TP_PROTO(struct task_struct *tsk, unsigned long utilization, unsigned long margin),
+ 	TP_PROTO(struct task_struct *tsk, unsigned long utilization, long margin),
 
  	TP_ARGS(tsk, utilization, margin),
 
@@ -1153,7 +1153,7 @@ TRACE_EVENT(sched_boost_task,
  		__array( char,	comm,	TASK_COMM_LEN		)
  		__field( pid_t,		pid			)
  		__field( unsigned long,	utilization		)
- 		__field( unsigned long,	margin			)
+ 		__field( long,	margin			)
  	),
 
  	TP_fast_assign(
@@ -1163,7 +1163,7 @@ TRACE_EVENT(sched_boost_task,
  		__entry->margin		= margin;
  	),
 
- 	TP_printk("comm=%s pid=%d utilization=%lu margin=%lu",
+ 	TP_printk("comm=%s pid=%d utilization=%lu margin=%ld",
  		  __entry->comm, __entry->pid,
  		  __entry->utilization,
  		  __entry->margin)
@@ -1216,14 +1216,14 @@ TRACE_EVENT(sched_task_fits,
   */
 TRACE_EVENT(sched_boost_cpu,
 
- 	TP_PROTO(int cpu, unsigned long usage, unsigned long margin),
+ 	TP_PROTO(int cpu, unsigned long usage, long margin),
 
  	TP_ARGS(cpu, usage, margin),
 
  	TP_STRUCT__entry(
  		__field( int,		cpu			)
  		__field( unsigned long,	usage			)
- 		__field( unsigned long,	margin			)
+ 		__field( long,	margin			)
  	),
 
  	TP_fast_assign(
@@ -1232,7 +1232,7 @@ TRACE_EVENT(sched_boost_cpu,
  		__entry->margin	= margin;
  	),
 
- 	TP_printk("cpu=%d usage=%lu margin=%lu",
+ 	TP_printk("cpu=%d usage=%lu margin=%ld",
  		  __entry->cpu,
  		  __entry->usage,
  		  __entry->margin)
@@ -1297,7 +1297,7 @@ TRACE_EVENT(sched_tune_boostgroup_update,
 TRACE_EVENT(sched_tune_tasks_update,
 
  	TP_PROTO(struct task_struct *tsk, int cpu, int tasks, int idx,
- 		unsigned int boost, unsigned int max_boost),
+ 		 int boost, int max_boost),
 
  	TP_ARGS(tsk, cpu, tasks, idx, boost, max_boost),
 
@@ -1307,8 +1307,8 @@ TRACE_EVENT(sched_tune_tasks_update,
  		__field( int,		cpu		)
  		__field( int,		tasks		)
  		__field( int,		idx		)
- 		__field( unsigned int,	boost		)
- 		__field( unsigned int,	max_boost	)
+ 		__field( int,	boost		)
+ 		__field( int,	max_boost	)
  	),
 
  	TP_fast_assign(
@@ -1322,7 +1322,7 @@ TRACE_EVENT(sched_tune_tasks_update,
  	),
 
  	TP_printk("pid=%d comm=%s "
- 			"cpu=%d tasks=%d idx=%d boost=%u max_boost=%u",
+ 			"cpu=%d tasks=%d idx=%d boost=%d max_boost=%d",
  		__entry->pid, __entry->comm,
  		__entry->cpu, __entry->tasks, __entry->idx,
  		__entry->boost, __entry->max_boost)

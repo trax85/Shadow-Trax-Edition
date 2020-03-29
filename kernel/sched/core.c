@@ -398,6 +398,12 @@ static struct rq *task_rq_lock(struct task_struct *p, unsigned long *flags)
 	}
 }
 
+struct rq *
+lock_rq_of(struct task_struct *p, unsigned long *flags)
+{
+ 	return task_rq_lock(p, flags);
+}
+
 static void __task_rq_unlock(struct rq *rq)
 	__releases(rq->lock)
 {
@@ -411,6 +417,12 @@ task_rq_unlock(struct rq *rq, struct task_struct *p, unsigned long *flags)
 {
 	raw_spin_unlock(&rq->lock);
 	raw_spin_unlock_irqrestore(&p->pi_lock, *flags);
+}
+
+void
+unlock_rq_of(struct rq *rq, struct task_struct *p, unsigned long *flags)
+{
+ 	task_rq_unlock(rq, p, flags);
 }
 
 /*
@@ -1225,7 +1237,9 @@ static struct rq *move_queued_task(struct task_struct *p, int new_cpu)
 
 	dequeue_task(rq, p, 0);
 	p->on_rq = TASK_ON_RQ_MIGRATING;
+        double_lock_balance(rq, cpu_rq(new_cpu));
 	set_task_cpu(p, new_cpu);
+        double_unlock_balance(rq, cpu_rq(new_cpu));
 	raw_spin_unlock(&rq->lock);
 
 	rq = cpu_rq(new_cpu);
@@ -2031,7 +2045,10 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 {
 	unsigned long flags;
 	int cpu, success = 0;
-
+#ifdef CONFIG_SMP
+ 	struct rq *rq;
+ 	u64 wallclock;
+#endif
 	/*
 	 * If we are going to wake up a thread waiting for CONDITION we
 	 * need to ensure that CONDITION=1 done by the caller can not be
@@ -2937,7 +2954,47 @@ unsigned long long task_sched_runtime(struct task_struct *p)
 
 	return ns;
 }
+#ifdef CONFIG_CPU_FREQ_GOV_SCHED
+static unsigned long sum_capacity_reqs(unsigned long cfs_cap,
+				       struct sched_capacity_reqs *scr)
+{
+	unsigned long total = cfs_cap + scr->rt;
 
+	total = total * capacity_margin;
+	total /= SCHED_CAPACITY_SCALE;
+	total += scr->dl;
+	return total;
+}
+
+static void sched_freq_tick(int cpu)
+{
+	struct sched_capacity_reqs *scr;
+	unsigned long capacity_orig, capacity_curr, capacity_sum;
+
+	if (!sched_freq())
+		return;
+
+	capacity_orig = capacity_orig_of(cpu);
+	capacity_curr = capacity_curr_of(cpu);
+	if (capacity_curr == capacity_orig)
+		return;
+
+	/*
+	 * To make free room for a task that is building up its "real"
+	 * utilization and to harm its performance the least, request
+	 * a jump to a higher OPP as soon as the margin of free capacity
+	 * is impacted (specified by capacity_margin).
+	 */
+
+	scr = &per_cpu(cpu_sched_capacity_reqs, cpu);
+	capacity_sum = sum_capacity_reqs(cpu_util(cpu), scr);
+	if (capacity_curr < capacity_sum) {
+		set_cfs_cpu_capacity(cpu, true, capacity_sum);
+	}
+}
+#else
+static inline void sched_freq_tick(int cpu) { }
+#endif
 /*
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.

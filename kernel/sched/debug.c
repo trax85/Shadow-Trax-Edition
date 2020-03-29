@@ -634,7 +634,7 @@ void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 	P(se.avg.running_avg_sum);
 	P(se.avg.avg_period);
 	P(se.avg.load_avg_contrib);
-	P(se.avg.utilization_avg_contrib);
+	P(se.avg.util_avg);
 	P(se.avg.decay_count);
 #endif
 	P(policy);

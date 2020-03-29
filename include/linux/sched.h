@@ -281,14 +281,13 @@ extern char ___assert_task_state[1 - 2*!!(
 extern const char *sched_window_reset_reasons[];
 
 enum task_event {
-	PUT_PREV_TASK   = 0,
-	PICK_NEXT_TASK  = 1,
-	TASK_WAKE       = 2,
-	TASK_MIGRATE    = 3,
-	TASK_UPDATE     = 4,
-	IRQ_UPDATE	= 5,
+ 	PUT_PREV_TASK   = 0,
+ 	PICK_NEXT_TASK  = 1,
+ 	TASK_WAKE       = 2,
+ 	TASK_MIGRATE    = 3,
+ 	TASK_UPDATE     = 4,
+ 	IRQ_UPDATE	= 5,
 };
-
 #include <linux/spinlock.h>
 
 /*
@@ -338,6 +337,7 @@ static inline void show_state(void)
 }
 
 extern void show_regs(struct pt_regs *);
+#define	MAX_SCHEDULE_TIMEOUT	LONG_MAX
 
 /*
  * TASK is a pointer to the task whose backtrace we want to see (or NULL for current
@@ -567,6 +567,34 @@ struct task_cputime {
  * before the scheduler is active -- see should_resched().
  */
 #define INIT_PREEMPT_COUNT	(1 + PREEMPT_ACTIVE)
+
+/**
+ * struct util_est - Estimation utilization of FAIR tasks
+ * @enqueued: instantaneous estimated utilization of a task/cpu
+ * @ewma:     the Exponential Weighted Moving Average (EWMA)
+ *            utilization of a task
+ *
+ * Support data structure to track an Exponential Weighted Moving Average
+ * (EWMA) of a FAIR task's utilization. New samples are added to the moving
+ * average each time a task completes an activation. Sample's weight is chosen
+ * so that the EWMA will be relatively insensitive to transient changes to the
+ * task's workload.
+ *
+ * The enqueued attribute has a slightly different meaning for tasks and cpus:
+ * - task:   the task's util_avg at last task dequeue time
+ * - cfs_rq: the sum of util_est.enqueued for each RUNNABLE task on that CPU
+ * Thus, the util_est.enqueued of a task represents the contribution on the
+ * estimated utilization of the CPU where that task is currently enqueued.
+ *
+ * Only for tasks we track a moving average of the past instantaneous
+ * estimated utilization. This allows to absorb sporadic drops in utilization
+ * of an otherwise almost periodic task.
+ */
+struct util_est {
+	unsigned int			enqueued;
+	unsigned int			ewma;
+#define UTIL_EST_WEIGHT_SHIFT		2
+};
 
 /**
  * struct thread_group_cputimer - thread group interval timer counts
@@ -890,6 +918,15 @@ enum cpu_idle_type {
 #define SCHED_CAPACITY_SHIFT	10
 #define SCHED_CAPACITY_SCALE	(1L << SCHED_CAPACITY_SHIFT)
 
+struct sched_capacity_reqs {
+	unsigned long cfs;
+	unsigned long rt;
+	unsigned long dl;
+
+	unsigned long total;
+};
+
+
 /*
  * Wake-queues are lists of tasks with a pending wakeup, whose
  * callers have already marked the task as woken internally,
@@ -1189,7 +1226,7 @@ struct sched_avg {
  	 * is runnable on a rq. It is based on both runnable_avg_sum and the
  	 * weight of the task.
  	 */
- 	unsigned long load_avg_contrib, utilization_avg_contrib;
+ 	unsigned long load_avg_contrib, util_avg;
   	/*
   	 * These sums represent an infinite geometric series and so are bound
   	 * above by 1024/(1-y).  Thus we only need a u32 to store them for all
@@ -1201,6 +1238,7 @@ struct sched_avg {
  	 * running_avg_sum.
  	 */
  	u32 runnable_avg_sum, avg_period, running_avg_sum;
+        struct util_est			util_est;
 };
 
 #ifdef CONFIG_SCHEDSTATS
@@ -1239,40 +1277,42 @@ struct sched_statistics {
 };
 #endif
 
-#define RAVG_HIST_SIZE_MAX  5
+#ifdef CONFIG_SCHED_WALT
+ #define RAVG_HIST_SIZE_MAX  5
 
 /* ravg represents frequency scaled cpu-demand of tasks */
 struct ravg {
-	/*
-	 * 'mark_start' marks the beginning of an event (task waking up, task
-	 * starting to execute, task being preempted) within a window
-	 *
-	 * 'sum' represents how runnable a task has been within current
-	 * window. It incorporates both running time and wait time and is
-	 * frequency scaled.
-	 *
-	 * 'sum_history' keeps track of history of 'sum' seen over previous
-	 * RAVG_HIST_SIZE windows. Windows where task was entirely sleeping are
-	 * ignored.
-	 *
-	 * 'demand' represents maximum sum seen over previous
-	 * sysctl_sched_ravg_hist_size windows. 'demand' could drive frequency
-	 * demand for tasks.
-	 *
-	 * 'curr_window' represents task's contribution to cpu busy time
-	 * statistics (rq->curr_runnable_sum) in current window
-	 *
-	 * 'prev_window' represents task's contribution to cpu busy time
-	 * statistics (rq->prev_runnable_sum) in previous window
-	 */
-	u64 mark_start;
+ 	/*
+ 	 * 'mark_start' marks the beginning of an event (task waking up, task
+ 	 * starting to execute, task being preempted) within a window
+ 	 *
+ 	 * 'sum' represents how runnable a task has been within current
+ 	 * window. It incorporates both running time and wait time and is
+ 	 * frequency scaled.
+ 	 *
+ 	 * 'sum_history' keeps track of history of 'sum' seen over previous
+ 	 * RAVG_HIST_SIZE windows. Windows where task was entirely sleeping are
+ 	 * ignored.
+ 	 *
+ 	 * 'demand' represents maximum sum seen over previous
+ 	 * sysctl_sched_ravg_hist_size windows. 'demand' could drive frequency
+ 	 * demand for tasks.
+ 	 *
+ 	 * 'curr_window' represents task's contribution to cpu busy time
+ 	 * statistics (rq->curr_runnable_sum) in current window
+ 	 *
+ 	 * 'prev_window' represents task's contribution to cpu busy time
+ 	 * statistics (rq->prev_runnable_sum) in previous window
+ 	 */
+ 	u64 mark_start;
 	u32 sum, demand;
 	u32 sum_history[RAVG_HIST_SIZE_MAX];
-#ifdef CONFIG_SCHED_FREQ_INPUT
 	u32 curr_window, prev_window;
-        u16 active_windows;
-#endif
+	u16 active_windows;
 };
+#endif
+
+#define RAVG_HIST_SIZE_MAX  5
 
 struct sched_entity {
 	struct load_weight	load;		/* for load-balancing */
@@ -1411,21 +1451,15 @@ struct task_struct {
 	const struct sched_class *sched_class;
 	struct sched_entity se;
 	struct sched_rt_entity rt;
-#ifdef CONFIG_SCHED_HMP
-	struct ravg ravg;
-	/*
-	 * 'init_load_pct' represents the initial task load assigned to children
-	 * of this task
-	 */
-	u32 init_load_pct;
-        u64 last_wake_ts;
-#ifdef CONFIG_SCHED_QHMP
-	u64 run_start;
-	u64 last_sleep_ts;
-	struct related_thread_group *grp;
-	struct list_head grp_list;
+#ifdef CONFIG_SCHED_WALT
+ 	struct ravg ravg;
+ 	/*
+ 	 * 'init_load_pct' represents the initial task load assigned to children
+ 	 * of this task
+ 	 */
+ 	u32 init_load_pct;
 #endif
-#endif
+
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group *sched_task_group;
 #endif
@@ -3212,7 +3246,6 @@ static inline void thread_group_cputime_init(struct signal_struct *sig)
 
 /*
  * Reevaluate whether the task has signals pending delivery.
- * Wake the task if so.
  * This is required every time the blocked sigset_t changes.
  * callers must hold sighand->siglock.
  */
@@ -3358,7 +3391,7 @@ static inline unsigned long rlimit_max(unsigned int limit)
 int do_stune_boost(int boost, int *slot);
  int do_stune_sched_boost(int *slot);
  int reset_stune_boost(int slot);
-int get_sched_boost(char *st_name);
+int get_sched_boost(void);
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 #endif
