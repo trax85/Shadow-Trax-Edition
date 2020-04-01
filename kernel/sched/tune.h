@@ -27,6 +27,7 @@ extern void schedtune_dequeue_task(struct task_struct *p, int cpu);
 
 #else /* CONFIG_CGROUP_SCHEDTUNE */
 
+#define schedtune_cpu_boost(cpu)  get_sysctl_sched_cfs_boost()
 #define schedtune_task_boost(tsk) get_sysctl_sched_cfs_boost()
 #define schedtune_exit_task(task) do { } while (0)
 #define schedtune_enqueue_task(task, cpu) while(0){}

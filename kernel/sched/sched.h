@@ -1614,7 +1614,7 @@ static inline void set_rt_cpu_capacity(int cpu, bool request,
 static inline void set_dl_cpu_capacity(int cpu, bool request,
 				       unsigned long capacity)
 { }
-#endif
+#endif /*CONFIG_CPU_FREQ_GOV_SCHED*/
 
 #ifdef CONFIG_SMP
 extern void sched_avg_update(struct rq *rq);
@@ -1911,3 +1911,10 @@ static inline void account_reset_rq(struct rq *rq)
 	rq->prev_steal_time_rq = 0;
 #endif
 }
+#ifdef arch_scale_freq_capacity
+#ifndef arch_scale_freq_invariant
+#define arch_scale_freq_invariant()     (true)
+#endif
+#else /* arch_scale_freq_capacity */
+#define arch_scale_freq_invariant()     (false)
+#endif

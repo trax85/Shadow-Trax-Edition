@@ -83,7 +83,7 @@ unsigned int sysctl_sched_use_walt_task_util = 1;
 __read_mostly unsigned int sysctl_sched_walt_cpu_high_irqload =
      (10 * NSEC_PER_MSEC);
 #endif
-
+unsigned long boosted_cpu_util(int cpu);
 /*
  * The initial- and re-scaling of tunables is configurable
  * (default SCHED_TUNABLESCALING_LOG = *(1+ilog(ncpus))
@@ -4146,6 +4146,12 @@ static inline void hrtick_update(struct rq *rq)
 }
 #endif
 
+/*
+ * The margin used when comparing utilization with CPU capacity:
+ * util * margin < capacity * 1024
+ */
+unsigned int capacity_margin = 1280; /* ~20% */
+
 unsigned int __read_mostly sysctl_sched_capacity_margin = 1280; /* ~20% margin */
 
 static bool cpu_overutilized(int cpu);
@@ -5096,6 +5102,7 @@ static inline int
 normalize_energy(int energy_diff)
 {
  	u32 normalized_nrg;
+
 #ifdef CONFIG_SCHED_DEBUG
  	int max_delta;
 
@@ -5131,7 +5138,7 @@ energy_diff(struct energy_env *eenv)
 #ifdef CONFIG_CGROUP_SCHEDTUNE
  	boost = schedtune_task_boost(eenv->task);
 #else
- 	boost = get_sysctl_sched_cfs_boost();
+ 	boost = 0;
 #endif
  	if (boost == 0)
  		return eenv->nrg.diff;
@@ -5313,12 +5320,6 @@ schedtune_task_margin(struct task_struct *task)
 	int boost;
 	unsigned long util;
 	long margin;
-
-#ifdef CONFIG_CGROUP_SCHEDTUNE
-	boost = schedtune_taskgroup_boost(task);
-#else
-	boost = get_sysctl_sched_cfs_boost();
-#endif
 	if (boost == 0)
 		return 0;
 
@@ -5334,16 +5335,6 @@ schedtune_cpu_margin(int cpu, unsigned long usage)
         int boost;
 	unsigned long margin;
 
-#ifdef CONFIG_CGROUP_SCHEDTUNE
-	if (usage)
-		boost = schedtune_cpu_boost(cpu);
-	else {
-		boost = 0;
-		schedtune_idle(cpu);
-	}
-#else
-	boost = get_sysctl_sched_cfs_boost();
-#endif
 	if (boost == 0)
 		return 0;
 
@@ -5421,8 +5412,7 @@ static inline bool task_fits_cpu(struct task_struct *p, int cpu)
 	return __task_fits(p, cpu, cpu_util(cpu));
 }
 
-static inline unsigned long
-boosted_cpu_util(int cpu)
+unsigned long boosted_cpu_util(int cpu)
 {
  	unsigned long util = cpu_util(cpu);
  	unsigned long margin = schedtune_cpu_margin(cpu, util);
@@ -5742,7 +5732,7 @@ static int energy_aware_wake_cpu(struct task_struct *p, int target, int sync)
 	struct sched_group *sg, *sg_target;
 	int target_max_cap = INT_MAX;
 	int target_cpu = -1;
-         unsigned long task_util_boosted, new_util;
+       unsigned long task_util_boosted, new_util;
 	int i;
 
 	if (sync) {
@@ -5785,7 +5775,8 @@ static int energy_aware_wake_cpu(struct task_struct *p, int target, int sync)
  			}
 
 	} while (sg = sg->next, sg != sd->groups);
-
+              
+                task_util_boosted = boosted_task_util(p);
 		/* Find cpu with sufficient capacity */
  		for_each_cpu_and(i, tsk_cpus_allowed(p), sched_group_cpus(sg_target)) {
  			/*
@@ -5793,7 +5784,13 @@ static int energy_aware_wake_cpu(struct task_struct *p, int target, int sync)
  			 * so prev_cpu will receive a negative bias due the double
  			 * accouting. However, the blocked utilization may be zero.
  			 */
- 			new_util = cpu_util(i) + boosted_task_util(p);
+ 			new_util = cpu_util(i) + task_util_boosted;
+                        
+                        /*
+ 			 * Ensure minimum capacity to grant the required boost.
+ 			 * The target CPU can be already at a capacity level higher
+ 			 * than the one required to boost the task.
+ 			 */
 
 		if (new_util >	capacity_orig_of(i))
  				continue;
@@ -5814,18 +5811,6 @@ static int energy_aware_wake_cpu(struct task_struct *p, int target, int sync)
  		 */
  		int tmp_target = find_best_target(p,true);
  		if (tmp_target >= 0) target_cpu = tmp_target;
-         }
-
-#ifdef CONFIG_CGROUP_SCHEDTUNE
- 		bool boosted = schedtune_task_boost(p) > 0;
-#else
- 		bool boosted = 0;
-#endif
- 		int tmp_target = find_best_target(p, boosted);
- 		if (tmp_target >= 0){
- 			target_cpu = tmp_target;
- 			if (boosted && idle_cpu(target_cpu))
- 				return target_cpu;
          }
 
 	if (target_cpu < 0)
@@ -8167,22 +8152,6 @@ more_balance:
 		if (cur_ld_moved)
 			update_capacity_of(env.src_cpu, true);
 		/*
-		 * We want to potentially update env.src_cpu's OPP.
-		 *
-		 * Add a margin (same ~20% used for the tipping point)
-		 * to our request to provide some head room for the remaining
-		 * tasks.
-		 */
-		if (sched_energy_freq() && cur_ld_moved) {
-			unsigned long req_cap =
-				boosted_cpu_util(env.src_cpu);
-
-			req_cap = req_cap * sysctl_sched_capacity_margin
-					>> SCHED_CAPACITY_SHIFT;
-			cpufreq_sched_set_cap(env.src_cpu, req_cap);
-		}
-
-		/*
 		 * We've detached some tasks from busiest_rq. Every
 		 * task is masked "TASK_ON_RQ_MIGRATING", so we can safely
 		 * unlock busiest->lock, and we are able to be sure
@@ -8196,20 +8165,10 @@ more_balance:
 			attach_tasks(&env);
 			ld_moved += cur_ld_moved;
 			/*
-			 * We want to potentially update env.dst_cpu's OPP.
-			 *
-			 * Add a margin (same ~20% used for the tipping point)
-			 * to our request to provide some head room if p's
-			 * utilization further increases.
+			  * We want to potentially lower env.src_cpu's OPP.
 			 */
-			if (sched_energy_freq()) {
-				unsigned long req_cap =
-					boosted_cpu_util(env.dst_cpu);
-
-				req_cap = req_cap * sysctl_sched_capacity_margin
-						>> SCHED_CAPACITY_SHIFT;
-				cpufreq_sched_set_cap(env.dst_cpu, req_cap);
-			}
+			if (cur_ld_moved)
+ 			update_capacity_of(env.src_cpu,true);
 		}
 
 		local_irq_restore(flags);
@@ -9071,24 +9030,6 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 
 	rq->misfit_task = !task_fits_capacity(curr, rq->cpu);
 
-	/*
-	 * To make free room for a task that is building up its "real"
-	 * utilization and to harm its performance the least, request a
-	 * jump to max OPP as soon as cpu_util() crosses the UP
-	 * threshold. The UP threshold is built relative to the current
-	 * capacity (OPP), by using same margin used to tell if a cpu
-	 * is overutilized (capacity_margin).
-	 */
-	if (sched_energy_freq()) {
-		int cpu = cpu_of(rq);
-		unsigned long capacity_orig = capacity_orig_of(cpu);
-		unsigned long capacity_curr = capacity_curr_of(cpu);
-
-		if (capacity_curr < capacity_orig &&
-		    (capacity_curr * SCHED_LOAD_SCALE) <
-		    (cpu_util(cpu) * sysctl_sched_capacity_margin))
-			cpufreq_sched_set_cap(cpu, capacity_orig);
-	}
 }
 
 /*
