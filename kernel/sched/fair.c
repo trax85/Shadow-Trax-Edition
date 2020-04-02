@@ -40,8 +40,6 @@
 #include "walt.h"
 
 
-static inline unsigned long boosted_cpu_util(int cpu);
-
 /*
  * Targeted preemption latency for CPU-bound tasks:
  * (default: 5ms * (1 + ilog(ncpus)), units: nanoseconds)
@@ -4113,8 +4111,6 @@ static inline void hrtick_update(struct rq *rq)
 }
 #endif
 
-static inline unsigned long boosted_cpu_util(int cpu);
-
 static void update_capacity_of(int cpu)
 {
  	unsigned long req_cap;
@@ -4861,17 +4857,20 @@ long group_norm_util(struct energy_env *eenv, struct sched_group *sg)
 static int find_new_capacity(struct energy_env *eenv,
 		const struct sched_group_energy *sge)
 {
-	int idx;
+	int idx, max_idx = sge->nr_cap_states - 1;
 	unsigned long util = group_max_util(eenv);
 
+        /* default is max_cap if we don't find a match */
+ 	eenv->cap_idx = max_idx;
+
 	for (idx = 0; idx < sge->nr_cap_states; idx++) {
-		if (sge->cap_states[idx].cap >= util)
+		if (sge->cap_states[idx].cap >= util) {
+ 			eenv->cap_idx = idx;
 			break;
+                }
 	}
 
-	eenv->cap_idx = idx;
-
-	return idx;
+	return eenv->cap_idx;
 }
 
 static int group_idle_state(struct sched_group *sg)
@@ -5224,19 +5223,7 @@ static int wake_affine(struct sched_domain *sd, struct task_struct *p, int sync)
 	return 1;
 }
 
-static inline unsigned long task_util(struct task_struct *p)
-{
-#ifdef CONFIG_SCHED_WALT
- 	if (!walt_disabled && sysctl_sched_use_walt_task_util) {
- 		unsigned long demand = p->ravg.demand;
- 		return (demand << 10) / walt_ravg_window;
- 	}
-#endif
-	return p->se.avg.util_avg;
-}
 unsigned int capacity_margin = 1280; /* ~20% margin */
-
-static inline unsigned long boosted_task_util(struct task_struct *task);
 
 static inline bool __task_fits(struct task_struct *p, int cpu, int util)
 {
@@ -5270,92 +5257,6 @@ static bool cpu_overutilized(int cpu)
  	return (capacity_of(cpu) * 1024) < (cpu_util(cpu) * capacity_margin);
 }
 
-
-#ifdef CONFIG_SCHED_TUNE
-struct reciprocal_value schedtune_spc_rdiv;
-
-static long
-schedtune_margin(unsigned long signal, long boost)
-{
-        long long margin = 0;
-
-	/*
-	 * Signal proportional compensation (SPC)
-	 *
-	 * The Boost (B) value is used to compute a Maring (M) which is
-	 * proportional to the complement of the original Signal (S):
-	  *   M = B * (SCHED_CAPACITY_SCALE - S)
-	 * The obtained M could be used by the caller to "boost" S.
-	 */
-	if (boost >= 0) {
- 		margin  = SCHED_CAPACITY_SCALE - signal;
- 		margin *= boost;
- 	} else
- 		margin = -signal * boost;
-
-	margin  = reciprocal_divide(margin, schedtune_spc_rdiv);
-  
-        if (boost < 0)
- 		margin *= -1;
-	return margin;
-
-}
-
-static inline int
-schedtune_cpu_margin(unsigned long util, int cpu)
-{
-	int boost = schedtune_cpu_boost(cpu);
-
-        if (boost == 0)
-		return 0;
-
-	return schedtune_margin(util, boost);
-}
-
-static inline long
-schedtune_task_margin(struct task_struct *task)
-{
-        int boost = schedtune_task_boost(task);
-        unsigned long util;
-        long margin;
-
-	if (boost == 0)
-		return 0;
-
-	util = task_util(task);
- 	margin = schedtune_margin(util, boost);
-
-	return margin;
-}
-
-#else /* CONFIG_SCHED_TUNE */
-
-static inline int
-schedtune_task_margin(unsigned long util)
-{
-	return 0;
-}
-
-#endif /* CONFIG_SCHED_TUNE */
-
-unsigned long boosted_cpu_util(int cpu)
-{
- 	unsigned long util = cpu_util(cpu);
- 	long margin = schedtune_cpu_margin(cpu, util);
-
- 	return util + margin;
-}
-
-static inline unsigned long
-boosted_task_util(struct task_struct *task)
-{
-	unsigned long util = task_util(task);
-	long margin = schedtune_task_margin(task);
-
-	trace_sched_boost_task(task, util, margin);
-
-	return util + margin;
-}
 
 /*
  * find_idlest_group finds and returns the least busy CPU group within the

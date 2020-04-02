@@ -648,18 +648,8 @@ struct rq {
 #endif
 
 #ifdef CONFIG_SCHED_WALT
- 	/*
- 	 * max_freq = user or thermal defined maximum
- 	 * max_possible_freq = maximum supported by hardware
- 	 */
- 	unsigned int cur_freq, max_freq, min_freq, max_possible_freq;
- 	struct cpumask freq_domain_cpumask;
 
  	u64 cumulative_runnable_avg;
- 	int efficiency; /* Differentiate cpus with different IPC capability */
- 	int load_scale_factor;
- 	int capacity;
- 	int max_possible_capacity;
  	u64 window_start;
  	u64 curr_runnable_sum;
  	u64 prev_runnable_sum;
@@ -1361,7 +1351,18 @@ void arch_update_cpu_capacity(int cpu)
 
 extern unsigned int sysctl_sched_use_walt_cpu_util;
 extern unsigned int walt_ravg_window;
-extern unsigned int walt_disabled;
+extern bool walt_disabled;
+
+static inline unsigned long task_util(struct task_struct *p)
+{
+#ifdef CONFIG_SCHED_WALT
+ 	if (!walt_disabled && sysctl_sched_use_walt_task_util) {
+ 		unsigned long demand = p->ravg.demand;
+ 		return (demand << 10) / walt_ravg_window;
+ 	}
+#endif
+ 	return p->se.avg.util_avg;
+}
 
 static inline unsigned long capacity_orig_of(int cpu);
 static inline unsigned long cpu_util_freq(int cpu)
@@ -1389,6 +1390,7 @@ extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime
 
 extern struct dl_bandwidth def_dl_bandwidth;
 extern void init_dl_bandwidth(struct dl_bandwidth *dl_b, u64 period, u64 runtime);
+extern void init_rt_schedtune_timer(struct sched_rt_entity *rt_se);
 extern void init_dl_task_timer(struct sched_dl_entity *dl_se);
 
 unsigned long to_ratio(u64 period, u64 runtime);
@@ -1928,3 +1930,7 @@ static inline void account_reset_rq(struct rq *rq)
 #else /* arch_scale_freq_capacity */
 #define arch_scale_freq_invariant()     (false)
 #endif
+/*
+ * task_may_not_preempt - check whether a task may not be preemptible soon
+ */
+extern bool task_may_not_preempt(struct task_struct *task, int cpu); 

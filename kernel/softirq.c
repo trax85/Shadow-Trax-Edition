@@ -256,8 +256,8 @@ asmlinkage void __do_softirq(void)
 	lockdep_softirq_enter();
 restart:
 	/* Reset the pending bitmask before enabling irqs */
-	__this_cpu_write(active_softirqs, pending_now);
 	set_softirq_pending(pending_delay);
+        __this_cpu_write(active_softirqs, pending);
 
 	local_irq_enable();
 
