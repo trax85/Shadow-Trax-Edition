@@ -335,6 +335,15 @@ int rt_mutex_getprio(struct task_struct *task)
  *
  * This can be both boosting and unboosting. task->pi_lock must be held.
  */
+int rt_mutex_get_effective_prio(struct task_struct *task, int newprio)
+{
+	if (!task_has_pi_waiters(task))
+		return newprio;
+
+	if (task_top_pi_waiter(task)->task->prio <= newprio)
+		return task_top_pi_waiter(task)->task->prio;
+	return newprio;
+}
 static void __rt_mutex_adjust_prio(struct task_struct *task)
 {
 	int prio = rt_mutex_getprio(task);

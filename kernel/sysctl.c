@@ -298,6 +298,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
+#if 0
 	{
 		.procname	= "sched_capacity_margin",
  		.data		= &sysctl_sched_capacity_margin,
@@ -305,6 +306,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
+#endif
 /*	{
 		.procname	= "sched_wakeup_load_threshold",
 		.data		= &sysctl_sched_wakeup_load_threshold,

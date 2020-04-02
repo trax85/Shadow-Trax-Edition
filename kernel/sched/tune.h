@@ -22,8 +22,8 @@ extern int schedtune_taskgroup_boost(struct task_struct *tsk);
 extern int schedtune_cpu_boost(int cpu);
 extern void schedtune_idle(int cpu);
 
-extern void schedtune_enqueue_task(struct task_struct *p, int cpu);
-extern void schedtune_dequeue_task(struct task_struct *p, int cpu);
+void schedtune_enqueue_task(struct task_struct *p, int cpu);
+void schedtune_dequeue_task(struct task_struct *p, int cpu);
 
 #else /* CONFIG_CGROUP_SCHEDTUNE */
 

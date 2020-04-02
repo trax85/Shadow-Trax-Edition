@@ -25,7 +25,7 @@ void store_cpu_topology(unsigned int cpuid);
 const struct cpumask *cpu_coregroup_mask(int cpu);
 
 struct sched_domain;
-extern unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu);
+//extern unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu);
 DECLARE_PER_CPU(atomic_long_t, cpu_freq_capacity);
 
 #else
