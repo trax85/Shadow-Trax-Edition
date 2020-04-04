@@ -16,10 +16,12 @@
 #include <linux/slab.h>
 #include <trace/events/power.h>
 #include <linux/irq_work.h>
-
 #include "sched.h"
 #include "tune.h"
 
+#ifdef CONFIG_SCHED_WALT
+unsigned long boosted_cpu_util(int cpu);
+#endif
 
 /* Stub out fast switch routines present on mainline to reduce the backport
  * overhead. */
@@ -127,14 +129,13 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 	if (sugov_up_down_rate_limit(sg_policy, time, next_freq))
 		return;
 
-	sg_policy->last_freq_update_time = time;
-
 	if (policy->fast_switch_enabled) {
 		if (sg_policy->next_freq == next_freq) {
 			trace_cpu_frequency(policy->cur, smp_processor_id());
 			return;
 		}
 		sg_policy->next_freq = next_freq;
+		sg_policy->last_freq_update_time = time;
 		next_freq = cpufreq_driver_fast_switch(policy, next_freq);
 		if (next_freq == CPUFREQ_ENTRY_INVALID)
 			return;
@@ -143,6 +144,7 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 		trace_cpu_frequency(next_freq, smp_processor_id());
 	} else if (sg_policy->next_freq != next_freq) {
 		sg_policy->next_freq = next_freq;
+		sg_policy->last_freq_update_time = time;
 		sg_policy->work_in_progress = true;
 		irq_work_queue(&sg_policy->irq_work);
 	}
@@ -203,6 +205,10 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, u64 time)
 	rt = (rt * max_cap) >> SCHED_CAPACITY_SHIFT;
 
 	*util = min(rq->cfs.avg.util_avg + rt, max_cap);
+#ifdef CONFIG_SCHED_WALT
+	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
+		*util = boosted_cpu_util(cpu);
+#endif
 	*max = max_cap;
 }
 
