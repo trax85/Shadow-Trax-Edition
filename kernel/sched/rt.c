@@ -856,11 +856,14 @@ static int do_sched_rt_period_timer(struct rt_bandwidth *rt_b, int overrun)
 				enqueue = 1;
 
 				/*
-				 * Force a clock update if the CPU was idle,
-				 * lest wakeup -> unthrottle time accumulate.
+				 * When we're idle and a woken (rt) task is
+ 				 * throttled check_preempt_curr() will set
+ 				 * skip_update and the time between the wakeup
+ 				 * and this unthrottle will get accounted as
+ 				 * 'runtime'.
 				 */
 				if (rt_rq->rt_nr_running && rq->curr == rq->idle)
-					rq->skip_clock_update = -1;
+					rq_clock_skip_update(rq, false);
 			}
 			if (rt_rq->rt_time || rt_rq->rt_nr_running)
 				idle = 0;
@@ -1066,6 +1069,9 @@ static void update_curr_rt(struct rq *rq)
 	delta_exec = rq_clock_task(rq) - curr->se.exec_start;
 	if (unlikely((s64)delta_exec <= 0))
 		return;
+
+        /* Kick cpufreq (see the comment in kernel/sched/sched.h). */
+ 	cpufreq_update_this_cpu(rq, SCHED_CPUFREQ_RT);
 
 	schedstat_set(curr->se.statistics.exec_max,
 		      max(curr->se.statistics.exec_max, delta_exec));
@@ -1964,6 +1970,16 @@ static struct rq *find_lock_lowest_rq(struct task_struct *task, struct rq *rq)
 			break;
 
 		lowest_rq = cpu_rq(cpu);
+
+                if (lowest_rq->rt.highest_prio.curr <= task->prio) {
+ 			/*
+ 			 * Target rq has tasks of equal or higher priority,
+ 			 * retrying does not release any lock and is unlikely
+ 			 * to yield a different result.
+ 			 */
+ 			lowest_rq = NULL;
+ 			break;
+ 		}
 
 		/* if the prio of this runqueue changed, try again */
 		if (double_lock_balance(rq, lowest_rq)) {

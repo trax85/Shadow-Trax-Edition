@@ -232,6 +232,44 @@ print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq);
 extern char ___assert_task_state[1 - 2*!!(
 		sizeof(TASK_STATE_TO_CHAR_STR)-1 != ilog2(TASK_STATE_MAX)+1)];
 
+#ifdef CONFIG_DEBUG_ATOMIC_SLEEP
+
+#define __set_task_state(tsk, state_value)			\
+ 	do {							\
+ 		(tsk)->task_state_change = _THIS_IP_;		\
+ 		(tsk)->state = (state_value);			\
+ 	} while (0)
+#define set_task_state(tsk, state_value)			\
+ 	do {							\
+ 		(tsk)->task_state_change = _THIS_IP_;		\
+ 		set_mb((tsk)->state, (state_value));		\
+ 	} while (0)
+
+/*
+ * set_current_state() includes a barrier so that the write of current->state
+ * is correctly serialised wrt the caller's subsequent test of whether to
+ * actually sleep:
+ *
+ *	set_current_state(TASK_UNINTERRUPTIBLE);
+ *	if (do_i_need_to_sleep())
+ *		schedule();
+ *
+ * If the caller does not need such serialisation then use __set_current_state()
+ */
+#define __set_current_state(state_value)			\
+ 	do {							\
+ 		current->task_state_change = _THIS_IP_;		\
+ 		current->state = (state_value);			\
+ 	} while (0)
+#define set_current_state(state_value)				\
+ 	do {							\
+ 		current->task_state_change = _THIS_IP_;		\
+ 		set_mb(current->state, (state_value));		\
+ 	} while (0)
+
+#else
+
+
 /* Convenience macros for the sake of set_task_state */
 #define TASK_KILLABLE		(TASK_WAKEKILL | TASK_UNINTERRUPTIBLE)
 #define TASK_STOPPED		(TASK_WAKEKILL | __TASK_STOPPED)
@@ -274,6 +312,8 @@ extern char ___assert_task_state[1 - 2*!!(
 	do { current->state = (state_value); } while (0)
 #define set_current_state(state_value)		\
 	set_mb(current->state, (state_value))
+
+#endif
 
 /* Task command name length */
 #define TASK_COMM_LEN 16
@@ -981,6 +1021,7 @@ extern void wake_up_q(struct wake_q_head *head);
 #define SD_BALANCE_FORK		0x0008	/* Balance on fork, clone */
 #define SD_BALANCE_WAKE		0x0010  /* Balance on wakeup */
 #define SD_WAKE_AFFINE		0x0020	/* Wake task to waking CPU */
+#define SD_ASYM_CPUCAPACITY	0x0040  /* Groups have different max cpu capacities */
 #define SD_SHARE_CPUCAPACITY	0x0080	/* Domain members share cpu power */
 #define SD_SHARE_POWERDOMAIN	0x0100	/* Domain members share power domain */
 #define SD_SHARE_PKG_RESOURCES	0x0200	/* Domain members share cpu pkg resources */
@@ -1822,6 +1863,8 @@ struct task_struct {
 #ifdef CONFIG_KASAN
 	unsigned int kasan_depth;
 #endif
+        /* Time that the task woke up or was last descheduled */
+ 	u64 waiting_time;
 #ifdef CONFIG_FUNCTION_GRAPH_TRACER
 	/* Index of current stored address in ret_stack */
 	int curr_ret_stack;
@@ -1864,6 +1907,9 @@ struct task_struct {
 #if defined(CONFIG_BCACHE) || defined(CONFIG_BCACHE_MODULE)
 	unsigned int	sequential_io;
 	unsigned int	sequential_io_avg;
+#endif
+#ifdef CONFIG_DEBUG_ATOMIC_SLEEP
+ 	unsigned long	task_state_change;
 #endif
 };
 
