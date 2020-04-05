@@ -1229,7 +1229,7 @@ TRACE_EVENT(sched_boost_cpu,
  	TP_STRUCT__entry(
  		__field( int,		cpu			)
  		__field( unsigned long,	usage			)
- 		__field( long,	margin			)
+ 		__field( unsigned,	margin			)
  	),
 
  	TP_fast_assign(

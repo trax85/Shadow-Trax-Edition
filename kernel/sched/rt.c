@@ -2373,7 +2373,8 @@ skip:
 		double_unlock_balance(this_rq, src_rq);
 	}
 
-	return resched;
+	if (resched)
+		resched_curr(this_rq);
 }
 
 static void post_schedule_rt(struct rq *rq)

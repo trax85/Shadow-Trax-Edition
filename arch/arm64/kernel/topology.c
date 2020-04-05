@@ -410,7 +410,7 @@ static void update_cpu_power(unsigned int cpu)
 struct cpu_topology cpu_topology[NR_CPUS];
 EXPORT_SYMBOL_GPL(cpu_topology);
 
-static inline const struct sched_group_energy *cpu_core_energy(int cpu)
+static inline const struct sched_group_energy *const cpu_core_energy(int cpu)
 {
  	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL0];
 

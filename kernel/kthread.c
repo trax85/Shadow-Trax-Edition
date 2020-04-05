@@ -690,6 +690,7 @@ static bool __kthread_cancel_work_sync(struct kthread_work *work)
 	int ret = false;
 
 	if (!worker)
+		goto out;
 
 	spin_lock_irqsave(&worker->lock, flags);
 	/* Work must not be used with >1 worker, see kthread_queue_work(). */

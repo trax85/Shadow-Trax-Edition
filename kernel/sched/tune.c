@@ -225,13 +225,6 @@ static inline struct schedtune *task_schedtune(struct task_struct *tsk)
 	return cgroup_st(task_cgroup(tsk, schedtune_subsys_id));
 }
 
-#if 0
-static inline struct schedtune *parent_st(struct schedtune *st)
-{
-	return css_st(st->css.parent);
-}
-#endif
-
 /*
  * SchedTune root control group
  * The root control group is used to defined a system-wide boosting tuning,
@@ -763,13 +756,14 @@ boost_write(struct cgroup *cgrp, struct cftype *cft,
 int
 dynamic_boost_write(struct cgroup_subsys_state *css, int boost)
 {
+        struct schedtune *st;
 	/* if dynamic schedtune boost doesnt't have 
 	 * its topapp_css, return 
 	 */
 	if (!unlikely(dynamic_schedtune_initialized))
 		return -EINVAL;
 
-	struct schedtune *st = css_st(css);
+	st = css_st(css);
 	unsigned threshold_idx;
 	int boost_pct;
 

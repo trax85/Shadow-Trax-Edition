@@ -5169,16 +5169,6 @@ static unsigned long __cpu_norm_util(unsigned long util, unsigned long capacity)
 	return (util << SCHED_CAPACITY_SHIFT)/capacity;
 }
 
-static int calc_util_delta(struct energy_env *eenv, int cpu)
-{
-	if (cpu == eenv->src_cpu)
-		return -eenv->util_delta;
-	if (cpu == eenv->dst_cpu)
-		return eenv->util_delta;
-	return 0;
-}
-
-
 static unsigned long group_max_util(struct energy_env *eenv)
 {
 	unsigned long max_util = 0;
@@ -10060,7 +10050,6 @@ static void propagate_entity_cfs_rq(struct sched_entity *se) { }
 static void detach_entity_cfs_rq(struct sched_entity *se)
 {
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
-        u64 now = cfs_rq_clock_task(cfs_rq);
 
 	/* Catch up with the cfs_rq and remove our load when we leave */
         update_load_avg(se, 0);
