@@ -18,6 +18,8 @@
 
 #include <linux/slab.h>
 
+#include "walt.h"
+
 struct dl_bandwidth def_dl_bandwidth;
 
 static inline struct task_struct *dl_task_of(struct sched_dl_entity *dl_se)
@@ -88,7 +90,7 @@ void init_dl_bw(struct dl_bw *dl_b)
 	dl_b->total_bw = 0;
 }
 
-void init_dl_rq(struct dl_rq *dl_rq, struct rq *rq)
+void init_dl_rq(struct dl_rq *dl_rq)
 {
 	dl_rq->rb_root = RB_ROOT;
 
@@ -232,17 +234,9 @@ static inline bool need_pull_dl_task(struct rq *rq, struct task_struct *prev)
 	return dl_task(prev);
 }
 
-static DEFINE_PER_CPU(struct callback_head, dl_balance_head);
-
-static void push_dl_tasks(struct rq *);
-
-static inline void queue_push_tasks(struct rq *rq)
+static inline void set_post_schedule(struct rq *rq)
 {
-	if (!has_pushable_dl_tasks(rq))
- 		return;
-
- 	queue_balance_callback(rq, &per_cpu(dl_balance_head, rq->cpu),
- 		push_dl_tasks);
+	rq->post_schedule = has_pushable_dl_tasks(rq);
 }
 
 static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq);
@@ -328,7 +322,7 @@ static inline int pull_dl_task(struct rq *rq)
 	return 0;
 }
 
-static inline void queue_push_tasks(struct rq *rq)
+static inline void set_post_schedule(struct rq *rq)
 {
 }
 #endif /* CONFIG_SMP */
@@ -894,6 +888,7 @@ void inc_dl_tasks(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
 	WARN_ON(!dl_prio(prio));
 	dl_rq->dl_nr_running++;
 	add_nr_running(rq_of_dl_rq(dl_rq), 1);
+        walt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));
 
 	inc_dl_deadline(dl_rq, deadline);
 	inc_dl_migration(dl_se, dl_rq);
@@ -908,6 +903,7 @@ void dec_dl_tasks(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
 	WARN_ON(!dl_rq->dl_nr_running);
 	dl_rq->dl_nr_running--;
 	sub_nr_running(rq_of_dl_rq(dl_rq), 1);
+        walt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));
 
 	dec_dl_deadline(dl_rq, dl_se->deadline);
 	dec_dl_migration(dl_se, dl_rq);
@@ -1071,12 +1067,13 @@ static void yield_task_dl(struct rq *rq)
 static int find_later_rq(struct task_struct *task);
 
 static int
-select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags,
+ 		  int sibling_count_hint)
 {
 	struct task_struct *curr;
 	struct rq *rq;
 
-	if (sd_flag != SD_BALANCE_WAKE && sd_flag != SD_BALANCE_FORK)
+	if (sd_flag != SD_BALANCE_WAKE)
 		goto out;
 
 	rq = cpu_rq(cpu);
@@ -1219,7 +1216,7 @@ struct task_struct *pick_next_task_dl(struct rq *rq, struct task_struct *prev)
 		start_hrtick_dl(rq, p);
 #endif
 
-	queue_push_tasks(rq);
+	set_post_schedule(rq);
 
 	return p;
 }
@@ -1310,6 +1307,32 @@ next_node:
 	}
 
 	return NULL;
+}
+
+/*
+ * Return the earliest pushable rq's task, which is suitable to be executed
+ * on the CPU, NULL otherwise:
+ */
+static struct task_struct *pick_earliest_pushable_dl_task(struct rq *rq, int cpu)
+{
+ 	struct rb_node *next_node = rq->dl.pushable_dl_tasks_leftmost;
+ 	struct task_struct *p = NULL;
+
+ 	if (!has_pushable_dl_tasks(rq))
+ 		return NULL;
+
+next_node:
+ 	if (next_node) {
+ 		p = rb_entry(next_node, struct task_struct, pushable_dl_tasks);
+
+ 		if (pick_dl_task(rq, p, cpu))
+ 			return p;
+
+ 		next_node = rb_next(next_node);
+ 		goto next_node;
+ 	}
+
+ 	return NULL;
 }
 
 static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask_dl);
@@ -1538,7 +1561,9 @@ retry:
 
 	deactivate_task(rq, next_task, 0);
         clear_average_bw(&next_task->dl, &rq->dl);
+        next_task->on_rq = TASK_ON_RQ_MIGRATING;
 	set_task_cpu(next_task, later_rq->cpu);
+        next_task->on_rq = TASK_ON_RQ_QUEUED;
         add_average_bw(&next_task->dl, &later_rq->dl);
 	activate_task(later_rq, next_task, 0);
 
@@ -1600,7 +1625,7 @@ static int pull_dl_task(struct rq *this_rq)
 		if (src_rq->dl.dl_nr_running <= 1)
 			goto skip;
 
-		p = pick_next_earliest_dl_task(src_rq, this_cpu);
+		p = pick_earliest_pushable_dl_task(src_rq, this_cpu);
 
 		/*
 		 * We found a task to be pulled if:
@@ -1626,7 +1651,9 @@ static int pull_dl_task(struct rq *this_rq)
 
 			deactivate_task(src_rq, p, 0);
                         clear_average_bw(&p->dl, &src_rq->dl);
+                        p->on_rq = TASK_ON_RQ_MIGRATING;
 			set_task_cpu(p, this_cpu);
+                        p->on_rq = TASK_ON_RQ_QUEUED;
                         add_average_bw(&p->dl, &this_rq->dl);
 			activate_task(this_rq, p, 0);
 			dmin = p->dl.deadline;
@@ -1640,6 +1667,10 @@ skip:
 	return ret;
 }
 
+static void post_schedule_dl(struct rq *rq)
+{
+ 	push_dl_tasks(rq);
+}
 
 /*
  * Since the task is not running and a reschedule is not going to happen
@@ -1841,6 +1872,7 @@ const struct sched_class dl_sched_class = {
 	.set_cpus_allowed       = set_cpus_allowed_dl,
 	.rq_online              = rq_online_dl,
 	.rq_offline             = rq_offline_dl,
+        .post_schedule		= post_schedule_dl,
 	.task_woken		= task_woken_dl,
 #endif
 

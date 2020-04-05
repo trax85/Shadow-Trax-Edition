@@ -170,6 +170,7 @@ extern int nr_threads;
 DECLARE_PER_CPU(unsigned long, process_counts);
 extern int nr_processes(void);
 extern unsigned long nr_running(void);
+extern bool cpu_has_rt_task(int cpu);
 extern bool single_task_running(void);
 extern bool cpu_has_rt_task(int cpu);
 extern unsigned long nr_iowait(void);
@@ -966,49 +967,49 @@ struct sched_capacity_reqs {
 	unsigned long total;
 };
 
-
 /*
- * Wake-queues are lists of tasks with a pending wakeup, whose
- * callers have already marked the task as woken internally,
- * and can thus carry on. A common use case is being able to
- * do the wakeups once the corresponding user lock as been
- * released.
- *
- * We hold reference to each task in the list across the wakeup,
- * thus guaranteeing that the memory is still valid by the time
- * the actual wakeups are performed in wake_up_q().
- *
- * One per task suffices, because there's never a need for a task to be
- * in two wake queues simultaneously; it is forbidden to abandon a task
- * in a wake queue (a call to wake_up_q() _must_ follow), so if a task is
- * already in a wake queue, the wakeup will happen soon and the second
- * waker can just skip it.
- *
- * The WAKE_Q macro declares and initializes the list head.
- * wake_up_q() does NOT reinitialize the list; it's expected to be
- * called near the end of a function, where the fact that the queue is
- * not used again will be easy to see by inspection.
- *
- * Note that this can cause spurious wakeups. schedule() callers
- * must ensure the call is done inside a loop, confirming that the
- * wakeup condition has in fact occurred.
- */
+  * Wake-queues are lists of tasks with a pending wakeup, whose
+  * callers have already marked the task as woken internally,
+  * and can thus carry on. A common use case is being able to
+  * do the wakeups once the corresponding user lock as been
+  * released.
+  *
+  * We hold reference to each task in the list across the wakeup,
+  * thus guaranteeing that the memory is still valid by the time
+  * the actual wakeups are performed in wake_up_q().
+  *
+  * One per task suffices, because there's never a need for a task to be
+  * in two wake queues simultaneously; it is forbidden to abandon a task
+  * in a wake queue (a call to wake_up_q() _must_ follow), so if a task is
+  * already in a wake queue, the wakeup will happen soon and the second
+  * waker can just skip it.
+  *
+  * The WAKE_Q macro declares and initializes the list head.
+  * wake_up_q() does NOT reinitialize the list; it's expected to be
+  * called near the end of a function, where the fact that the queue is
+  * not used again will be easy to see by inspection.
+  *
+  * Note that this can cause spurious wakeups. schedule() callers
+  * must ensure the call is done inside a loop, confirming that the
+  * wakeup condition has in fact occurred.
+  */
 struct wake_q_node {
-	struct wake_q_node *next;
+ 	struct wake_q_node *next;
 };
 
 struct wake_q_head {
-	struct wake_q_node *first;
-	struct wake_q_node **lastp;
+ 	struct wake_q_node *first;
+ 	struct wake_q_node **lastp;
+        int count;
 };
 
 #define WAKE_Q_TAIL ((struct wake_q_node *) 0x01)
 
 #define WAKE_Q(name)					\
-	struct wake_q_head name = { WAKE_Q_TAIL, &name.first }
+ 	struct wake_q_head name = { WAKE_Q_TAIL, &name.first, 0 }
 
 extern void wake_q_add(struct wake_q_head *head,
-		       struct task_struct *task);
+ 		       struct task_struct *task);
 extern void wake_up_q(struct wake_q_head *head);
 
 /*
@@ -1087,6 +1088,37 @@ unsigned long capacity_curr_of(int cpu);
 
 struct sched_group;
 
+struct eas_stats {
+ 	/* select_idle_sibling() stats */
+ 	u64 sis_attempts;
+ 	u64 sis_idle;
+ 	u64 sis_cache_affine;
+ 	u64 sis_suff_cap;
+ 	u64 sis_idle_cpu;
+ 	u64 sis_count;
+
+ 	/* select_energy_cpu_brute() stats */
+ 	u64 secb_attempts;
+ 	u64 secb_sync;
+ 	u64 secb_idle_bt;
+ 	u64 secb_insuff_cap;
+ 	u64 secb_no_nrg_sav;
+ 	u64 secb_nrg_sav;
+ 	u64 secb_count;
+
+ 	/* find_best_target() stats */
+ 	u64 fbt_attempts;
+ 	u64 fbt_no_cpu;
+ 	u64 fbt_no_sd;
+ 	u64 fbt_pref_idle;
+ 	u64 fbt_count;
+
+ 	/* cas */
+ 	/* select_task_rq_fair() stats */
+ 	u64 cas_attempts;
+ 	u64 cas_count;
+};
+
 struct sched_domain {
 	/* These fields must be setup */
 	struct sched_domain *parent;	/* top domain must be null terminated */
@@ -1147,6 +1179,7 @@ struct sched_domain {
 	unsigned int ttwu_wake_remote;
 	unsigned int ttwu_move_affine;
 	unsigned int ttwu_move_balance;
+        struct eas_stats eas_stats;
 #endif
 #ifdef CONFIG_SCHED_DEBUG
 	char *name;
@@ -1183,7 +1216,7 @@ bool cpus_share_cache(int this_cpu, int that_cpu);
 
 typedef const struct cpumask *(*sched_domain_mask_f)(int cpu);
 typedef int (*sched_domain_flags_f)(void);
-typedef const struct sched_group_energy *(*sched_domain_energy_f)(int cpu);
+typedef const struct sched_group_energy *const(*sched_domain_energy_f)(int cpu);
 
 #define SDTL_OVERLAP	0x01
 
@@ -1295,6 +1328,35 @@ struct sched_statistics {
 	u64			nr_wakeups_affine_attempts;
 	u64			nr_wakeups_passive;
 	u64			nr_wakeups_idle;
+ 
+        /* select_idle_sibling() */
+ 	u64			nr_wakeups_sis_attempts;
+ 	u64			nr_wakeups_sis_idle;
+ 	u64			nr_wakeups_sis_cache_affine;
+ 	u64			nr_wakeups_sis_suff_cap;
+ 	u64			nr_wakeups_sis_idle_cpu;
+ 	u64			nr_wakeups_sis_count;
+
+ 	/* energy_aware_wake_cpu() */
+ 	u64			nr_wakeups_secb_attempts;
+ 	u64			nr_wakeups_secb_sync;
+ 	u64			nr_wakeups_secb_idle_bt;
+ 	u64			nr_wakeups_secb_insuff_cap;
+ 	u64			nr_wakeups_secb_no_nrg_sav;
+ 	u64			nr_wakeups_secb_nrg_sav;
+ 	u64			nr_wakeups_secb_count;
+
+ 	/* find_best_target() */
+ 	u64			nr_wakeups_fbt_attempts;
+ 	u64			nr_wakeups_fbt_no_cpu;
+ 	u64			nr_wakeups_fbt_no_sd;
+ 	u64			nr_wakeups_fbt_pref_idle;
+ 	u64			nr_wakeups_fbt_count;
+
+ 	/* cas */
+ 	/* select_task_rq_fair() */
+ 	u64			nr_wakeups_cas_attempts;
+ 	u64			nr_wakeups_cas_count;
 };
 #endif
 
@@ -1372,10 +1434,15 @@ struct sched_rt_entity {
 	unsigned long timeout;
 	unsigned long watchdog_stamp;
 	unsigned int time_slice;
-        bool schedtune_enqueued;
- 	struct hrtimer schedtune_timer;
+        unsigned short on_rq;
+ 	unsigned short on_list;
 
+        struct hrtimer schedtune_timer;
+        
+	/* Accesses for these must be guarded by rq->lock of the task's rq */
+	bool schedtune_enqueued;
 	struct sched_rt_entity *back;
+
 #ifdef CONFIG_RT_GROUP_SCHED
 	struct sched_rt_entity	*parent;
 	/* rq on which this entity is (to be) queued: */
@@ -1481,6 +1548,7 @@ struct task_struct {
  	 * of this task
  	 */
  	u32 init_load_pct;
+        u64 last_sleep_ts;
 #endif
 
 #ifdef CONFIG_CGROUP_SCHED
@@ -1680,7 +1748,7 @@ struct task_struct {
 
 	/* Protection of the PI data structures: */
 	raw_spinlock_t pi_lock;
-
+       
 	struct wake_q_node wake_q;
 
 #ifdef CONFIG_RT_MUTEXES
@@ -2209,6 +2277,7 @@ static inline int sched_update_freq_max_load(const cpumask_t *cpumask)
 #define PF_KTHREAD	0x00200000	/* I am a kernel thread */
 #define PF_RANDOMIZE	0x00400000	/* randomize virtual address space */
 #define PF_SWAPWRITE	0x00800000	/* Allowed to write to swap */
+#define PF_LOW_POWER	0x02000000	/* Thread is low-power */
 #define PF_NO_SETAFFINITY 0x04000000	/* Userland is not allowed to meddle with cpus_allowed */
 #define PF_MCE_EARLY    0x08000000      /* Early kill for mce process policy */
 #define PF_SPREAD_PAGE  0x01000000
