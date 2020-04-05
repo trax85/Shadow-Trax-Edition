@@ -27,6 +27,7 @@
 #include <linux/sort.h>
 #include <linux/sw_sync.h>
 #include <linux/kmemleak.h>
+#include <linux/devfreq_boost.h>
 
 #include <linux/msm_iommu_domains.h>
 #include <soc/qcom/event_timer.h>
@@ -53,6 +54,9 @@
 #define PIPE_CLEANUP_TIMEOUT_US 100000
 #define MAX_CURSOR_IMG_WIDTH 512
 #define MAX_CURSOR_IMG_HEIGHT 512
+
+static unsigned int frame_boost = 0;
+module_param(frame_boost, uint, 0644);
 
 static int mdss_mdp_overlay_free_fb_pipe(struct msm_fb_data_type *mfd);
 static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd);
@@ -4257,6 +4261,9 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 	}
 
 	pr_debug("prepare fb%d num_ovs=%d\n", mfd->index, num_ovs);
+
+        if(frame_boost)
+ 		devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 200);
 
 	for (i = 0; i < num_ovs; i++) {
 		if (IS_RIGHT_MIXER_OV(ip_ovs[i].flags, ip_ovs[i].dst_rect.x,

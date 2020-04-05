@@ -62,6 +62,7 @@
 #include <linux/page-debug-flags.h>
 #include <linux/hugetlb.h>
 #include <linux/sched/rt.h>
+#include <linux/cpu_boost.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>

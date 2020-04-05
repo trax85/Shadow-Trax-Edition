@@ -12,6 +12,8 @@
 #include <linux/oom.h>
 #include <linux/sort.h>
 #include <linux/version.h>
+#include <linux/state_notifier.h>
+#include <linux/cpu_boost.h>
 
 /* The sched_param struct is located elsewhere in newer kernels */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
@@ -219,7 +221,10 @@ static void scan_and_kill(unsigned long pages_needed)
 		pr_info("Killing %s with adj %d to free %lu KiB\n", vtsk->comm,
 			vtsk->signal->oom_score_adj,
 			victim->size << (PAGE_SHIFT - 10));
-
+                
+                if (!state_suspended) {
+ 			do_input_boost_max();
+ 		}
 		/* Accelerate the victim's death by forcing the kill signal */
 		do_send_sig_info(SIGKILL, SIG_INFO_TYPE, vtsk, KILL_GROUP_TYPE);
 
@@ -279,9 +284,13 @@ static int simple_lmk_reclaim_thread(void *data)
 	return 0;
 }
 
+static int aggression = CONFIG_ANDROID_SIMPLE_LMK_AGGRESSION ;
+
+module_param_named(aggression, aggression, int, 0644);
+
 void simple_lmk_decide_reclaim(int kswapd_priority)
 {
-	if (kswapd_priority != CONFIG_ANDROID_SIMPLE_LMK_AGGRESSION)
+	if (kswapd_priority != aggression)
 		return;
 
 	if (!cmpxchg(&needs_reclaim, false, true))

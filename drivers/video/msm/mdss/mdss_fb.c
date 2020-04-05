@@ -50,6 +50,7 @@
 
 #include <linux/qcom_iommu.h>
 #include <linux/msm_iommu_domains.h>
+#include <linux/devfreq_boost.h>
 
 #ifdef CONFIG_MACH_XIAOMI_KENZO
 #include "mdss_dsi.h"
@@ -3916,6 +3917,7 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 		break;
 
 	case MSMFB_DISPLAY_COMMIT:
+                devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
 		ret = mdss_fb_display_commit(info, argp);
 		break;
 
