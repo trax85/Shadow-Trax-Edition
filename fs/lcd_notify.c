@@ -50,4 +50,3 @@ int lcd_notifier_call_chain(unsigned long val, void *v)
 	return blocking_notifier_call_chain(&lcd_notifier_list, val, v);
 }
 EXPORT_SYMBOL_GPL(lcd_notifier_call_chain);
-
