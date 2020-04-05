@@ -26,7 +26,7 @@
 #define DEVFREQ_GOV_RESUME			0x5
 
 /* Caution: devfreq->lock must be locked before calling update_devfreq */
-extern int update_devfreq(struct devfreq *devfreq);
+//extern int update_devfreq(struct devfreq *devfreq);
 
 extern void devfreq_monitor_start(struct devfreq *devfreq);
 extern void devfreq_monitor_stop(struct devfreq *devfreq);

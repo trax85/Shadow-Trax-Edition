@@ -179,6 +179,8 @@ struct devfreq {
 	unsigned long *time_in_state;
 	unsigned long last_stat_updated;
         bool do_wake_boost;
+        bool is_boost_device;
+ 	bool max_boost;
 };
 
 #if defined(CONFIG_PM_DEVFREQ)
@@ -221,6 +223,8 @@ struct devfreq_simple_ondemand_data {
 	unsigned int simple_scaling;
 };
 #endif
+/* Caution: devfreq->lock must be locked before calling update_devfreq */
+extern int update_devfreq(struct devfreq *devfreq);
 
 #else /* !CONFIG_PM_DEVFREQ */
 static inline struct devfreq *devfreq_add_device(struct device *dev,
@@ -262,6 +266,11 @@ static inline int devfreq_unregister_opp_notifier(struct device *dev,
 					   struct devfreq *devfreq)
 {
 	return -EINVAL;
+}
+
+static inline int update_devfreq(struct devfreq *devfreq)
+{
+ 	return -EINVAL;
 }
 
 #endif /* CONFIG_PM_DEVFREQ */
