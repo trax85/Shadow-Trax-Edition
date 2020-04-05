@@ -116,6 +116,7 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
 #define clear_need_resched()	clear_thread_flag(TIF_NEED_RESCHED)
 
 #define tif_need_resched() test_thread_flag(TIF_NEED_RESCHED)
+#define tif_need_resched_relaxed() test_thread_flag_relaxed(TIF_NEED_RESCHED)
 
 #if defined TIF_RESTORE_SIGMASK && !defined HAVE_SET_RESTORE_SIGMASK
 /*

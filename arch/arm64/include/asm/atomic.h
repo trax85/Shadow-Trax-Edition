@@ -4,6 +4,7 @@
  * Copyright (C) 1996 Russell King.
  * Copyright (C) 2002 Deep Blue Solutions Ltd.
  * Copyright (C) 2012 ARM Ltd.
+ * Copyright (C) 2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -37,6 +38,45 @@
  */
 #define atomic_read(v)	(*(volatile int *)&(v)->counter)
 #define atomic_set(v,i)	(((v)->counter) = (i))
+
+
+#define cpu_relaxed_read_atomic(v)	ldax32((volatile int *)&(v->counter))
+
+/*
+ * Macros for generating inline functions to use special load and store
+ * instructions (exlusive and  aquire/release).
+ */
+
+#define _LD(_name, _type, _inst, _reg)					       \
+static inline _type _name (volatile _type *p)				       \
+{									       \
+	_type ret;							       \
+ 	asm volatile(							       \
+ 		_inst " %" _reg "0, %1": "=&r" (ret) : "Q" (*p) : "memory");   \
+ 	return ret;							       \
+}
+
+#define _STX(_name, _type, _inst, _reg)					       \
+static inline int _name (volatile _type *p, _type v)			       \
+{									       \
+ 	int ret;							       \
+ 	asm volatile(							       \
+ 		 _inst " %" _reg "0, %" _reg "1, %2"			       \
+ 		: "=&r" (ret)						       \
+ 		: "r" (v), "Q" (*p)					       \
+ 		: "memory");						       \
+ 	return ret;							       \
+}
+
+#define _STL(_name, _type, _inst, _reg)					       \
+static inline void _name (volatile _type *p, _type v)			       \
+{									       \
+ 	asm volatile(							       \
+ 		 _inst " %" _reg "0, %1"				       \
+ 		:							       \
+ 		: "r" (v), "Q" (*p)					       \
+ 		: "memory");						       \
+}
 
 /*
   * Macros for generating inline functions to use special load and store
