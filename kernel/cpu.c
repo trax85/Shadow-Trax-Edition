@@ -19,6 +19,7 @@
 #include <linux/mutex.h>
 #include <linux/gfp.h>
 #include <linux/suspend.h>
+#include <linux/interrupt.h>
 
 #include <trace/events/sched.h>
 
@@ -367,12 +368,14 @@ out_release:
 
 int __ref cpu_down(unsigned int cpu)
 {
-	const unsigned int blocked_cpus = 0xf;
+        struct cpumask newmask;
 	int err;
 
-	/* kthreads and workqueues require the little cluster to stay online */
-	if ((cpu == 0 || cpu == 1 || cpu == 2 || cpu == 4) & blocked_cpus)
-		return -EINVAL;
+	cpumask_andnot(&newmask, cpu_online_mask, cpumask_of(cpu));
+ 	/* One big cluster CPU and one little cluster CPU must remain online */
+ 	if (!cpumask_intersects(&newmask, cpu_perf_mask) ||
+ 		!cpumask_intersects(&newmask, cpu_lp_mask))
+ 		return -EINVAL;
 
 	cpu_maps_update_begin();
 
@@ -508,6 +511,7 @@ int disable_nonboot_cpus(void)
 {
 	int cpu, first_cpu, error = 0;
 
+        unaffine_perf_irqs();
 	cpu_maps_update_begin();
 	first_cpu = cpumask_first(cpu_online_mask);
 	/*
@@ -577,6 +581,7 @@ void __ref enable_nonboot_cpus(void)
 	cpumask_clear(frozen_cpus);
 out:
 	cpu_maps_update_done();
+        reaffine_perf_irqs();
 }
 
 static int __init alloc_frozen_cpus(void)
