@@ -21,7 +21,7 @@ on property:persist.spectrum.profile=0
     write /sys/devices/system/cpu/cpu4/online 1
     write /sys/devices/system/cpu/cpu5/online 1
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1401000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 0
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 100
@@ -33,7 +33,7 @@ on property:persist.spectrum.profile=0
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 0
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
     write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor "interactive"
-    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 883200
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1612000
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay "19000 1382400:39000"
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 95
@@ -44,13 +44,10 @@ on property:persist.spectrum.profile=0
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 0
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 0
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
-    write /sys/module/lazyplug/parameters/lazyplug_active 1
-    write /sys/module/lazyplug/parameters/nr_run_profile_sel 4
-    write /sys/module/lazyplug/parameters/nr_run_hysteresis 6
-    write /sys/module/lazyplug/parameters/cpu_nr_run_threshold 500
-    write /sys/module/cpu_boost/parameters/input_boost_enabled 1
+    write /sys/module/cpu_boost/parameters/input_boost_enabled 0
     write /sys/module/cpu_boost/parameters/input_boost_freq "0:691000 1:806000 "
     write /sys/module/cpu_boost/parameters/input_boost_ms 10
+    write /sys/module/cpu_boost/parameters/input_devfreq_boost 1
     write /sys/module/msm_performance/parameters/touchboost 0
     write /sys/module/adreno_idler/parameters/adreno_idler_active Y
     write /sys/class/kgsl/kgsl-3d0/max_gpuclk 550000000
@@ -86,7 +83,7 @@ on property:persist.spectrum.profile=1
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1536000
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 1017600:50 1190400:60 1305600:70 1382400:80 1401600:90"
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
-    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 1
+    write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
     write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
     write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor "interactive"
@@ -98,14 +95,14 @@ on property:persist.spectrum.profile=1
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1382400
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads "75 1382400:80 1747200:85"
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000
-    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 1
+    write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1
     write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1
     write /sys/module/cpu_boost/parameters/boost_ms 250
     write /sys/module/cpu_boost/parameters/input_boost_enabled 1
     write /sys/module/cpu_boost/parameters/input_boost_freq "0:1305600 4:1305600"
     write /sys/module/cpu_boost/parameters/input_boost_ms 80
-    write /sys/module/lazyplug/parameters/lazyplug_active 0
+    write /sys/module/cpu_boost/parameters/input_devfreq_boost 1
     write /sys/module/msm_performance/parameters/touchboost 1
     write /sys/module/adreno_idler/parameters/adreno_idler_active N
     write /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
@@ -127,12 +124,12 @@ on property:persist.spectrum.profile=1
 on property:persist.spectrum.profile=2
     write /sys/devices/system/cpu/cpu0/online 1
     write /sys/devices/system/cpu/cpu1/online 1
-    write /sys/devices/system/cpu/cpu2/online 1
+    write /sys/devices/system/cpu/cpu2/online 0
     write /sys/devices/system/cpu/cpu3/online 1
-    write /sys/devices/system/cpu/cpu4/online 1
+    write /sys/devices/system/cpu/cpu4/online 0
     write /sys/devices/system/cpu/cpu5/online 1
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "cultivation"
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1305600
     write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/go_hispeed_load 99
     write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/above_hispeed_delay 30000
@@ -147,7 +144,7 @@ on property:persist.spectrum.profile=2
     write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/target_loads "60 400000:25 691200:40 1017600:55 1190400:85 1305600:99"
     write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/use_sched_load 0
     write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor "cultivation"
-    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 883200
+    write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 400000
     write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1305600
     write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/go_hispeed_load 99
     write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/above_hispeed_delay 25000
@@ -164,14 +161,11 @@ on property:persist.spectrum.profile=2
     write /sys/module/cpu_boost/parameters/input_boost_enabled 0
     write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0 4:0 5:0"
     write /sys/module/cpu_boost/parameters/input_boost_ms 0
+    write /sys/module/cpu_boost/parameters/input_devfreq_boost 0
     write /sys/module/msm_performance/parameters/touchboost 0
     write /sys/module/adreno_idler/parameters/adreno_idler_active Y
     write /sys/class/kgsl/kgsl-3d0/max_gpuclk 432000000
     write /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
-    write /sys/module/lazyplug/parameters/lazyplug_active 1
-    write /sys/module/lazyplug/parameters/nr_run_profile_sel 6
-    write /sys/module/lazyplug/parameters/nr_run_hysteresis 6
-    write /sys/module/lazyplug/parameters/cpu_nr_run_threshold 500
     write /sys/block/mmcblk0/queue/scheduler noop
     write /sys/block/mmcblk1/queue/scheduler noop
     write /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost 0
@@ -220,8 +214,8 @@ on property:persist.spectrum.profile=3
     write /sys/module/cpu_boost/parameters/input_boost_enabled 1
     write /sys/module/cpu_boost/parameters/input_boost_freq "0:1305600 1:1305600 2:1305600 3:1305600 4:1190400 5:1190400"
     write /sys/module/cpu_boost/parameters/input_boost_ms 500
+    write /sys/module/cpu_boost/parameters/input_devfreq_boost 1
     write /sys/module/adreno_idler/parameters/adreno_idler_active N
-    write /sys/module/lazyplug/parameters/lazyplug_active 0
     write /sys/class/kgsl/kgsl-3d0/max_gpuclk 753333333
     write /sys/class/kgsl/kgsl-3d0/devfreq/governor msm-adreno-tz
     write /sys/block/mmcblk0/queue/scheduler deadline
