@@ -15,10 +15,8 @@
 #ifndef _ZRAM_DRV_H_
 #define _ZRAM_DRV_H_
 
-
-#include <linux/rwsem.h>
+#include <linux/spinlock.h>
 #include <linux/zsmalloc.h>
-#include <linux/crypto.h>
 
 #include "zcomp.h"
 
@@ -111,6 +109,7 @@ struct zram {
 	 * the number of pages zram can consume for storing compressed data
 	 */
 	unsigned long limit_pages;
+	int max_comp_streams;
 
 	struct zram_stats stats;
 	atomic_t refcount; /* refcount for zram_meta */
@@ -121,6 +120,6 @@ struct zram {
 	 * we can store in a disk.
 	 */
 	u64 disksize;	/* bytes */
-	char compressor[CRYPTO_MAX_ALG_NAME];
+	char compressor[10];
 };
 #endif
