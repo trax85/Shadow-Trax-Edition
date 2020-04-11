@@ -171,13 +171,10 @@ int autoremove_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *
 }
 EXPORT_SYMBOL(autoremove_wake_function);
 
-
-
 static inline bool is_kthread_should_stop(void)
 {
 	return (current->flags & PF_KTHREAD) && kthread_should_stop();
 }
-
 
 /*
  * DEFINE_WAIT_FUNC(wait, woken_wake_func);
@@ -207,8 +204,8 @@ long wait_woken(wait_queue_t *wait, unsigned mode, long timeout)
 	 * woken_wake_function() such that if we observe WQ_FLAG_WOKEN we must
 	 * also observe all state before the wakeup.
 	 */
-
 	if (!(wait->flags & WQ_FLAG_WOKEN) && !is_kthread_should_stop())
+
 		timeout = schedule_timeout(timeout);
 	__set_current_state(TASK_RUNNING);
 
@@ -239,7 +236,6 @@ int woken_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key)
 	return default_wake_function(wait, mode, sync, key);
 }
 EXPORT_SYMBOL(woken_wake_function);
-
 
 int wake_bit_function(wait_queue_t *wait, unsigned mode, int sync, void *arg)
 {
@@ -338,7 +334,7 @@ EXPORT_SYMBOL(__wake_up_bit);
  *
  * In order for this to function properly, as it uses waitqueue_active()
  * internally, some kind of memory barrier must be done prior to calling
- * this. Typically, this will be smp_mb__after_atomic(), but in some
+ * this. Typically, this will be smp_mb__after_clear_bit(), but in some
  * cases where bitflags are manipulated non-atomically under a lock, one
  * may need to use a less regular barrier, such fs/inode.c's smp_mb(),
  * because spin_unlock() does not guarantee a memory barrier.

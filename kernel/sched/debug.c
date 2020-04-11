@@ -68,9 +68,8 @@ static void print_cfs_group_stats(struct seq_file *m, int cpu, struct task_group
 #define PN(F) \
 	SEQ_printf(m, "  .%-30s: %lld.%06ld\n", #F, SPLIT_NS((long long)F))
 
-	if (!se) 
+	if (!se)
 		return;
-
 
 	PN(se->exec_start);
 	PN(se->vruntime);
@@ -90,7 +89,7 @@ static void print_cfs_group_stats(struct seq_file *m, int cpu, struct task_group
 	P(se->load.weight);
 #ifdef CONFIG_SMP
 	P(se->avg.load_avg);
- 	P(se->avg.util_avg);
+	P(se->avg.util_avg);
 #endif
 #undef PN
 #undef P
@@ -594,32 +593,32 @@ void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 	P(se.statistics.nr_wakeups_affine_attempts);
 	P(se.statistics.nr_wakeups_passive);
 	P(se.statistics.nr_wakeups_idle);
-        /* eas */
- 	/* select_idle_sibling() */
- 	P(se.statistics.nr_wakeups_sis_attempts);
- 	P(se.statistics.nr_wakeups_sis_idle);
- 	P(se.statistics.nr_wakeups_sis_cache_affine);
- 	P(se.statistics.nr_wakeups_sis_suff_cap);
- 	P(se.statistics.nr_wakeups_sis_idle_cpu);
- 	P(se.statistics.nr_wakeups_sis_count);
- 	/* select_energy_cpu_brute() */
- 	P(se.statistics.nr_wakeups_secb_attempts);
- 	P(se.statistics.nr_wakeups_secb_sync);
- 	P(se.statistics.nr_wakeups_secb_idle_bt);
- 	P(se.statistics.nr_wakeups_secb_insuff_cap);
- 	P(se.statistics.nr_wakeups_secb_no_nrg_sav);
- 	P(se.statistics.nr_wakeups_secb_nrg_sav);
- 	P(se.statistics.nr_wakeups_secb_count);
- 	/* find_best_target() */
- 	P(se.statistics.nr_wakeups_fbt_attempts);
- 	P(se.statistics.nr_wakeups_fbt_no_cpu);
- 	P(se.statistics.nr_wakeups_fbt_no_sd);
- 	P(se.statistics.nr_wakeups_fbt_pref_idle);
- 	P(se.statistics.nr_wakeups_fbt_count);
- 	/* cas */
- 	/* select_task_rq_fair() */
- 	P(se.statistics.nr_wakeups_cas_attempts);
- 	P(se.statistics.nr_wakeups_cas_count);
+	/* eas */
+	/* select_idle_sibling() */
+	P(se.statistics.nr_wakeups_sis_attempts);
+	P(se.statistics.nr_wakeups_sis_idle);
+	P(se.statistics.nr_wakeups_sis_cache_affine);
+	P(se.statistics.nr_wakeups_sis_suff_cap);
+	P(se.statistics.nr_wakeups_sis_idle_cpu);
+	P(se.statistics.nr_wakeups_sis_count);
+	/* select_energy_cpu_brute() */
+	P(se.statistics.nr_wakeups_secb_attempts);
+	P(se.statistics.nr_wakeups_secb_sync);
+	P(se.statistics.nr_wakeups_secb_idle_bt);
+	P(se.statistics.nr_wakeups_secb_insuff_cap);
+	P(se.statistics.nr_wakeups_secb_no_nrg_sav);
+	P(se.statistics.nr_wakeups_secb_nrg_sav);
+	P(se.statistics.nr_wakeups_secb_count);
+	/* find_best_target() */
+	P(se.statistics.nr_wakeups_fbt_attempts);
+	P(se.statistics.nr_wakeups_fbt_no_cpu);
+	P(se.statistics.nr_wakeups_fbt_no_sd);
+	P(se.statistics.nr_wakeups_fbt_pref_idle);
+	P(se.statistics.nr_wakeups_fbt_count);
+	/* cas */
+	/* select_task_rq_fair() */
+	P(se.statistics.nr_wakeups_cas_attempts);
+	P(se.statistics.nr_wakeups_cas_count);
 
 	{
 		u64 avg_atom, avg_per_cpu;
@@ -651,10 +650,10 @@ void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 	P(se.load.weight);
 #ifdef CONFIG_SMP
 	P(se.avg.load_sum);
- 	P(se.avg.util_sum);
- 	P(se.avg.load_avg);
- 	P(se.avg.util_avg);
- 	P(se.avg.last_update_time);
+	P(se.avg.util_sum);
+	P(se.avg.load_avg);
+	P(se.avg.util_avg);
+	P(se.avg.last_update_time);
 #endif
 	P(policy);
 	P(prio);
@@ -682,3 +681,4 @@ void proc_sched_set_task(struct task_struct *p)
 	memset(&p->se.statistics, 0, sizeof(p->se.statistics));
 #endif
 }
+

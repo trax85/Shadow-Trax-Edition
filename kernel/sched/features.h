@@ -49,18 +49,18 @@ SCHED_FEAT(NONTASK_CAPACITY, true)
  * Queue remote wakeups on the target CPU and process them
  * using the scheduler IPI. Reduces rq->lock contention/bounces.
  */
-SCHED_FEAT(TTWU_QUEUE, false)
+SCHED_FEAT(TTWU_QUEUE, true)
 
 #ifdef HAVE_RT_PUSH_IPI
- /*
-  * In order to avoid a thundering herd attack of CPUs that are
-  * lowering their priorities at the same time, and there being
-  * a single CPU that has an RT task that can migrate and is waiting
-  * to run, where the other CPUs will try to take that CPUs
-  * rq lock and possibly create a large contention, sending an
-  * IPI to that CPU and let that CPU push the RT task to where
-  * it should go may be a better scenario.
-  */
+/*
+ * In order to avoid a thundering herd attack of CPUs that are
+ * lowering their priorities at the same time, and there being
+ * a single CPU that has an RT task that can migrate and is waiting
+ * to run, where the other CPUs will try to take that CPUs
+ * rq lock and possibly create a large contention, sending an
+ * IPI to that CPU and let that CPU push the RT task to where
+ * it should go may be a better scenario.
+ */
 SCHED_FEAT(RT_PUSH_IPI, true)
 #endif
 
@@ -99,11 +99,22 @@ SCHED_FEAT(NUMA_RESIST_LOWER, false)
  * decisions optimizing for energy efficiency.
  */
 SCHED_FEAT(ENERGY_AWARE, true)
+
 /*
- * UtilEstimation. Use estimated CPU utilization.
+ * Minimum capacity capping. Keep track of minimum capacity factor when
+ * minimum frequency available to a policy is modified.
+ * If enabled, this can be used to inform the scheduler about capacity
+ * restrictions.
  */
-SCHED_FEAT(UTIL_EST, true)
-SCHED_FEAT(UTIL_EST_FASTUP, true)
+SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
+
+/*
+ * Inflate the effective utilization of SchedTune-boosted tasks, which
+ * generally leads to usage of higher frequencies.
+ * If disabled, boosts will only bias tasks to higher-capacity CPUs.
+ */
+SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, true)
+
 /*
  * Apply schedtune boost hold to tasks of all sched classes.
  * If enabled, schedtune will hold the boost applied to a CPU
@@ -114,16 +125,3 @@ SCHED_FEAT(UTIL_EST_FASTUP, true)
  * RT class.
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
-/*
- * Minimum capacity capping. Keep track of minimum capacity factor when
- * minimum frequency available to a policy is modified.
- * If enabled, this can be used to inform the scheduler about capacity
- * restrictions.
- */
-SCHED_FEAT(MIN_CAPACITY_CAPPING, true)
-/*
- * Inflate the effective utilization of SchedTune-boosted tasks, which
- * generally leads to usage of higher frequencies.
- * If disabled, boosts will only bias tasks to higher-capacity CPUs.
- */
-SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, true)

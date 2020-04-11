@@ -39,6 +39,8 @@ static struct notifier_block interactive_state_notif;
 #define CREATE_TRACE_POINTS
 #include <trace/events/cpufreq_interactive.h>
 
+ATOMIC_NOTIFIER_HEAD(load_alert_notifier_head);
+
 extern bool mdss_screen_on;
 
 struct cpufreq_interactive_policyinfo {

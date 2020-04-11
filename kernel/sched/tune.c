@@ -5,7 +5,6 @@
 #include <linux/printk.h>
 #include <linux/rcupdate.h>
 #include <linux/slab.h>
-#include <linux/list.h>
 
 #include <trace/events/sched.h>
 
@@ -16,102 +15,13 @@
 bool schedtune_initialized = false;
 #endif
 
+unsigned int sysctl_sched_cfs_boost __read_mostly;
+
 /* We hold schedtune boost in effect for at least this long */
 #define SCHEDTUNE_BOOST_HOLD_NS 50000000ULL
 
-unsigned int sysctl_sched_cfs_boost __read_mostly;
-
 extern struct reciprocal_value schedtune_spc_rdiv;
-
 extern struct target_nrg schedtune_target_nrg;
-
-extern struct target_nrg schedtune_target_nrg;
-
-/* Performance Boost region (B) threshold params */
-static int perf_boost_idx;
-
-/* Performance Constraint region (C) threshold params */
-static int perf_constrain_idx;
-
-/**
- * Performance-Energy (P-E) Space thresholds constants
- */
-struct threshold_params {
- 	int nrg_gain;
- 	int cap_gain;
-};
-
-/*
- * System specific P-E space thresholds constants
- */
-static struct threshold_params
-threshold_gains[] = {
-        { 0, 5 }, /*   < 10% */
- 	{ 1, 5 }, /*   < 20% */
- 	{ 2, 5 }, /*   < 30% */
- 	{ 3, 5 }, /*   < 40% */
- 	{ 4, 5 }, /*   < 50% */
- 	{ 5, 4 }, /*   < 60% */
- 	{ 5, 3 }, /*   < 70% */
- 	{ 5, 2 }, /*   < 80% */
- 	{ 5, 1 }, /*   < 90% */
- 	{ 5, 0 }  /* <= 100% */
-};
-
-static int
-__schedtune_accept_deltas(int nrg_delta, int cap_delta,
- 			  int perf_boost_idx, int perf_constrain_idx)
-{
- 	int payoff = -INT_MAX; 
-        int gain_idx = -1;
-          
-        /* Performance Boost (B) region */
- 	if (nrg_delta >= 0 && cap_delta > 0)
- 		gain_idx = perf_boost_idx;
- 	/* Performance Constraint (C) region */
- 	else if (nrg_delta < 0 && cap_delta <= 0)
- 		gain_idx = perf_constrain_idx;
-
- 	/* Default: reject schedule candidate */
- 	if (gain_idx == -1)
-                return payoff;
-  
-
-
-      /*
- 	 * Evaluate "Performance Boost" vs "Energy Increase"
- 	 *
- 	 * - Performance Boost (B) region
- 	 *
- 	 *   Condition: nrg_delta > 0 && cap_delta > 0
- 	 *   Payoff criteria:
- 	 *     cap_gain / nrg_gain  < cap_delta / nrg_delta =
- 	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
- 	 *   Note that since both nrg_gain and nrg_delta are positive, the
- 	 *   inequality does not change. Thus:
- 	 *
- 	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
- 	 *
- 	 * - Performance Constraint (C) region
- 	 *
- 	 *   Condition: nrg_delta < 0 && cap_delta < 0
- 	 *   payoff criteria:
- 	 *     cap_gain / nrg_gain  > cap_delta / nrg_delta =
- 	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
- 	 *   Note that since nrg_gain > 0 while nrg_delta < 0, the
- 	 *   inequality change. Thus:
- 	 *
- 	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
- 	 *
- 	 * This means that, in case of same positive defined {cap,nrg}_gain
- 	 * for both the B and C regions, we can use the same payoff formula
- 	 * where a positive value represents the accept condition.
- 	 */
- 	payoff  = cap_delta * threshold_gains[gain_idx].nrg_gain;
- 	payoff -= nrg_delta * threshold_gains[gain_idx].cap_gain;
-
-	return payoff;
-}
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 /* 
@@ -124,6 +34,90 @@ int default_topapp_boost = 0;
 struct cgroup_subsys_state *topapp_css;
 bool dynamic_schedtune_initialized = false;
 #endif /* CONFIG_DYNAMIC_STUNE_BOOST */
+
+/* Performance Boost region (B) threshold params */
+static int perf_boost_idx;
+
+/* Performance Constraint region (C) threshold params */
+static int perf_constrain_idx;
+
+/**
+ * Performance-Energy (P-E) Space thresholds constants
+ */
+struct threshold_params {
+	int nrg_gain;
+	int cap_gain;
+};
+
+/*
+ * System specific P-E space thresholds constants
+ */
+static struct threshold_params
+threshold_gains[] = {
+	{ 0, 5 }, /*   < 10% */
+	{ 1, 5 }, /*   < 20% */
+	{ 2, 5 }, /*   < 30% */
+	{ 3, 5 }, /*   < 40% */
+	{ 4, 5 }, /*   < 50% */
+	{ 5, 4 }, /*   < 60% */
+	{ 5, 3 }, /*   < 70% */
+	{ 5, 2 }, /*   < 80% */
+	{ 5, 1 }, /*   < 90% */
+	{ 5, 0 }  /* <= 100% */
+};
+
+static int
+__schedtune_accept_deltas(int nrg_delta, int cap_delta,
+			  int perf_boost_idx, int perf_constrain_idx)
+{
+	int payoff = -INT_MAX;
+	int gain_idx = -1;
+
+	/* Performance Boost (B) region */
+	if (nrg_delta >= 0 && cap_delta > 0)
+		gain_idx = perf_boost_idx;
+	/* Performance Constraint (C) region */
+	else if (nrg_delta < 0 && cap_delta <= 0)
+		gain_idx = perf_constrain_idx;
+
+	/* Default: reject schedule candidate */
+	if (gain_idx == -1)
+		return payoff;
+
+	/*
+	 * Evaluate "Performance Boost" vs "Energy Increase"
+	 *
+	 * - Performance Boost (B) region
+	 *
+	 *   Condition: nrg_delta > 0 && cap_delta > 0
+	 *   Payoff criteria:
+	 *     cap_gain / nrg_gain  < cap_delta / nrg_delta =
+	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
+	 *   Note that since both nrg_gain and nrg_delta are positive, the
+	 *   inequality does not change. Thus:
+	 *
+	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
+	 *
+	 * - Performance Constraint (C) region
+	 *
+	 *   Condition: nrg_delta < 0 && cap_delta < 0
+	 *   payoff criteria:
+	 *     cap_gain / nrg_gain  > cap_delta / nrg_delta =
+	 *     cap_gain * nrg_delta < cap_delta * nrg_gain
+	 *   Note that since nrg_gain > 0 while nrg_delta < 0, the
+	 *   inequality change. Thus:
+	 *
+	 *     payoff = (cap_delta * nrg_gain) - (cap_gain * nrg_delta)
+	 *
+	 * This means that, in case of same positive defined {cap,nrg}_gain
+	 * for both the B and C regions, we can use the same payoff formula
+	 * where a positive value represents the accept condition.
+	 */
+	payoff  = cap_delta * threshold_gains[gain_idx].nrg_gain;
+	payoff -= nrg_delta * threshold_gains[gain_idx].cap_gain;
+
+	return payoff;
+}
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
 
@@ -224,6 +218,13 @@ static inline struct schedtune *task_schedtune(struct task_struct *tsk)
 {
 	return cgroup_st(task_cgroup(tsk, schedtune_subsys_id));
 }
+
+#if 0
+static inline struct schedtune *parent_st(struct schedtune *st)
+{
+	return css_st(st->css.parent);
+}
+#endif
 
 /*
  * SchedTune root control group
@@ -334,28 +335,43 @@ schedtune_boost_group_active(int idx, struct boost_groups* bg, u64 now)
 }
 
 static void
-schedtune_cpu_update(int cpu)
+schedtune_cpu_update(int cpu, u64 now)
 {
 	struct boost_groups *bg;
+	u64 boost_ts = now;
 	int boost_max = INT_MIN;
 	int idx;
 
 	bg = &per_cpu(cpu_boost_groups, cpu);
 
 	for (idx = 0; idx < BOOSTGROUPS_COUNT; ++idx) {
+
+		/* Ignore non boostgroups not mapping a cgroup */
+		if (!bg->group[idx].valid)
+			continue;
+
 		/*
 		 * A boost group affects a CPU only if it has
-		 * RUNNABLE tasks on that CPU
+		 * RUNNABLE tasks on that CPU or it has hold
+		 * in effect from a previous task.
 		 */
-		if (bg->group[idx].tasks == 0)
+		if (!schedtune_boost_group_active(idx, bg, now))
 			continue;
-		boost_max = max(boost_max, bg->group[idx].boost);
+
+		/* this boost group is active */
+		if (boost_max > bg->group[idx].boost)
+			continue;
+
+		boost_max = bg->group[idx].boost;
+		boost_ts =  bg->group[idx].ts;
 	}
-   
-        /* If there are no active boost groups on the CPU, set no boost  */
- 	if (boost_max == INT_MIN)
- 		boost_max = 0;
+
+	/* If there are no active boost groups on the CPU, set no boost  */
+	if (boost_max == INT_MIN)
+		boost_max = 0;
+
 	bg->boost_max = boost_max;
+	bg->boost_ts = boost_ts;
 }
 
 static int
@@ -385,6 +401,7 @@ schedtune_boostgroup_update(int idx, int boost)
 		/* Update the boost value of this boost group */
 		bg->group[idx].boost = boost;
 
+		now = sched_clock_cpu(cpu);
 		/*
 		 * Check if this update increase current max.
 		 */
@@ -399,7 +416,7 @@ schedtune_boostgroup_update(int idx, int boost)
 
 		/* Check if this update has decreased current max */
 		if (cur_boost_max == old_boost && old_boost > boost) {
-			schedtune_cpu_update(cpu);
+			schedtune_cpu_update(cpu, now);
 			trace_sched_tune_boostgroup_update(cpu, -1, bg->boost_max);
 			continue;
 		}
@@ -425,18 +442,27 @@ schedtune_update_timestamp(struct task_struct *p)
 static inline void
 schedtune_tasks_update(struct task_struct *p, int cpu, int idx, int task_count)
 {
- 	struct boost_groups *bg = &per_cpu(cpu_boost_groups, cpu);
- 	int tasks = bg->group[idx].tasks + task_count;
+	struct boost_groups *bg = &per_cpu(cpu_boost_groups, cpu);
+	int tasks = bg->group[idx].tasks + task_count;
+	u64 now;
 
+	/* Update boosted tasks count while avoiding to make it negative */
+	bg->group[idx].tasks = max(0, tasks);
 
- 	/* Update boosted tasks count while avoiding to make it negative */
- 	bg->group[idx].tasks = max(0, tasks);
+	trace_sched_tune_tasks_update(p, cpu, tasks, idx,
+			bg->group[idx].boost, bg->boost_max);
 
-        /* Boost group activation or deactivation on that RQ */
- 	if (tasks == 1 || tasks == 0)
- 		schedtune_cpu_update(cpu);
+	/* Update timeout on enqueue */
+	if (task_count > 0) {
+		now = sched_clock_cpu(cpu);
+		if (schedtune_update_timestamp(p))
+			bg->group[idx].ts = now;
+
+		/* Boost group activation or deactivation on that RQ */
+		if (bg->group[idx].tasks == 1)
+			schedtune_cpu_update(cpu, now);
+	}
 }
-
 
 /*
  * NOTE: This function must be called while holding the lock on the CPU RQ
@@ -627,9 +653,16 @@ void schedtune_exit_task(struct task_struct *tsk)
 int schedtune_cpu_boost(int cpu)
 {
 	struct boost_groups *bg;
+	u64 now;
 
 	bg = &per_cpu(cpu_boost_groups, cpu);
- 	return bg->boost_max;
+	now = sched_clock_cpu(cpu);
+
+	/* check to see if we have a hold in effect */
+	if (schedtune_boost_timeout(now, bg->boost_ts))
+		schedtune_cpu_update(cpu, now);
+
+	return bg->boost_max;
 }
 
 int schedtune_task_boost(struct task_struct *p)
@@ -697,30 +730,29 @@ boost_write(struct cgroup *cgrp, struct cftype *cft,
 	    s64 boost)
 {
 	struct schedtune *st = cgroup_st(cgrp);
-        unsigned threshold_idx;
- 	int boost_pct;
+	unsigned threshold_idx;
+	int boost_pct;
 
 	if (boost < -100 || boost > 100)
 		return -EINVAL;
-        boost_pct = boost;
+	boost_pct = boost;
 
- 	/*
- 	 * Update threshold params for Performance Boost (B)
- 	 * and Performance Constraint (C) regions.
- 	 * The current implementatio uses the same cuts for both
- 	 * B and C regions.
- 	 */
- 	threshold_idx = clamp(boost_pct, 0, 99) / 10;
- 	st->perf_boost_idx = threshold_idx;
- 	st->perf_constrain_idx = threshold_idx;
+	/*
+	 * Update threshold params for Performance Boost (B)
+	 * and Performance Constraint (C) regions.
+	 * The current implementatio uses the same cuts for both
+	 * B and C regions.
+	 */
+	threshold_idx = clamp(boost_pct, 0, 99) / 10;
+	st->perf_boost_idx = threshold_idx;
+	st->perf_constrain_idx = threshold_idx;
 
 	st->boost = boost;
 	if (cgrp == (void *)&root_schedtune.css) {
 		sysctl_sched_cfs_boost = boost;
-                perf_boost_idx  = threshold_idx;
- 		perf_constrain_idx  = threshold_idx;
- 	}
-
+		perf_boost_idx  = threshold_idx;
+		perf_constrain_idx  = threshold_idx;
+	}
 
 	if (boost == 100)
 		boost = 99;
@@ -751,19 +783,17 @@ boost_write(struct cgroup *cgrp, struct cftype *cft,
 	return 0;
 }
 
-
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 int
 dynamic_boost_write(struct cgroup_subsys_state *css, int boost)
 {
-        struct schedtune *st;
 	/* if dynamic schedtune boost doesnt't have 
 	 * its topapp_css, return 
 	 */
 	if (!unlikely(dynamic_schedtune_initialized))
 		return -EINVAL;
 
-	st = css_st(css);
+	struct schedtune *st = css_st(css);
 	unsigned threshold_idx;
 	int boost_pct;
 
@@ -803,11 +833,11 @@ static struct cftype files[] = {
 		.read_s64 = boost_read,
 		.write_s64 = boost_write,
 	},
-        {
- 		.name = "prefer_idle",
- 		.read_u64 = prefer_idle_read,
- 		.write_u64 = prefer_idle_write,
- 	},
+	{
+		.name = "prefer_idle",
+		.read_u64 = prefer_idle_read,
+		.write_u64 = prefer_idle_write,
+	},
 	{ }	/* terminate */
 };
 
@@ -883,8 +913,15 @@ out:
 static void
 schedtune_boostgroup_release(struct schedtune *st)
 {
-	/* Reset this boost group */
-	schedtune_boostgroup_update(st->idx, 0);
+	struct boost_groups *bg;
+	int cpu;
+
+	/* Reset per CPUs boost group support */
+	for_each_possible_cpu(cpu) {
+		bg = &per_cpu(cpu_boost_groups, cpu);
+		bg->group[st->idx].valid = false;
+		bg->group[st->idx].boost = 0;
+	}
 
 	/* Keep track of allocated boost groups */
 	allocated_group[st->idx] = NULL;
@@ -933,19 +970,21 @@ struct cgroup_subsys schedtune_subsys = {
 static inline void
 schedtune_init_cgroups(void)
 {
- 	struct boost_groups *bg;
- 	int cpu;
+	struct boost_groups *bg;
+	int cpu;
 
- 	/* Initialize the per CPU boost groups */
- 	for_each_possible_cpu(cpu) {
- 		bg = &per_cpu(cpu_boost_groups, cpu);
- 		memset(bg, 0, sizeof(struct boost_groups));
-                raw_spin_lock_init(&bg->lock);
- 	}
+	/* Initialize the per CPU boost groups */
+	for_each_possible_cpu(cpu) {
+		bg = &per_cpu(cpu_boost_groups, cpu);
+		memset(bg, 0, sizeof(struct boost_groups));
+		bg->group[0].valid = true;
+		raw_spin_lock_init(&bg->lock);
+	}
 
- 	pr_info("schedtune: configured to support %d boost groups\n",
- 		BOOSTGROUPS_COUNT);
-        schedtune_initialized = true;
+	pr_info("schedtune: configured to support %d boost groups\n",
+		BOOSTGROUPS_COUNT);
+
+	schedtune_initialized = true;
 }
 
 #else /* CONFIG_CGROUP_SCHEDTUNE */
@@ -972,30 +1011,29 @@ schedtune_accept_deltas(int nrg_delta, int cap_delta,
 
 int
 sysctl_sched_cfs_boost_handler(struct ctl_table *table, int write,
-		void __user *buffer, size_t *lenp,
-		loff_t *ppos)
+			       void __user *buffer, size_t *lenp,
+			       loff_t *ppos)
 {
 	int ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
-        unsigned threshold_idx;
- 	int boost_pct;
+	unsigned threshold_idx;
+	int boost_pct;
 
 	if (ret || !write)
 		return ret;
 
 	if (sysctl_sched_cfs_boost < -100 || sysctl_sched_cfs_boost > 100)
- 		return -EINVAL;
- 	boost_pct = sysctl_sched_cfs_boost;
-
+		return -EINVAL;
+	boost_pct = sysctl_sched_cfs_boost;
 
 	/*
- 	 * Update threshold params for Performance Boost (B)
- 	 * and Performance Constraint (C) regions.
- 	 * The current implementatio uses the same cuts for both
- 	 * B and C regions.
- 	 */
- 	threshold_idx = clamp(boost_pct, 0, 99) / 10;
- 	perf_boost_idx = threshold_idx;
- 	perf_constrain_idx = threshold_idx;
+	 * Update threshold params for Performance Boost (B)
+	 * and Performance Constraint (C) regions.
+	 * The current implementatio uses the same cuts for both
+	 * B and C regions.
+	 */
+	threshold_idx = clamp(boost_pct, 0, 99) / 10;
+	perf_boost_idx = threshold_idx;
+	perf_constrain_idx = threshold_idx;
 
 	return 0;
 }
@@ -1144,11 +1182,13 @@ schedtune_init(void)
 	schedtune_test_nrg(delta_pwr);
 
 #ifdef CONFIG_CGROUP_SCHEDTUNE
- 	schedtune_init_cgroups();
+	schedtune_init_cgroups();
 #else
- 	pr_info("schedtune: configured to support global boosting only\n");
+	pr_info("schedtune: configured to support global boosting only\n");
 #endif
-        schedtune_spc_rdiv = reciprocal_value(100);
+
+	schedtune_spc_rdiv = reciprocal_value(100);
+
 	return 0;
 
 nodata:
@@ -1156,3 +1196,5 @@ nodata:
 	return -EINVAL;
 }
 postcore_initcall(schedtune_init);
+
+

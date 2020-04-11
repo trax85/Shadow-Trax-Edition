@@ -47,22 +47,21 @@ static inline int on_dl_rq(struct sched_dl_entity *dl_se)
 
 static void add_average_bw(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
 {
- 	u64 se_bw = dl_se->dl_bw;
+	u64 se_bw = dl_se->dl_bw;
 
- 	dl_rq->avg_bw += se_bw;
+	dl_rq->avg_bw += se_bw;
 }
 
 static void clear_average_bw(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
 {
- 	u64 se_bw = dl_se->dl_bw;
+	u64 se_bw = dl_se->dl_bw;
 
- 	dl_rq->avg_bw -= se_bw;
- 	if (dl_rq->avg_bw < 0) {
- 		WARN_ON(1);
- 		dl_rq->avg_bw = 0;
- 	}
+	dl_rq->avg_bw -= se_bw;
+	if (dl_rq->avg_bw < 0) {
+		WARN_ON(1);
+		dl_rq->avg_bw = 0;
+	}
 }
-
 
 static inline int is_leftmost(struct task_struct *p, struct dl_rq *dl_rq)
 {
@@ -420,10 +419,10 @@ static void replenish_dl_entity(struct sched_dl_entity *dl_se,
 	if (dl_time_before(dl_se->deadline, rq_clock(rq))) {
 		static bool lag_once = false;
 
- 		if (!lag_once) {
- 			lag_once = true;
- 			printk_deferred("sched: DL replenish lagged to much\n");
- 		}
+		if (!lag_once) {
+			lag_once = true;
+			printk_deferred("sched: DL replenish lagged to much\n");
+		}
 		dl_se->deadline = rq_clock(rq) + pi_se->dl_deadline;
 		dl_se->runtime = pi_se->dl_runtime;
 	}
@@ -450,13 +449,13 @@ static void replenish_dl_entity(struct sched_dl_entity *dl_se,
  *
  * This function returns true if:
  *
- *   runtime / (deadline - t) > dl_runtime / dl_period ,
+ *   runtime / (deadline - t) > dl_runtime / dl_deadline ,
  *
  * IOW we can't recycle current parameters.
  *
- * Notice that the bandwidth check is done against the period. For
+ * Notice that the bandwidth check is done against the deadline. For
  * task with deadline equal to period this is the same of using
- *  dl_period instead of dl_deadline in the equation above.
+ * dl_period instead of dl_deadline in the equation above.
  */
 static bool dl_entity_overflow(struct sched_dl_entity *dl_se,
 			       struct sched_dl_entity *pi_se, u64 t)
@@ -503,8 +502,8 @@ static void update_dl_entity(struct sched_dl_entity *dl_se,
 	struct dl_rq *dl_rq = dl_rq_of_se(dl_se);
 	struct rq *rq = rq_of_dl_rq(dl_rq);
 
-        if (dl_se->dl_new)
- 		add_average_bw(dl_se, dl_rq);
+	if (dl_se->dl_new)
+		add_average_bw(dl_se, dl_rq);
 
 	/*
 	 * The arrival of a new instance needs special treatment, i.e.,
@@ -714,23 +713,23 @@ static
 int dl_runtime_exceeded(struct rq *rq, struct sched_dl_entity *dl_se)
 {
 	int dmiss = dl_time_before(dl_se->deadline, rq_clock(rq));
- 	int rorun = dl_se->runtime <= 0;
+	int rorun = dl_se->runtime <= 0;
 
- 	if (!rorun && !dmiss)
- 		return 0;
+	if (!rorun && !dmiss)
+		return 0;
 
- 	/*
- 	 * If we are beyond our current deadline and we are still
- 	 * executing, then we have already used some of the runtime of
- 	 * the next instance. Thus, if we do not account that, we are
- 	 * stealing bandwidth from the system at each deadline miss!
- 	 */
- 	if (dmiss) {
- 		dl_se->runtime = rorun ? dl_se->runtime : 0;
- 		dl_se->runtime -= rq_clock(rq) - dl_se->deadline;
- 	}
+	/*
+	 * If we are beyond our current deadline and we are still
+	 * executing, then we have already used some of the runtime of
+	 * the next instance. Thus, if we do not account that, we are
+	 * stealing bandwidth from the system at each deadline miss!
+	 */
+	if (dmiss) {
+		dl_se->runtime = rorun ? dl_se->runtime : 0;
+		dl_se->runtime -= rq_clock(rq) - dl_se->deadline;
+	}
 
- 	return 1;
+	return 1;
 }
 
 extern bool sched_rt_bandwidth_account(struct rt_rq *rt_rq);
@@ -759,8 +758,9 @@ static void update_curr_dl(struct rq *rq)
 	delta_exec = rq_clock_task(rq) - curr->se.exec_start;
 	if (unlikely((s64)delta_exec <= 0))
 		return;
-        /* kick cpufreq (see the comment in kernel/sched/sched.h). */
- 	cpufreq_update_this_cpu(rq, SCHED_CPUFREQ_DL);
+
+	/* kick cpufreq (see the comment in kernel/sched/sched.h). */
+	cpufreq_update_this_cpu(rq, SCHED_CPUFREQ_DL);
 
 	schedstat_set(curr->se.statistics.exec_max,
 		      max(curr->se.statistics.exec_max, delta_exec));
@@ -888,7 +888,7 @@ void inc_dl_tasks(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
 	WARN_ON(!dl_prio(prio));
 	dl_rq->dl_nr_running++;
 	add_nr_running(rq_of_dl_rq(dl_rq), 1);
-        walt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));
+	walt_inc_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));
 
 	inc_dl_deadline(dl_rq, deadline);
 	inc_dl_migration(dl_se, dl_rq);
@@ -903,7 +903,7 @@ void dec_dl_tasks(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
 	WARN_ON(!dl_rq->dl_nr_running);
 	dl_rq->dl_nr_running--;
 	sub_nr_running(rq_of_dl_rq(dl_rq), 1);
-        walt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));
+	walt_dec_cumulative_runnable_avg(rq_of_dl_rq(dl_rq), dl_task_of(dl_se));
 
 	dec_dl_deadline(dl_rq, dl_se->deadline);
 	dec_dl_migration(dl_se, dl_rq);
@@ -972,8 +972,8 @@ enqueue_dl_entity(struct sched_dl_entity *dl_se,
 	 */
 	if (!dl_se->dl_new && flags & ENQUEUE_REPLENISH)
 		replenish_dl_entity(dl_se, pi_se);
-        else
- 		update_dl_entity(dl_se, pi_se);
+	else
+		update_dl_entity(dl_se, pi_se);
 
 	__enqueue_dl_entity(dl_se);
 }
@@ -1068,7 +1068,7 @@ static int find_later_rq(struct task_struct *task);
 
 static int
 select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags,
- 		  int sibling_count_hint)
+		  int sibling_count_hint)
 {
 	struct task_struct *curr;
 	struct rq *rq;
@@ -1250,8 +1250,8 @@ static void task_fork_dl(struct task_struct *p)
 static void task_dead_dl(struct task_struct *p)
 {
 	struct dl_bw *dl_b = dl_bw_of(task_cpu(p));
-        struct dl_rq *dl_rq = dl_rq_of_se(&p->dl);
- 	struct rq *rq = rq_of_dl_rq(dl_rq);
+	struct dl_rq *dl_rq = dl_rq_of_se(&p->dl);
+	struct rq *rq = rq_of_dl_rq(dl_rq);
 
 	/*
 	 * Since we are TASK_DEAD we won't slip out of the domain!
@@ -1260,8 +1260,8 @@ static void task_dead_dl(struct task_struct *p)
 	/* XXX we should retain the bw until 0-lag */
 	dl_b->total_bw -= p->dl.dl_bw;
 	raw_spin_unlock_irq(&dl_b->lock);
- 
-        clear_average_bw(&p->dl, &rq->dl);
+
+	clear_average_bw(&p->dl, &rq->dl);
 }
 
 static void set_curr_task_dl(struct rq *rq)
@@ -1315,24 +1315,24 @@ next_node:
  */
 static struct task_struct *pick_earliest_pushable_dl_task(struct rq *rq, int cpu)
 {
- 	struct rb_node *next_node = rq->dl.pushable_dl_tasks_leftmost;
- 	struct task_struct *p = NULL;
+	struct rb_node *next_node = rq->dl.pushable_dl_tasks_leftmost;
+	struct task_struct *p = NULL;
 
- 	if (!has_pushable_dl_tasks(rq))
- 		return NULL;
+	if (!has_pushable_dl_tasks(rq))
+		return NULL;
 
 next_node:
- 	if (next_node) {
- 		p = rb_entry(next_node, struct task_struct, pushable_dl_tasks);
+	if (next_node) {
+		p = rb_entry(next_node, struct task_struct, pushable_dl_tasks);
 
- 		if (pick_dl_task(rq, p, cpu))
- 			return p;
+		if (pick_dl_task(rq, p, cpu))
+			return p;
 
- 		next_node = rb_next(next_node);
- 		goto next_node;
- 	}
+		next_node = rb_next(next_node);
+		goto next_node;
+	}
 
- 	return NULL;
+	return NULL;
 }
 
 static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask_dl);
@@ -1560,11 +1560,11 @@ retry:
 	}
 
 	deactivate_task(rq, next_task, 0);
-        clear_average_bw(&next_task->dl, &rq->dl);
-        next_task->on_rq = TASK_ON_RQ_MIGRATING;
+	clear_average_bw(&next_task->dl, &rq->dl);
+	next_task->on_rq = TASK_ON_RQ_MIGRATING;
 	set_task_cpu(next_task, later_rq->cpu);
-        next_task->on_rq = TASK_ON_RQ_QUEUED;
-        add_average_bw(&next_task->dl, &later_rq->dl);
+	next_task->on_rq = TASK_ON_RQ_QUEUED;
+	add_average_bw(&next_task->dl, &later_rq->dl);
 	activate_task(later_rq, next_task, 0);
 
 	resched_curr(later_rq);
@@ -1650,11 +1650,11 @@ static int pull_dl_task(struct rq *this_rq)
 			ret = 1;
 
 			deactivate_task(src_rq, p, 0);
-                        clear_average_bw(&p->dl, &src_rq->dl);
-                        p->on_rq = TASK_ON_RQ_MIGRATING;
+			clear_average_bw(&p->dl, &src_rq->dl);
+			p->on_rq = TASK_ON_RQ_MIGRATING;
 			set_task_cpu(p, this_cpu);
-                        p->on_rq = TASK_ON_RQ_QUEUED;
-                        add_average_bw(&p->dl, &this_rq->dl);
+			p->on_rq = TASK_ON_RQ_QUEUED;
+			add_average_bw(&p->dl, &this_rq->dl);
 			activate_task(this_rq, p, 0);
 			dmin = p->dl.deadline;
 
@@ -1669,7 +1669,7 @@ skip:
 
 static void post_schedule_dl(struct rq *rq)
 {
- 	push_dl_tasks(rq);
+	push_dl_tasks(rq);
 }
 
 /*
@@ -1773,7 +1773,7 @@ static void switched_from_dl(struct rq *rq, struct task_struct *p)
 	if (!start_dl_timer(p))
 		__dl_clear_params(p);
 
-        clear_average_bw(&p->dl, &rq->dl);
+	clear_average_bw(&p->dl, &rq->dl);
 
 	/*
 	 * Since this might be the only -deadline task on the rq,
@@ -1872,7 +1872,7 @@ const struct sched_class dl_sched_class = {
 	.set_cpus_allowed       = set_cpus_allowed_dl,
 	.rq_online              = rq_online_dl,
 	.rq_offline             = rq_offline_dl,
-        .post_schedule		= post_schedule_dl,
+	.post_schedule		= post_schedule_dl,
 	.task_woken		= task_woken_dl,
 #endif
 
@@ -1887,3 +1887,4 @@ const struct sched_class dl_sched_class = {
 
 	.update_curr		= update_curr_dl,
 };
+
