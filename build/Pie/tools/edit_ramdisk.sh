@@ -97,7 +97,6 @@ echo "# VARIABLES FOR SH" >> $CONFIGFILE
 echo "# zrammode=$PROFILE" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# USER TWEAKS" >> $CONFIGFILE
-echo "service usertweaks /system/bin/sh /system/etc/shadow.sh" >> $CONFIGFILE
 echo "class main" >> $CONFIGFILE
 echo "group root" >> $CONFIGFILE
 echo "user root" >> $CONFIGFILE
@@ -106,12 +105,7 @@ echo "" >> $CONFIGFILE
 echo "on property:dev.bootcomplete=1" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# SWAPPINESS AND VFS CACHE PRESSURE" >> $CONFIGFILE
-echo "write /proc/sys/vm/swappiness $SWAP" >> $CONFIGFILE
 echo "write /proc/sys/vm/vfs_cache_pressure $VFS" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
-echo "# DT2W" >> $CONFIGFILE
-echo "write /sys/android_touch/doubletap2wake " $DTP >> $CONFIGFILE
-echo "write /sys/android_touch/vib_strength " $VIBS >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 COLOR=$(cat /tmp/aroma/color.prop | cut -d '=' -f2)
 echo "# KCAL" >> $CONFIGFILE
@@ -152,7 +146,6 @@ echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_hvdcp3_icl_ma" >>
 echo "write /sys/module/qpnp_smbcharger/parameters/default_dcp_icl_ma $CHG" >> $CONFIGFILE
 echo "write /sys/module/qpnp_smbcharger/parameters/default_hvdcp_icl_ma $CHG" >> $CONFIGFILE
 echo "write /sys/module/qpnp_smbcharger/parameters/default_hvdcp3_icl_ma $CHG" >> $CONFIGFILE
-echo "write /sys/kernel/fast_charge/force_fast_charge $USB" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# DISABLE BCL & CORE CTL" >> $CONFIGFILE
 echo "write /sys/module/msm_thermal/core_control/enabled 0" >> $CONFIGFILE
@@ -205,7 +198,7 @@ echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads \"99\"
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 0" >> $CONFIGFILE
 fi
 echo "" >> $CONFIGFILE
 echo "# TWEAK A72 CLUSTER GOVERNOR" >> $CONFIGFILE
@@ -245,34 +238,9 @@ echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads \"75 1
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0" >> $CONFIGFILE
 echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 0" >> $CONFIGFILE
 fi
 echo "" >> $CONFIGFILE
-echo "# ENABLE BCL & CORE CTL" >> $CONFIGFILE
-echo "write /sys/module/msm_thermal/core_control/enabled 0">> $CONFIGFILE
-echo "write /sys/devices/soc.0/qcom,bcl.56/mode disable" >> $CONFIGFILE
-echo "write /sys/devices/soc.0/qcom,bcl.56/hotplug_mask 48" >> $CONFIGFILE
-echo "write /sys/devices/soc.0/qcom,bcl.56/hotplug_soc_mask 32" >> $CONFIGFILE
-echo "write /sys/devices/soc.0/qcom,bcl.56/mode enable" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
-echo "# GPU SETTINGS" >> $CONFIGFILE
-echo "write /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/default_pwrlevel $GLVL" >> $CONFIGFILE
-echo "write /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/min_pwrlevel $GLVL" >> $CONFIGFILE
-echo "write /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/devfreq/min_freq $GFREQ" >> $CONFIGFILE
-echo "write /sys/class/kgsl/kgsl-3d0/max_gpuclk $GMAXFREQ" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
-echo "# CPU BOOST PARAMETERS" >> $CONFIGFILE
-echo "write /sys/module/cpu_boost/parameters/input_boost_freq \"$BOOST\"" >> $CONFIGFILE
-echo "write /sys/module/cpu_boost/parameters/input_boost_ms 55" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
-echo "# SET IO SCHEDULER" >> $CONFIGFILE
-if [ $PROFILE == 1 ]; then
-echo "setprop sys.io.scheduler \"zen\"" >> $CONFIGFILE
-elif [ $PROFILE == 2 ]; then
-echo "setprop sys.io.scheduler \"fiops\"" >> $CONFIGFILE
-elif [ $PROFILE == 3 ]; then
-echo "setprop sys.io.scheduler \"fiops\"" >> $CONFIGFILE
-fi
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# TOUCH BOOST" >> $CONFIGFILE
@@ -281,11 +249,8 @@ echo "" >> $CONFIGFILE
 echo "# ADRENO IDLER" >> $CONFIGFILE
 echo "write /sys/module/adreno_idler/parameters/adreno_idler_active $AID" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
-echo "# ADRENO BOOST" >> $CONFIGFILE
-echo "write /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost $ABST" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
 echo "# FSYNC" >> $CONFIGFILE
-echo "write /sys/module/sync/parameters/fsync_enabled $DFS" >> $CONFIGFILE
+echo "write /sys/module/sync/parameters/fsync_enabled 1" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "write /sys/module/mdss_fb/parameters/backlight_dimmer y" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/iostats 0" >> $CONFIGFILE
@@ -299,29 +264,6 @@ echo "" >> $CONFIGFILE
 echo "# KSM" >> $CONFIGFILE
 echo "write /sys/kernel/mm/ksm/run 0" >> $CONFIGFILE
 echo "write /sys/kernel/mm/ksm/run_charging 0" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
-echo "# CORE MODE" >> $CONFIGFILE
-if [ $CMODE == 1 ]; then
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 0" >> $CONFIGFILE
-elif [ $CMODE == 2 ]; then
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 2" >> $CONFIGFILE
-fi
-echo "" >> $CONFIGFILE
-echo "# CPU SCHEDULER" >> $CONFIGFILE
-echo "chmod 755 /proc/sys/kernel/sched_boost" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_boost 0" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_freq_inc_notify 400000" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_freq_dec_notify 400000" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_wake_to_idle 0" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
-echo "# SHADOW SCHEDULING" >> $CONFIGFILE
-echo "chmod 755 /proc/sys/kernel/sched_use_shadow_scheduling" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_use_shadow_scheduling 1" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_shadow_downmigrate 80" >> $CONFIGFILE
-echo "write /proc/sys/kernel/sched_shadow_upmigrate 85" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
 echo "# DCVS" >> $CONFIGFILE
 echo "write /sys/class/devfreq/cpubw/governor \"bw_hwmon\"" >> $CONFIGFILE
 echo "write /sys/class/devfreq/cpubw/bw_hwmon/io_percent 34" >> $CONFIGFILE
@@ -329,17 +271,14 @@ echo "write /sys/class/devfreq/cpubw/bw_hwmon/guard_band_mbps 100" >> $CONFIGFIL
 echo "write /sys/class/devfreq/qcom,memlat-cpu0.51/polling_interval 10" >> $CONFIGFILE
 echo "write /sys/class/devfreq/qcom,memlat-cpu4.52/polling_interval 10" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
-echo "# FP BOOST" >> $CONFIGFILE
-echo "write /sys/kernel/fp_boost/enabled 1" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
 echo "# POWERSUSPEND" >> $CONFIGFILE
 echo "write /sys/kernel/power_suspend/power_suspend_mode 3" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 VOLT=$(cat /tmp/aroma/uv.prop | cut -d '=' -f2)
 if [ $VOLT == 1 ]; then
 echo "# CPU & GPU UV" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 900 950 1020 1075\"" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 720 800 900 960 1000 1030 1040 1050 760 750 850 890 950 1000 1020 1020\"" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"710 720 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
+echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"700 720 740 860 900 920 930 940 950 700 710 830 860 920 940 950 980\"" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 fi
 echo "# RUN USERTWEAKS SERVICE" >> $CONFIGFILE
