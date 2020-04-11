@@ -390,7 +390,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-memset-transposed-args \
 		   -Wno-discarded-array-qualifiers -std=gnu89 \
 		   -Wno-tautological-compare -Wno-array-bounds \
-                   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 \
+                   -mcpu=cortex-a72.cortex-a53 -mtune=cortex-a72.cortex-a53 \
 		   -Wno-nonnull
 
 KBUILD_AFLAGS_KERNEL :=
@@ -1063,7 +1063,7 @@ CLEAN_DIRS  += $(MODVERDIR)
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config usr/include include/generated          \
-                  arch/*/include/generated
+                  arch/*/include/generated tmp_objdiff net/wireguard/*
 MRPROPER_FILES += .config .config.old .version .old_version $(version_h) \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS \
 		  signing_key.priv signing_key.x509 x509.genkey		\
