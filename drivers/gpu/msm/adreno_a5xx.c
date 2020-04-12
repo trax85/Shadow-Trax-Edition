@@ -1206,7 +1206,7 @@ static void a5xx_lm_init(struct adreno_device *adreno_dev)
 	kgsl_regwrite(device, A5XX_GPMU_TEMP_SENSOR_CONFIG, 0x1);
 
 	kgsl_regwrite(device, A5XX_GPMU_GPMU_VOLTAGE,
-			(0x80000000 | device->pwrctrl.default_pwrlevel));
+			(0x80000000 | (device->pwrctrl.num_pwrlevels - 1)));
 	/* todo use the iddq fuse to correct this value at runtime */
 	kgsl_regwrite(device, A5XX_GPMU_BASE_LEAKAGE, 0x00640002);
 	/* default of 6A */
