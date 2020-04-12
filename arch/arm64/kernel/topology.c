@@ -538,7 +538,7 @@ static void __init reset_cpu_capacity(void)
 		set_capacity_scale(cpu, SCHED_CAPACITY_SCALE);
 }
 
-static inline const struct sched_group_energy *cpu_cluster_energy(int cpu)
+static inline const struct sched_group_energy *const cpu_cluster_energy(int cpu)
 {
  	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL1];
 
