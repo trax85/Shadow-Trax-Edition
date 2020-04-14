@@ -25,10 +25,9 @@ run_program("/tmp/flash_kernel.sh");
 ui_print(" ");
 ui_print("Summoning Shadow Kernel");
 run_program("/tmp/aroma/sleep","500");
-delete("/system/etc/init.d/99DarknessTweaks");
-package_extract_dir("system", "/system");
-set_perm(0, 0, 0755, "/system/etc/init.d/98FSTrim");
-set_perm(0, 0, 0755, "/system/xbin/busybox");
+if
+  file_getprop("/tmp/aroma/rom.prop","selected") == "1"
+then
 if
   file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
 then
@@ -48,6 +47,31 @@ set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalclient.so");
 set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalioctl.so");
 endif;
 unmount("/system");
+endif;
+if
+  file_getprop("/tmp/aroma/rom.prop","selected") == "1"
+then
+if
+  file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
+then
+package_extract_dir("thermal/old", "/system/system");
+set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
+set_perm(0, 0, 0644, "/system/system/vendor/lib/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalioctl.so");
+endif;
+if
+  file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
+then
+package_extract_dir("thermal/new", "/system/system");
+set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
+set_perm(0, 0, 0644, "/system/system/vendor/lib/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalclient.so");
+set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalioctl.so");
+endif;
+unmount("/system/system");
+endif;
+
 ui_print(" ");
 ui_print("Resurrecting kernel powers");
 set_progress(0.7);

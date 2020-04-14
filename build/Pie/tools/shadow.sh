@@ -27,4 +27,13 @@
         echo "16384,20992,24064,30720,46080,66560" > /sys/module/lowmemorykiller/parameters/minfree
 	echo 10 > /proc/sys/vm/dirty_background_ratio
     fi
-    echo "0" /sys/kernel/alessa_plug
+    if [ $MemTotal -gt 2000000 ]; then
+         echo /proc/sys/vm/swappiness 60
+         echo /sys/block/zram0/disksize 805306368
+         echo /sys/block/zram0/comp_algorithm "lzo"
+    else
+         echo /proc/sys/vm/swappiness 60
+         echo /sys/block/zram0/disksize 805306368
+         echo /sys/block/zram0/comp_algorithm "lzo"
+    fi
+    

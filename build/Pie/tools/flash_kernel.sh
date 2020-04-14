@@ -1,6 +1,6 @@
 #!/sbin/sh
  #
- # Copyright © 2017, Umang Leekha "umang96" <umangleekha3@gmail.com> 
+ # Copyright ï¿½ 2017, Umang Leekha "umang96" <umangleekha3@gmail.com> 
  #
  # Live ramdisk patching script
  #
@@ -17,13 +17,7 @@
  #
 qc=$(cat /tmp/aroma/crate.prop | cut -d '=' -f2)
 zim=/tmp/Image1
-if [ $qc -eq 1 ]; then
 dim=/tmp/dt1.img
-elif [ $qc -eq 2 ]; then
-dim=/tmp/dt2.img
-elif [ $qc -eq 3 ]; then
-dim=/tmp/dt2.img
-fi
 cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 ramoops_memreserve=4M"
 cmd=$cmd" androidboot.selinux=permissive"
 cmd=$cmd" cpu_max_c1=1440000"" cpu_max_c2=1843200"
@@ -35,14 +29,21 @@ JACK=`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $JACK = 0 ]; then
 cmd=$cmd" android.audiojackmode=stock"
 fi
-NET=$(cat /tmp/aroma/netmode.prop | cut -d '=' -f2)
-if [ $NET -eq 1 ]; then
-cmd=$cmd" android.gdxnetlink=old"
-elif [ $NET -eq 1 ]; then
+#NET=$(cat /tmp/aroma/netmode.prop | cut -d '=' -f2)
+#if [ $NET -eq 1 ]; then
+#cmd=$cmd" android.gdxnetlink=old"
+#elif [ $NET -eq 1 ]; then
 cmd=$cmd" android.gdxnetlink=los"
-fi
+#fi
+ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
+if [ $ROM = 0 ]; then
 cp /tmp/shadow.sh /system/etc/shadow.sh
 chmod 644 /system/etc/shadow.sh
+elif [ $ROM = 1 ]; then
+cp /tmp/shadow.sh /system/system/etc/shadow.sh
+chmod 644 /system/system/etc/shadow.sh
+fi
+#
 cp -f /tmp/cpio /sbin/cpio
 cd /tmp/
 /sbin/busybox dd if=/dev/block/bootdevice/by-name/boot of=./boot.img
@@ -58,9 +59,16 @@ cp /tmp/init.shadow.rc /tmp/ramdisk/
 cp /tmp/init.spectrum.rc /tmp/ramdisk/
 cp /tmp/init.spectrum.sh /tmp/ramdisk/
 # COMPATIBILITY FIXES START
+if [ $ROM = 0 ]; then
 cp /tmp/init.qcom.post_boot.sh /system/etc/init.qcom.post_boot.sh
 cp /tmp/gxfingerprint.default.so /system/lib64/hw/gxfingerprint.default.so
 chmod 644 /system/etc/init.qcom.post_boot.sh
+elif [ $ROM = 1 ]; then
+cp /tmp/init.qcom.post_boot.sh /system/system/etc/init.qcom.post_boot.sh
+cp /tmp/gxfingerprint.default.so /system/system/lib64/hw/gxfingerprint.default.so
+chmod 644 /system/system/etc/init.qcom.post_boot.sh
+fi
+#
 if [ $(grep -c "lazytime" fstab.qcom) -ne 0 ]; then
 cp /tmp/fstab.qcom /tmp/ramdisk/
 chmod 640 /tmp/ramdisk/fstab.qcom
