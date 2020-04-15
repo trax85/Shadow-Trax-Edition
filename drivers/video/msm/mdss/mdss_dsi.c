@@ -40,6 +40,9 @@
 
 #define XO_CLK_RATE	19200000
 
+static unsigned int dsi_refreshrate = 60;
+module_param(dsi_refreshrate, uint, 0755);
+
 /* Master structure to hold all the information about the DSI/panel */
 static struct mdss_dsi_data *mdss_dsi_res;
 
@@ -1860,6 +1863,7 @@ static int mdss_dsi_dfps_config(struct mdss_panel_data *pdata, int new_fps)
 	if (sctrl_pdata)
 		sctrl_pdata->dfps_status = true;
 
+        new_fps = dsi_refreshrate;
 	if (new_fps !=
 		ctrl_pdata->panel_data.panel_info.mipi.frame_rate) {
 		if (pdata->panel_info.dfps_update
