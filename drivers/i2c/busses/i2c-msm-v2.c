@@ -1651,7 +1651,7 @@ static int i2c_msm_clk_path_postponed_register(struct i2c_msm_ctrl *ctrl)
 		if (ctrl->rsrcs.clk_path_vote.reg_err) {
 			/* log a success message if an error msg was logged */
 			ctrl->rsrcs.clk_path_vote.reg_err = false;
-			dev_err(ctrl->dev,
+			dev_printk(KERN_DEBUG, ctrl->dev,
 				"msm_bus_scale_register_client(mstr-id:%d):0x%x (ok)",
 				ctrl->rsrcs.clk_path_vote.mstr_id,
 				ctrl->rsrcs.clk_path_vote.client_hdl);
@@ -1661,7 +1661,7 @@ static int i2c_msm_clk_path_postponed_register(struct i2c_msm_ctrl *ctrl)
 		if (!ctrl->rsrcs.clk_path_vote.reg_err) {
 			ctrl->rsrcs.clk_path_vote.reg_err = true;
 
-			dev_info(ctrl->dev,
+			dev_printk(KERN_DEBUG, ctrl->dev,
 				"msm_bus_scale_register_client(mstr-id:%d):0 (not a problem)",
 				ctrl->rsrcs.clk_path_vote.mstr_id);
 		}
@@ -2205,7 +2205,7 @@ static int i2c_msm_pm_xfer_start(struct i2c_msm_ctrl *ctrl)
 	 * and systme-pm are in transition concurrently)
 	 */
 	if (ctrl->pwr_state != I2C_MSM_PM_RT_ACTIVE) {
-		dev_info(ctrl->dev, "Runtime PM-callback was not invoked.\n");
+		dev_printk(KERN_DEBUG, ctrl->dev, "Runtime PM-callback was not invoked.\n");
 		i2c_msm_pm_resume(ctrl->dev);
 	}
 
