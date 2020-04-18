@@ -824,7 +824,7 @@ int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
 		if (IS_ERR(pipe)) {
 			return PTR_ERR(pipe);
 		} else if (!pipe) {
-			pr_err("error allocating pipe. flags=0x%x req->pipe_type=%d pipe_type=%d\n",
+			pr_debug("error allocating pipe. flags=0x%x req->pipe_type=%d pipe_type=%d\n",
 				req->flags, req->pipe_type, pipe_type);
 			return -ENODEV;
 		}
