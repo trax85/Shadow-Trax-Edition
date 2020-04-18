@@ -3194,8 +3194,8 @@ static int __mdss_fb_display_thread(void *data)
 		wake_up_all(&mfd->idle_wait_q);
 	}
 
-	mdss_fb_release_kickoff(mfd);
 	atomic_set(&mfd->commits_pending, 0);
+        atomic_set(&mfd->kickoff_pending, 0);
 	wake_up_all(&mfd->idle_wait_q);
 
 	return ret;
@@ -3784,7 +3784,7 @@ static int __ioctl_wait_idle(struct msm_fb_data_type *mfd, u32 cmd)
 		(cmd == MSMFB_OVERLAY_PLAY) ||
 		(cmd == MSMFB_OVERLAY_UNSET) ||
 		(cmd == MSMFB_OVERLAY_SET))) {
-		ret = mdss_fb_wait_for_kickoff(mfd);
+		ret = mdss_fb_pan_idle(mfd);
 	} else if ((cmd != MSMFB_VSYNC_CTRL) &&
 		(cmd != MSMFB_OVERLAY_VSYNC_CTRL) &&
 		(cmd != MSMFB_ASYNC_BLIT) &&
