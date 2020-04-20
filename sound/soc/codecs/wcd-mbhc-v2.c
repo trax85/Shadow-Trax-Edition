@@ -95,7 +95,6 @@ enum wcd_mbhc_cs_mb_en_flag {
 
 static bool skip_impdet_retry;
 static bool lineout_detected;
-static struct switch_dev accdet_data;
 
 static void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 				struct snd_soc_jack *jack, int status, int mask)
