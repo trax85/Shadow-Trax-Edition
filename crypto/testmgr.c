@@ -2406,6 +2406,36 @@ static const struct alg_test_desc alg_test_descs[] = {
 				}
 			}
 		}
+        }, {
+ 		.alg = "ecb(speck128)",
+ 		.test = alg_test_skcipher,
+ 		.suite = {
+ 			.cipher = {
+ 				.enc = {
+ 					.vecs = speck128_enc_tv_template,
+ 					.count = ARRAY_SIZE(speck128_enc_tv_template)
+ 				},
+ 				.dec = {
+ 					.vecs = speck128_dec_tv_template,
+ 					.count = ARRAY_SIZE(speck128_dec_tv_template)
+ 				}
+ 			}
+ 		}
+ 	}, {
+ 		.alg = "ecb(speck64)",
+ 		.test = alg_test_skcipher,
+ 		.suite = {
+ 			.cipher = {
+ 				.enc = {
+ 					.vecs = speck64_enc_tv_template,
+ 					.count = ARRAY_SIZE(speck64_enc_tv_template)
+ 				},
+ 				.dec = {
+ 					.vecs = speck64_dec_tv_template,
+ 					.count = ARRAY_SIZE(speck64_dec_tv_template)
+ 				}
+ 			}
+ 		}
 	}, {
 		.alg = "ecb(tea)",
 		.test = alg_test_skcipher,
@@ -3034,6 +3064,36 @@ static const struct alg_test_desc alg_test_descs[] = {
 				}
 			}
 		}
+        }, {
+ 		.alg = "xts(speck128)",
+ 		.test = alg_test_skcipher,
+ 		.suite = {
+ 			.cipher = {
+ 				.enc = {
+ 					.vecs = speck128_xts_enc_tv_template,
+ 					.count = ARRAY_SIZE(speck128_xts_enc_tv_template)
+ 				},
+ 				.dec = {
+ 					.vecs = speck128_xts_dec_tv_template,
+ 					.count = ARRAY_SIZE(speck128_xts_dec_tv_template)
+ 				}
+ 			}
+ 		}
+        }, {
+ 		.alg = "xts(speck64)",
+ 		.test = alg_test_skcipher,
+ 		.suite = {
+ 			.cipher = {
+ 				.enc = {
+ 					.vecs = speck64_xts_enc_tv_template,
+ 					.count = ARRAY_SIZE(speck64_xts_enc_tv_template)
+ 				},
+ 				.dec = {
+ 					.vecs = speck64_xts_dec_tv_template,
+ 					.count = ARRAY_SIZE(speck64_xts_dec_tv_template)
+ 				}
+ 			}
+ 		}
 	}, {
 		.alg = "xts(twofish)",
 		.test = alg_test_skcipher,
