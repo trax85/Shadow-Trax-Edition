@@ -1232,26 +1232,28 @@ static int migration_cpu_stop(void *data)
 	return 0;
 }
 
+static const struct cpumask *
+get_adjusted_cpumask(const struct task_struct *p,
+		     const struct cpumask *orig_mask)
+{
+	/* Force all low-power kthreads onto the big cluster */
+	if (p->flags & PF_LOW_POWER)
+		return cpu_lp_mask;
+
+	return orig_mask;
+}
+
 void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
 {
 	lockdep_assert_held(&p->pi_lock);
+
+        new_mask = get_adjusted_cpumask(p, new_mask);
 
 	if (p->sched_class->set_cpus_allowed)
 		p->sched_class->set_cpus_allowed(p, new_mask);
 
 	cpumask_copy(&p->cpus_allowed, new_mask);
 	p->nr_cpus_allowed = cpumask_weight(new_mask);
-}
-
-static const struct cpumask *
-get_adjusted_cpumask(const struct task_struct *p,
-		     const struct cpumask *orig_mask)
-{
-	/* Force all low-power kthreads onto the little cluster */
-	if (p->flags & PF_LOW_POWER)
-		return cpu_lp_mask;
-
-	return orig_mask;
 }
 
 /*
