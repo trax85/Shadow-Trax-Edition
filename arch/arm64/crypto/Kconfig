@@ -36,11 +36,6 @@ config CRYPTO_AES_ARM64_CE
 	depends on ARM64 && KERNEL_MODE_NEON
 	select CRYPTO_ALGAPI
 
-config CRYPTO_CRC32_ARM64_CE
- 	tristate "CRC32 and CRC32C digest algorithms using PMULL instructions"
- 	depends on KERNEL_MODE_NEON && CRC32
- 	select CRYPTO_HASH
-
 config CRYPTO_AES_ARM64_CE_CCM
 	tristate "AES in CCM mode using ARMv8 Crypto Extensions"
 	depends on ARM64 && KERNEL_MODE_NEON
