@@ -79,10 +79,10 @@ void tracectr_notifier(void *ignore, struct task_struct *prev,
 		if (per_cpu(hotplug_flag, cpu) == 1) {
 			per_cpu(hotplug_flag, cpu) = 0;
 			setup_prev_cnts(cpu, cnten_val);
-		} else {
+		} /*else {
 			trace_sched_switch_with_ctrs(per_cpu(old_pid, cpu),
 						     current_pid);
-		}
+		}*/
 
 		/* Enable all the counters that were disabled */
 		asm volatile("msr pmcntenset_el0, %0" : : "r" (cnten_val));

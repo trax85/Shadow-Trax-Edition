@@ -816,7 +816,7 @@ void do_exit(long code)
 
 	if (group_dead)
 		acct_process();
-	trace_sched_process_exit(tsk);
+	//trace_sched_process_exit(tsk);
 
 	exit_sem(tsk);
 	exit_shm(tsk);
@@ -1541,7 +1541,7 @@ static long do_wait(struct wait_opts *wo)
 	struct task_struct *tsk;
 	int retval;
 
-	trace_sched_process_wait(wo->wo_pid);
+	//trace_sched_process_wait(wo->wo_pid);
 
 	init_waitqueue_func_entry(&wo->child_wait, child_wait_callback);
 	wo->child_wait.private = current;
