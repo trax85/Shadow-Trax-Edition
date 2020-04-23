@@ -1366,11 +1366,11 @@ int _regmap_raw_multi_reg_write(struct regmap *map,
 
 	kfree(buf);
 
-	for (i = 0; i < num_regs; i++) {
-		int reg = regs[i].reg;
+	/*for (i = 0; i < num_regs; i++) {
+	/	int reg = regs[i].reg;
 
 		//trace_regmap_hw_write_done(map->dev, reg, 1);
-	}
+	}*/
 	return ret;
 }
 
