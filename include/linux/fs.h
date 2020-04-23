@@ -250,6 +250,12 @@ struct iattr {
  */
 #include <linux/quota.h>
 
+/*
+ * Maximum number of layers of fs stack.  Needs to be limited to
+ * prevent kernel stack overflow
+ */
+#define FILESYSTEM_MAX_STACK_DEPTH 2
+
 /** 
  * enum positive_aop_returns - aop return codes with specific semantics
  *
@@ -1330,6 +1336,11 @@ struct super_block {
 
 	/* Being remounted read-only */
 	int s_readonly_remount;
+
+        /*
+ 	 * Indicates how deep in a filesystem stack this SB is
+ 	 */
+ 	int s_stack_depth;
 };
 
 /* superblock cache pruning functions */
@@ -2735,6 +2746,13 @@ static inline void inode_has_no_xattr(struct inode *inode)
 {
 	if (!is_sxid(inode->i_mode) && (inode->i_sb->s_flags & MS_NOSEC))
 		inode->i_flags |= S_NOSEC;
+}
+
+static inline bool dir_relax(struct inode *inode)
+{
+ 	mutex_unlock(&inode->i_mutex);
+ 	mutex_lock(&inode->i_mutex);
+ 	return !IS_DEADDIR(inode);
 }
 
 #endif /* _LINUX_FS_H */
