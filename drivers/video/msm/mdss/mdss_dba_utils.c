@@ -410,7 +410,7 @@ static int mdss_dba_utils_send_cec_msg(void *data, struct cec_msg *msg)
 static int mdss_dba_utils_init_switch_dev(struct mdss_dba_utils_data *udata,
 	u32 fb_node)
 {
-	int rc = -EINVAL, ret;
+	int rc = -EINVAL, ret = 0;
 
 	if (!udata) {
 		pr_err("invalid input\n");
@@ -602,7 +602,7 @@ void *mdss_dba_utils_init(struct mdss_dba_utils_init_data *uid)
 	struct mdss_dba_utils_data *udata = NULL;
 	struct msm_dba_reg_info info;
 	struct cec_abstract_init_data cec_abst_init_data;
-	void *cec_abst_data;
+	void *cec_abst_data = NULL;
 	int ret = 0;
 
 	if (!uid) {
