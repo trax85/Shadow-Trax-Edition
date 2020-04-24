@@ -114,8 +114,8 @@ static int32_t msm_vfe32_init_qos_parms(struct vfe_device *vfe_dev,
 					kfree(qos_regs);
 				}
 			} else {
-				kfree(qos_settings);
-				kfree(qos_regs);
+				        kfree(qos_settings);
+				        kfree(qos_regs);
 			}
 		}
 	}

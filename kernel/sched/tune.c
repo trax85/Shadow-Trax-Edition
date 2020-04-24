@@ -787,16 +787,16 @@ boost_write(struct cgroup *cgrp, struct cftype *cft,
 int
 dynamic_boost_write(struct cgroup_subsys_state *css, int boost)
 {
+        struct schedtune *st;
+        unsigned threshold_idx;
+        int boost_pct;
 	/* if dynamic schedtune boost doesnt't have 
 	 * its topapp_css, return 
 	 */
 	if (!unlikely(dynamic_schedtune_initialized))
 		return -EINVAL;
 
-	struct schedtune *st = css_st(css);
-	unsigned threshold_idx;
-	int boost_pct;
-
+	st = css_st(css);
 	if (boost < -100 || boost > 100)
 		return -EINVAL;
 	boost_pct = boost;
