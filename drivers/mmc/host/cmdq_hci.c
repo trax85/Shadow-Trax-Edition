@@ -661,7 +661,7 @@ out:
 
 static void cmdq_finish_data(struct mmc_host *mmc, unsigned int tag)
 {
-	struct mmc_request *mrq;
+	struct mmc_request *mrq = NULL;
 	struct cmdq_host *cq_host = (struct cmdq_host *)mmc_cmdq_private(mmc);
 
 	mrq = get_req_by_tag(cq_host, tag);
@@ -683,7 +683,7 @@ irqreturn_t cmdq_irq(struct mmc_host *mmc, int err)
 	unsigned long tag = 0, comp_status;
 	struct cmdq_host *cq_host = (struct cmdq_host *)mmc_cmdq_private(mmc);
 	unsigned long err_info = 0;
-	struct mmc_request *mrq;
+	struct mmc_request *mrq = NULL;
 	int ret;
 	u32 dbr_set = 0;
 
