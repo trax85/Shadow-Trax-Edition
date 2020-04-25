@@ -1652,10 +1652,11 @@ long do_fork(unsigned long clone_flags,
 	long nr;
 
         /* Boost devfreq device to the max for 1250 ms when userspace launches an app */
- 	if (is_zygote_pid(current->pid))
+ 	if (is_zygote_pid(current->pid)){
  		devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 2500);
  		do_input_boost_max();
-	/*
+	}
+        /*
 	 * Do some preliminary argument and permissions checking before we
 	 * actually start allocating stuff
 	 */

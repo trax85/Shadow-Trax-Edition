@@ -108,8 +108,8 @@ static int32_t msm_vfe32_init_qos_parms(struct vfe_device *vfe_dev,
 					kfree(qos_regs);
 				} else {
 					for (i = 0; i < qos_entries; i++)
-						msm_camera_io_w(qos_settings[i],
-							vfebase + qos_regs[i]);
+						msm_camera_io_w(qos_settings[i],vfebase + qos_regs[i]);
+
 					kfree(qos_settings);
 					kfree(qos_regs);
 				}
@@ -157,8 +157,9 @@ static int32_t msm_vfe32_init_qos_parms(struct vfe_device *vfe_dev,
 					for (i = 0; i < ds_entries; i++)
 						msm_camera_io_w(ds_settings[i],
 							vfebase + ds_regs[i]);
-						kfree(ds_regs);
-						kfree(ds_settings);
+
+					kfree(ds_regs);
+					kfree(ds_settings);
 				}
 			} else {
 				kfree(ds_regs);
