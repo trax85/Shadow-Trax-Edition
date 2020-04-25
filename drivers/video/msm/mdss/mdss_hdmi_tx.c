@@ -1255,6 +1255,7 @@ static struct attribute *hdmi_tx_fs_attrs[] = {
 	&dev_attr_product_description.attr,
 	&dev_attr_avi_itc.attr,
 	&dev_attr_avi_cn0_1.attr,
+        &dev_attr_hdr_stream.attr,
 	&dev_attr_s3d_mode.attr,
 	NULL,
 };
