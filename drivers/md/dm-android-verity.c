@@ -562,14 +562,14 @@ static int android_verity_ctr(struct dm_target *ti, unsigned argc, char **argv)
 	dev_t uninitialized_var(dev);
 	struct android_metadata *uninitialized_var(metadata);
 	int err = 0, i, mode;
-	char *key_id, *table_ptr, dummy,
+	char *key_id = NULL, *table_ptr = NULL, dummy,
 	*verity_table_args[VERITY_TABLE_ARGS + 2 + VERITY_TABLE_OPT_FEC_ARGS];
 	/* One for specifying number of opt args and one for mode */
 	sector_t data_sectors;
 	u32 data_block_size;
 	unsigned int major, minor,
 	no_of_args = VERITY_TABLE_ARGS + 2 + VERITY_TABLE_OPT_FEC_ARGS;
-	struct fec_header fec;
+	struct fec_header uninitialized_var(fec);
 	struct fec_ecc_metadata uninitialized_var(ecc);
 	char buf[FEC_ARG_LENGTH], *buf_ptr;
 	unsigned long long tmpll;
