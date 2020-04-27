@@ -7626,10 +7626,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 		}
 	}
 
-	} else {
- 		vadc_dev = NULL;
- 	}
-
 	if (of_find_property(spmi->dev.of_node, "qcom,vchg_sns-vadc", NULL)) {
 		vchg_vadc_dev = qpnp_get_vadc(&spmi->dev, "vchg_sns");
 		if (IS_ERR(vchg_vadc_dev)) {
