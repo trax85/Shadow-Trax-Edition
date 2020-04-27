@@ -195,7 +195,6 @@ int update_devfreq(struct devfreq *devfreq)
 	if (!devfreq->governor)
 		return -EINVAL;
 
-	/* Reevaluate the proper frequency */
 	if (devfreq->max_boost) {
  		/* Use the max freq for max boosts */
  		freq = ULONG_MAX;
