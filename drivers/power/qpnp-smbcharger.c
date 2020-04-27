@@ -245,7 +245,6 @@ struct smbchg_chip {
 	struct work_struct		usb_set_online_work;
 	struct delayed_work		vfloat_adjust_work;
 	struct delayed_work		hvdcp_det_work;
-	struct delayed_work		reg_work;
 	spinlock_t			sec_access_lock;
 	struct mutex			therm_lvl_lock;
 	struct mutex			usb_set_online_lock;
@@ -2250,8 +2249,7 @@ static void smbchg_parallel_usb_en_work(struct work_struct *work)
 	return;
 
 recheck:
-	queue_delayed_work(system_power_efficient_wq,
- 		&chip->parallel_en_work, 0);
+	schedule_delayed_work(&chip->parallel_en_work, 0);
 }
 
 static void smbchg_parallel_usb_check_ok(struct smbchg_chip *chip)
@@ -2262,8 +2260,7 @@ static void smbchg_parallel_usb_check_ok(struct smbchg_chip *chip)
 		return;
 
 	smbchg_stay_awake(chip, PM_PARALLEL_CHECK);
-	queue_delayed_work(system_power_efficient_wq,
- 		&chip->parallel_en_work, 0);
+	schedule_delayed_work(&chip->parallel_en_work, 0);
 }
 
 static int charging_suspend_vote_cb(struct device *dev, int suspend,
@@ -3064,8 +3061,7 @@ static void smbchg_vfloat_adjust_check(struct smbchg_chip *chip)
 
 	smbchg_stay_awake(chip, PM_REASON_VFLOAT_ADJUST);
 	pr_smb(PR_STATUS, "Starting vfloat adjustments\n");
-	queue_delayed_work(system_power_efficient_wq,
- 		&chip->vfloat_adjust_work, 0);
+	schedule_delayed_work(&chip->vfloat_adjust_work, 0);
 }
 
 #define FV_STS_REG			0xC
@@ -4162,8 +4158,7 @@ stop:
 	return;
 
 reschedule:
-	queue_delayed_work(system_power_efficient_wq,
- 		&chip->vfloat_adjust_work,
+	schedule_delayed_work(&chip->vfloat_adjust_work,
 			msecs_to_jiffies(VFLOAT_RESAMPLE_DELAY_MS));
 	return;
 }
@@ -4596,9 +4591,8 @@ static void handle_usb_insertion(struct smbchg_chip *chip)
 	schedule_work(&chip->usb_set_online_work);
 
 	if (usb_supply_type == POWER_SUPPLY_TYPE_USB_DCP)
-		queue_delayed_work(system_power_efficient_wq,
- 			&chip->hvdcp_det_work,
- 				msecs_to_jiffies(HVDCP_NOTIFY_MS));
+		schedule_delayed_work(&chip->hvdcp_det_work,
+					msecs_to_jiffies(HVDCP_NOTIFY_MS));
 
 	smbchg_detect_parallel_charger(chip);
 
@@ -4927,8 +4921,7 @@ static void smbchg_handle_hvdcp3_disable(struct smbchg_chip *chip)
 		read_usb_type(chip, &usb_type_name, &usb_supply_type);
 		smbchg_change_usb_supply_type(chip, usb_supply_type);
 		if (usb_supply_type == POWER_SUPPLY_TYPE_USB_DCP)
-			queue_delayed_work(system_power_efficient_wq,
- 				&chip->hvdcp_det_work,
+			schedule_delayed_work(&chip->hvdcp_det_work,
 				msecs_to_jiffies(HVDCP_NOTIFY_MS));
 	}
 }
@@ -7820,8 +7813,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 	}
 
 	dump_regs(chip);
-	queue_delayed_work(system_power_efficient_wq,
- 		&chip->reg_work, 60 * HZ);
 	create_debugfs_entries(chip);
 	dev_info(chip->dev,
 		"SMBCHG successfully probe Charger version=%s Revision DIG:%d.%d ANA:%d.%d batt=%d dc=%d usb=%d\n",
