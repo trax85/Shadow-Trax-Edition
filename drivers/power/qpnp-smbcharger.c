@@ -245,6 +245,7 @@ struct smbchg_chip {
 	struct work_struct		usb_set_online_work;
 	struct delayed_work		vfloat_adjust_work;
 	struct delayed_work		hvdcp_det_work;
+	struct delayed_work		reg_work;
 	spinlock_t			sec_access_lock;
 	struct mutex			therm_lvl_lock;
 	struct mutex			usb_set_online_lock;
@@ -7822,6 +7823,7 @@ static int smbchg_probe(struct spmi_device *spmi)
 		power_supply_set_present(chip->usb_psy, chip->usb_present);
 	}
 
+	dump_regs(chip);
 	queue_delayed_work(system_power_efficient_wq,
  		&chip->reg_work, 60 * HZ);
 	create_debugfs_entries(chip);
