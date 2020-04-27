@@ -3384,7 +3384,7 @@ int usb_port_resume(struct usb_device *udev, pm_message_t msg)
 	struct usb_port *port_dev;
 	int		port1 = udev->portnum;
 	int		status;
-	u16		portchange = 0, portstatus = 0;
+	u16		portchange, portstatus;
 
 	if (!hub)
 		return -ENODEV;
