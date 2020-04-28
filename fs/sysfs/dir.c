@@ -493,7 +493,7 @@ int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
 	strlcat(path, sd->s_name, PATH_MAX);
 	return path;
 }
-
+*/
 /**
  *	sysfs_add_one - add sysfs_dirent to parent
  *	@acxt: addrm context to use
