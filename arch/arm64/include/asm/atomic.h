@@ -384,6 +384,7 @@ static inline int atomic64_add_unless(atomic64_t *v, long a, long u)
 	return c != u;
 }
 
+#define atomic_inc_return_relaxed(v)	atomic_add_return_relaxed(1, (v))
 #define atomic64_add_negative(a, v)	(atomic64_add_return((a), (v)) < 0)
 #define atomic64_inc(v)			atomic64_add(1LL, (v))
 #define atomic64_inc_return(v)		atomic64_add_return(1LL, (v))
