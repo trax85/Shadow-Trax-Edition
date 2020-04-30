@@ -61,27 +61,38 @@
 struct kgsl_device;
 struct kgsl_context;
 
+/**
+ * struct kgsl_driver - main container for global KGSL things
+ * @cdev: Character device struct
+ * @major: Major ID for the KGSL device
+ * @class: Pointer to the class struct for the core KGSL sysfs entries
+ * @virtdev: Virtual device for managing the core
+ * @ptkobj: kobject for storing the pagetable statistics
+ * @prockobj: kobject for storing the process statistics
+ * @devp: Array of pointers to the individual KGSL device structs
+ * @process_list: List of open processes
+ * @pagetable_list: LIst of open pagetables
+ * @ptlock: Lock for accessing the pagetable list
+ * @process_mutex: Mutex for accessing the process list
+ * @devlock: Mutex protecting the device list
+ * @stats: Struct containing atomic memory statistics
+ * @full_cache_threshold: the threshold that triggers a full cache flush
+ * @workqueue: Pointer to a single threaded workqueue
+ */
+
 struct kgsl_driver {
 	struct cdev cdev;
 	dev_t major;
 	struct class *class;
-	/* Virtual device for managing the core */
 	struct device virtdev;
-	/* Kobjects for storing pagetable and process statistics */
 	struct kobject *ptkobj;
 	struct kobject *prockobj;
 	struct kgsl_device *devp[KGSL_DEVICE_MAX];
-
-	/* Global lilst of open processes */
 	struct list_head process_list;
-	/* Global list of pagetables */
 	struct list_head pagetable_list;
-	/* Spinlock for accessing the pagetable list */
 	spinlock_t ptlock;
-	/* Mutex for accessing the process list */
 	struct mutex process_mutex;
 
-	/* Mutex for protecting the device list */
 	struct mutex devlock;
 
 	struct {
@@ -97,7 +108,7 @@ struct kgsl_driver {
 		uint64_t mapped_max;
 	} stats;
 	unsigned int full_cache_threshold;
-
+	struct workqueue_struct *workqueue;
 	struct kthread_worker worker;
 	struct task_struct *worker_thread;
 };
@@ -403,6 +414,15 @@ static inline int timestamp_cmp(unsigned int a, unsigned int b)
 	a += KGSL_TIMESTAMP_WINDOW;
 	b += KGSL_TIMESTAMP_WINDOW;
 	return ((a > b) && (a - b <= KGSL_TIMESTAMP_WINDOW)) ? 1 : -1;
+}
+
+/**
+ * kgsl_schedule_work() - Schedule a work item on the KGSL workqueue
+ * @work: work item to schedule
+ */
+static inline void kgsl_schedule_work(struct work_struct *work)
+{
+	queue_work(kgsl_driver.workqueue, work);
 }
 
 static inline int
