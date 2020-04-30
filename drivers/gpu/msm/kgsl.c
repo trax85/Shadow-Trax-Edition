@@ -771,7 +771,7 @@ static int kgsl_suspend_device(struct kgsl_device *device, pm_message_t state)
 	if (!device)
 		return -EINVAL;
 
-	KGSL_PWR_WARN(device, "suspend start\n");
+	//KGSL_PWR_WARN(device, "suspend start\n");
 
 	mutex_lock(&device->mutex);
 	status = kgsl_pwrctrl_change_state(device, KGSL_STATE_SUSPEND);
@@ -779,7 +779,7 @@ static int kgsl_suspend_device(struct kgsl_device *device, pm_message_t state)
 	      device->ftbl->dispatcher_halt(device);
 	mutex_unlock(&device->mutex);
 
-	KGSL_PWR_WARN(device, "suspend end\n");
+	//KGSL_PWR_WARN(device, "suspend end\n");
 	return status;
 }
 
@@ -788,7 +788,7 @@ static int kgsl_resume_device(struct kgsl_device *device)
 	if (!device)
 		return -EINVAL;
 
-	KGSL_PWR_WARN(device, "resume start\n");
+	//KGSL_PWR_WARN(device, "resume start\n");
 	mutex_lock(&device->mutex);
 	if (device->state == KGSL_STATE_SUSPEND) {
 		kgsl_pwrctrl_change_state(device, KGSL_STATE_SLUMBER);
@@ -808,7 +808,7 @@ static int kgsl_resume_device(struct kgsl_device *device)
 	}
 
 	mutex_unlock(&device->mutex);
-	KGSL_PWR_WARN(device, "resume end\n");
+	//KGSL_PWR_WARN(device, "resume end\n");
 	return 0;
 }
 
