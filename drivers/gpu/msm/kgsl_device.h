@@ -177,6 +177,8 @@ struct kgsl_functable {
 	void (*regulator_disable)(struct kgsl_device *);
 	void (*pwrlevel_change_settings)(struct kgsl_device *device,
 		unsigned int prelevel, unsigned int postlevel, bool post);
+	void (*dispatcher_halt)(struct kgsl_device *device);
+ 	void (*dispatcher_unhalt)(struct kgsl_device *device);
 };
 
 struct kgsl_ioctl {
