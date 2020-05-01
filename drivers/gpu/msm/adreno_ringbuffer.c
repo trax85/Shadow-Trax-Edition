@@ -1130,9 +1130,9 @@ done:
 		kgsl_memdesc_unmap(&entry->memdesc);
 
 
-	trace_kgsl_issueibcmds(device, context->id, cmdbatch,
+	/*trace_kgsl_issueibcmds(device, context->id, cmdbatch,
 			numibs, cmdbatch->timestamp,
-			cmdbatch->flags, ret, drawctxt->type);
+			cmdbatch->flags, ret, drawctxt->type);*/
 
 	kfree(link);
 	return ret;
