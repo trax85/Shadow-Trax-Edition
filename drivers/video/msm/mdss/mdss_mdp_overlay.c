@@ -55,8 +55,8 @@
 #define MAX_CURSOR_IMG_WIDTH 512
 #define MAX_CURSOR_IMG_HEIGHT 512
 
-static unsigned int frame_boost = 0;
-module_param(frame_boost, uint, 0644);
+bool frame_boost = false ;
+module_param(frame_boost, bool, 0755);
 
 static int mdss_mdp_overlay_free_fb_pipe(struct msm_fb_data_type *mfd);
 static int mdss_mdp_overlay_fb_parse_dt(struct msm_fb_data_type *mfd);
