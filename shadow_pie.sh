@@ -22,7 +22,7 @@ red='\033[0;31m'
 gre='\e[0;32m'
 echo -e ""
 echo -e "$gre ====================================\n\n Welcome to Shadow building program !\n\n ===================================="
-echo -e "$gre \n 1.Build Shadow without qc\n\n 2.Build Shadow with qc\n"
+echo -e "$gre \n 1.Build Shadow clean\n\n 2.Build Shadow dirty\n"
 echo -n " Enter your choice:"
 read qc
 echo -e "$white"
@@ -34,16 +34,20 @@ Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
 export ARCH=arm64
-#export CROSS_COMPILE="/home/$USER/toolchain/gcc-linaro-6.4.1/bin/aarch64-linux-gnu-"
-export CROSS_COMPILE="/home/felix/linaro6.4.1/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/gcc-8/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/gcc-linaro-7/bin/aarch64-linux-gnu-"
+export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/aarch64-linux-android/bin/aarch64-linux-android-"
+if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
 make clean > /dev/null
-if [ $qc == 2 ]; then
-echo -e "$yellow Applying quick charging patch \n $white"
-git apply qc.patch
-elif [ $qc == 1 ]; then
-git apply -R qc.patch > /dev/null 2>&1
 fi
+#if [ $qc == 2 ]; then
+#echo -e "$yellow Applying quick charging patch \n $white"
+#git apply qc.patch
+#elif [ $qc == 1 ]; then
+#git apply -R qc.patch > /dev/null 2>&1
+#fi
 make shadow_pie_defconfig
 export KBUILD_BUILD_HOST="xda"
 export KBUILD_BUILD_USER="energyspear17"
@@ -51,11 +55,7 @@ make -j4
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
 $DTBTOOL -2 -o $KERNEL_DIR/arch/arm64/boot/dt.img -s 2048 -p $KERNEL_DIR/scripts/dtc/ $KERNEL_DIR/arch/arm/boot/dts/
-if ([ $qc -eq 1 ]); then
 mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/$VERSION/tools/dt1.img
-elif ([ $qc -eq 2 ]); then
-mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/$VERSION/tools/dt2.img
-fi
 cp $KERNEL_DIR/arch/arm64/boot/Image $KERNEL_DIR/build/$VERSION/tools/Image1
 zimage=$KERNEL_DIR/arch/arm64/boot/Image
 if ! [ -a $zimage ];

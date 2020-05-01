@@ -98,7 +98,8 @@ alert(
 
 selectbox(
   "\n\nChoose the android version that you are on.","<@center><b>\n\n\n\n\n\nThis will configure kernel according to your rom.\n</b></@>","","rom.prop",
-  "Pie ","\nAndroid 9",0,
+  "Nougat  ","\nAndroid 7",0,
+  "Pie, Oreo ","\nAndroid 9, Android 8 ",0,
   "Q ","\nAndroid 10",1
 );
 
