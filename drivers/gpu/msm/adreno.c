@@ -1215,8 +1215,6 @@ int adreno_probe(struct platform_device *pdev)
 	adreno_sysfs_init(device);
 
 	kgsl_pwrscale_init(&pdev->dev, CONFIG_MSM_ADRENO_DEFAULT_GOVERNOR);
-
-	adreno_input_handler.private = device;
 out:
 	if (status) {
 		adreno_ringbuffer_close(adreno_dev);
