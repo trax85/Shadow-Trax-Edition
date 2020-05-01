@@ -559,7 +559,7 @@ static int sendcmd(struct adreno_device *adreno_dev,
 {
 	struct kgsl_device *device = &adreno_dev->dev;
 	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
-	struct adreno_context *drawctxt = ADRENO_CONTEXT(cmdbatch->context);
+	//struct adreno_context *drawctxt = ADRENO_CONTEXT(cmdbatch->context);
 	struct adreno_dispatcher_cmdqueue *dispatch_q =
 				ADRENO_CMDBATCH_DISPATCH_CMDQUEUE(cmdbatch);
 	struct adreno_submit_time time;
@@ -1528,7 +1528,7 @@ int adreno_dispatcher_queue_cmd(struct adreno_device *adreno_dev,
 		if (!drawctxt->queued && kgsl_check_timestamp(cmdbatch->device,
 			cmdbatch->context, drawctxt->queued_timestamp)) {
 			//trace_adreno_cmdbatch_queued(cmdbatch,
-				drawctxt->queued);
+			//	drawctxt->queued);
 
 			_retire_marker(cmdbatch);
 			spin_unlock(&drawctxt->lock);
@@ -1811,7 +1811,7 @@ static void adreno_fault_header(struct adreno_ringbuffer *rb,
 {
 	struct kgsl_device *device = rb->device;
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
-	struct adreno_context *drawctxt = ADRENO_CONTEXT(cmdbatch->context);
+	//struct adreno_context *drawctxt = ADRENO_CONTEXT(cmdbatch->context);
 	unsigned int status, rptr, wptr, ib1sz, ib2sz;
 	uint64_t ib1base, ib2base;
 
@@ -2002,7 +2002,7 @@ void process_cmdbatch_fault(struct kgsl_device *device,
 
 	if (test_and_clear_bit(KGSL_FT_SKIPFRAME, &cmdbatch->fault_policy)) {
 		//trace_adreno_cmdbatch_recovery(cmdbatch,
-			BIT(KGSL_FT_SKIPFRAME));
+		//	BIT(KGSL_FT_SKIPFRAME));
 		set_bit(KGSL_FT_SKIPFRAME, &cmdbatch->fault_recovery);
 
 		/*
