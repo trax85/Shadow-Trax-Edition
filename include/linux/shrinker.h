@@ -12,6 +12,8 @@ struct shrink_control {
 	unsigned long nr_to_scan;
 };
 
+#define SHRINK_STOP (~0UL)
+
 /*
  * A callback you can register to apply pressure to ageable caches.
  *
