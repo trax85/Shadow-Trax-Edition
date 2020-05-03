@@ -139,7 +139,7 @@ static struct pll_vote_clk gpll2_clk_src = {
 	.status_mask = BIT(17),
 	.base = &virt_bases[GCC_BASE],
 	.c = {
-		.rate = 1049000000,
+		.rate = 932000000,
 		.parent = &xo_clk_src.c,
 		.dbg_name = "gpll2_clk_src",
 		.ops = &clk_ops_pll_vote,
@@ -154,7 +154,7 @@ static struct pll_vote_clk gpll3_clk_src = {
 	.status_mask = BIT(17),
 	.base = &virt_bases[GCC_BASE],
 	.c = {
-		.rate = 1140880000,
+		.rate = 1100000000,
 		.parent = &xo_clk_src.c,
 		.dbg_name = "gpll3_clk_src",
 		.ops = &clk_ops_pll_vote,
@@ -171,10 +171,10 @@ static struct pll_config_regs gpll3_regs = {
 	.base = &virt_bases[GCC_BASE],
 };
 
-/* GPLL3 at 1130.88MHz, main output enabled. */
+/* GPLL3 at 1100MHz, main output enabled. */
 static struct pll_config gpll3_config = {
 	.l = 57,
-	.m = 8,
+	.m = 7,
 	.n = 24,
 	.vco_val = 0x0,
 	.vco_mask = BM(21, 20),
@@ -212,7 +212,7 @@ static struct pll_vote_clk gpll6_clk_src = {
 	.status_mask = BIT(17),
 	.base = &virt_bases[GCC_BASE],
 	.c = {
-		.rate = 1480000000,
+		.rate = 1080000000,
 		.parent = &xo_clk_src.c,
 		.dbg_name = "gpll6_clk_src",
 		.ops = &clk_ops_pll_vote,
