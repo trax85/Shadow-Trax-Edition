@@ -20,32 +20,20 @@
 #include <linux/of.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
-
-#include <asm/cputype.h>
-#include <asm/topology.h>
 #include <linux/sched_energy.h>
+
+#include <asm/topology.h>
 
 static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_CAPACITY_SCALE;
 
 unsigned long arch_get_cpu_efficiency(int cpu)
 {
- 	return per_cpu(cpu_efficiency, cpu);
+	return per_cpu(cpu_efficiency, cpu);
 }
 
-/*
- * cpu power table
- * This per cpu data structure describes the relative capacity of each core.
- * On a heteregenous system, cores don't have the same computation capacity
- * and we reflect that difference in the cpu_power field so the scheduler can
- * take this difference into account during load balance. A per cpu structure
- * is preferred because each CPU updates its own cpu_power field during the
- * load balance except for idle cores. One idle core is selected to run the
- * rebalance_domains for all idle cores and the cpu_power can be updated
- * during this sequence.
- */
-static DEFINE_PER_CPU(unsigned long, cpu_scale);
+static DEFINE_PER_CPU(unsigned long, cpu_scale) = SCHED_CAPACITY_SCALE;
 
-unsigned long arch_scale_cpu_capacity(struct sched_domain *sd, int cpu)
+unsigned long scale_cpu_capacity(struct sched_domain *sd, int cpu)
 {
 	return per_cpu(cpu_scale, cpu);
 }
@@ -53,7 +41,6 @@ unsigned long arch_scale_cpu_capacity(struct sched_domain *sd, int cpu)
 static void set_capacity_scale(unsigned int cpu, unsigned long capacity)
 {
 	per_cpu(cpu_scale, cpu) = capacity;
-
 }
 
 static int __init get_cpu_for_node(struct device_node *node)
@@ -194,51 +181,12 @@ static int __init parse_cluster(struct device_node *cluster, int depth)
 	return 0;
 }
 
-struct cpu_efficiency {
-	const char *compatible;
-	unsigned long efficiency;
-};
-
-/*
- * Table of relative efficiency of each processors
- * The efficiency value must fit in 20bit and the final
- * cpu_scale value must be in the range
- *   0 < cpu_scale < SCHED_CAPACITY_SCALE
- */
-static const struct cpu_efficiency table_efficiency[] = {
-	{ "arm,cortex-a72", 4186 },
-	{ "arm,cortex-a53", 2048 },
-	{ NULL, },
-};
-
-static unsigned long *__cpu_capacity;
-#define cpu_capacity(cpu)	__cpu_capacity[cpu]
-
-static unsigned long middle_capacity = 1;
-
-#ifdef TJK_HMP
-static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_CAPACITY_SCALE;
-
-unsigned long arch_get_cpu_efficiency(int cpu)
-{
-	return per_cpu(cpu_efficiency, cpu);
-}
-#endif
-
-/*
- * Iterate all CPUs' descriptor in DT and compute the efficiency
- * (as per table_efficiency). Also calculate a middle efficiency
- * as close as possible to  (max{eff_i} - min{eff_i}) / 2
- * This is later used to scale the cpu_power field such that an
- * 'average' CPU is of middle power. Also see the comments near
- * table_efficiency[] and update_cpu_power().
- */
 static int __init parse_dt_topology(void)
 {
 	struct device_node *cn, *map;
 	int ret = 0;
 	int cpu;
-        u32 efficiency;
+	u32 efficiency;
 
 	cn = of_find_node_by_path("/cpus");
 	if (!cn) {
@@ -267,14 +215,15 @@ static int __init parse_dt_topology(void)
 			pr_err("CPU%d: No topology information specified\n",
 			       cpu);
 			ret = -EINVAL;
-                }
-                /* The CPU efficiency value passed from the device tree */
- 		cn = of_get_cpu_node(cpu, NULL);
- 		if (of_property_read_u32(cn, "efficiency", &efficiency) < 0) {
- 			WARN_ON(1);
- 			continue;
- 		}
- 		per_cpu(cpu_efficiency, cpu) = efficiency;
+		}
+
+		/* The CPU efficiency value passed from the device tree */
+		cn = of_get_cpu_node(cpu, NULL);
+		if (of_property_read_u32(cn, "efficiency", &efficiency) < 0) {
+			WARN_ON(1);
+			continue;
+		}
+		per_cpu(cpu_efficiency, cpu) = efficiency;
 	}
 
 out_map:
@@ -285,141 +234,22 @@ out:
 }
 
 /*
-  * Scheduler load-tracking scale-invariance
-  *
-  * Provides the scheduler with a scale-invariance correction factor that
-  * compensates for frequency scaling (arch_scale_freq_capacity()). The scaling
-  * factor is updated in smp.c
-  */
-unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu)
-{
- 	unsigned long curr = atomic_long_read(&per_cpu(cpu_freq_capacity, cpu));
-
- 	if (!curr) {
- 		return SCHED_CAPACITY_SCALE;
- 	}
-
- 	return curr;
-}
-
-static void __init parse_dt_cpu_capacity(void)
-{
-	const struct cpu_efficiency *cpu_eff;
-	struct device_node *cn;
-	unsigned long min_capacity = ULONG_MAX;
-	unsigned long max_capacity = 0;
-	unsigned long capacity = 0;
-	int cpu;
-
-	__cpu_capacity = kcalloc(nr_cpu_ids, sizeof(*__cpu_capacity),
-				 GFP_NOWAIT);
-
-	for_each_possible_cpu(cpu) {
-		const u32 *rate;
-		int len;
-		u32 efficiency;
-
-		/* Too early to use cpu->of_node */
-		cn = of_get_cpu_node(cpu, NULL);
-		if (!cn) {
-			pr_err("Missing device node for CPU %d\n", cpu);
-			continue;
-		}
-
-		/*
-		 * The CPU efficiency value passed from the device tree
-		 * overrides the value defined in the table_efficiency[]
-		 */
-		if (of_property_read_u32(cn, "efficiency", &efficiency) < 0) {
-
-			for (cpu_eff = table_efficiency;
-					cpu_eff->compatible; cpu_eff++)
-
-				if (of_device_is_compatible(cn,
-						cpu_eff->compatible))
-					break;
-
-			if (cpu_eff->compatible == NULL) {
-				pr_warn("%s: Unknown CPU type\n",
-						cn->full_name);
-				continue;
-			}
-
-			efficiency = cpu_eff->efficiency;
-		}
-
-#ifdef TJK_HMP
- 		per_cpu(cpu_efficiency, cpu) = cpu_eff->efficiency;
- #endif
-
-		rate = of_get_property(cn, "clock-frequency", &len);
-		if (!rate || len != 4) {
-			pr_err("%s: Missing clock-frequency property\n",
-				cn->full_name);
-			continue;
-		}
-
-		capacity = ((be32_to_cpup(rate)) >> 20) * efficiency;
-
-		/* Save min capacity of the system */
-		if (capacity < min_capacity)
-			min_capacity = capacity;
-
-		/* Save max capacity of the system */
-		if (capacity > max_capacity)
-			max_capacity = capacity;
-
-		cpu_capacity(cpu) = capacity;
-	}
-
-	/* compute a middle_capacity factor that will ensure that the capacity
-	 * of an 'average' CPU of the system will be as close as possible to
-	 * SCHED_CAPACITY_SCALE, which is the default value, but with the
-	 * constraint explained near table_efficiency[].
-	 */
-	if (4 * max_capacity < (3 * (max_capacity + min_capacity)))
-              middle_capacity = (min_capacity + max_capacity)
-				>> (SCHED_CAPACITY_SHIFT+1);
-	else
-		middle_capacity = ((max_capacity / 3)
-				>> (SCHED_CAPACITY_SHIFT-1)) + 1;
-}
-
-#ifdef TJK_HMP
-
-/*
- * Look for a customed capacity of a CPU in the cpu_topo_data table during the
- * boot. The update of all CPUs is in O(n^2) for heteregeneous system but the
- * function returns directly for SMP system.
- */
-static void update_cpu_power(unsigned int cpu)
-{
-	if (!cpu_capacity(cpu))
-		return;
-
-	set_power_scale(cpu, cpu_capacity(cpu) / middle_capacity);
-
-	pr_debug("CPU%u: update cpu_power %lu\n",
-		cpu, arch_scale_cpu_power(NULL, cpu));
-}
-#endif
-
-/*
  * cpu topology table
  */
 struct cpu_topology cpu_topology[NR_CPUS];
 EXPORT_SYMBOL_GPL(cpu_topology);
 
-static inline const struct sched_group_energy *const cpu_core_energy(int cpu)
+static inline
+const struct sched_group_energy * const cpu_core_energy(int cpu)
 {
- 	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL0];
+	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL0];
 
- 	if (!sge) {
- 		pr_warn("Invalid sched_group_energy for CPU%d\n", cpu);
- 		return NULL;
- 	}
+	if (!sge) {
+		pr_warn("Invalid sched_group_energy for CPU%d\n", cpu);
+		return NULL;
+	}
 
- 	return sge;
+	return sge;
 }
 
 const struct cpumask *cpu_coregroup_mask(int cpu)
@@ -429,28 +259,36 @@ const struct cpumask *cpu_coregroup_mask(int cpu)
 
 static void update_cpu_capacity(unsigned int cpu)
 {
- 	unsigned long capacity;
+	unsigned long capacity = SCHED_CAPACITY_SCALE;
 
- 	if (!cpu_core_energy(cpu)) {
- 		capacity = SCHED_CAPACITY_SCALE;
- 	} else {
- 		int max_cap_idx = cpu_core_energy(cpu)->nr_cap_states - 1;
- 		capacity = cpu_core_energy(cpu)->cap_states[max_cap_idx].cap;
- 	}
+	if (cpu_core_energy(cpu)) {
+		int max_cap_idx = cpu_core_energy(cpu)->nr_cap_states - 1;
+		capacity = cpu_core_energy(cpu)->cap_states[max_cap_idx].cap;
+	}
 
- 	set_capacity_scale(cpu, capacity);
- 	pr_info("CPU%d: update cpu_capacity %lu\n",
- 		cpu, arch_scale_cpu_capacity(NULL, cpu));
+	set_capacity_scale(cpu, capacity);
+
+	pr_debug("CPU%d: update cpu_capacity %lu\n",
+		cpu, arch_scale_cpu_capacity(NULL, cpu));
 }
+
 void update_cpu_power_capacity(int cpu)
 {
- 	update_cpu_capacity(cpu);
+	update_cpu_capacity(cpu);
 }
 
 static void update_siblings_masks(unsigned int cpuid)
 {
 	struct cpu_topology *cpu_topo, *cpuid_topo = &cpu_topology[cpuid];
 	int cpu;
+
+	if (cpuid_topo->cluster_id == -1) {
+		/*
+ 		 * DT does not contain topology information for this cpu.
+ 		 */
+ 		pr_debug("CPU%u: No topology information configured\n", cpuid);
+		return;
+	}
 
 	/* update core and thread sibling masks */
 	for_each_possible_cpu(cpu) {
@@ -474,42 +312,7 @@ static void update_siblings_masks(unsigned int cpuid)
 
 void store_cpu_topology(unsigned int cpuid)
 {
-	struct cpu_topology *cpuid_topo = &cpu_topology[cpuid];
-	u64 mpidr;
-
-	if (cpuid_topo->cluster_id != -1)
-		goto topology_populated;
-
-	mpidr = read_cpuid_mpidr();
-
-	/* Create cpu topology mapping based on MPIDR. */
-	if (mpidr & MPIDR_UP_BITMASK) {
-		/* Uniprocessor system */
-		cpuid_topo->thread_id  = -1;
-		cpuid_topo->core_id    = MPIDR_AFFINITY_LEVEL(mpidr, 0);
-		cpuid_topo->cluster_id = 0;
-	} else if (mpidr & MPIDR_MT_BITMASK) {
-		/* Multiprocessor system : Multi-threads per core */
-		cpuid_topo->thread_id  = MPIDR_AFFINITY_LEVEL(mpidr, 0);
-		cpuid_topo->core_id    = MPIDR_AFFINITY_LEVEL(mpidr, 1);
-		cpuid_topo->cluster_id = MPIDR_AFFINITY_LEVEL(mpidr, 2) |
-					 MPIDR_AFFINITY_LEVEL(mpidr, 3) << 8;
-	} else {
-		/* Multiprocessor system : Single-thread per core */
-		cpuid_topo->thread_id  = -1;
-		cpuid_topo->core_id    = MPIDR_AFFINITY_LEVEL(mpidr, 0);
-		cpuid_topo->cluster_id = MPIDR_AFFINITY_LEVEL(mpidr, 1) |
-					 MPIDR_AFFINITY_LEVEL(mpidr, 2) << 8 |
-					 MPIDR_AFFINITY_LEVEL(mpidr, 3) << 16;
-	}
-
-	pr_debug("CPU%u: cluster %d core %d thread %d mpidr %llx\n",
-		 cpuid, cpuid_topo->cluster_id, cpuid_topo->core_id,
-		 cpuid_topo->thread_id, mpidr);
-
-topology_populated:
 	update_siblings_masks(cpuid);
-	update_cpu_capacity(cpuid);
 }
 
 static void __init reset_cpu_topology(void)
@@ -530,38 +333,35 @@ static void __init reset_cpu_topology(void)
 	}
 }
 
-static void __init reset_cpu_capacity(void)
+static inline const struct sched_group_energy * const cpu_cluster_energy(int cpu)
 {
-	unsigned int cpu;
+	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL1];
 
-	for_each_possible_cpu(cpu)
-		set_capacity_scale(cpu, SCHED_CAPACITY_SCALE);
+	if (!sge) {
+		pr_warn("Invalid sched_group_energy for Cluster%d\n", cpu);
+		return NULL;
+	}
+
+	return sge;
 }
 
-static inline const struct sched_group_energy *const cpu_cluster_energy(int cpu)
+static int cpu_cpu_flags(void)
 {
- 	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL1];
-
- 	if (!sge) {
- 		pr_warn("Invalid sched_group_energy for Cluster%d\n", cpu);
- 		return NULL;
- 	}
-
- 	return sge;
+	return SD_ASYM_CPUCAPACITY;
 }
 
 static inline int cpu_corepower_flags(void)
 {
- 	return SD_SHARE_PKG_RESOURCES  | SD_SHARE_POWERDOMAIN | \
- 	       SD_SHARE_CAP_STATES;
+	return SD_SHARE_PKG_RESOURCES  | SD_SHARE_POWERDOMAIN | \
+	       SD_SHARE_CAP_STATES;
 }
 
 static struct sched_domain_topology_level arm64_topology[] = {
 #ifdef CONFIG_SCHED_MC
- 	{ cpu_coregroup_mask, cpu_corepower_flags, cpu_core_energy, SD_INIT_NAME(MC) },
+	{ cpu_coregroup_mask, cpu_corepower_flags, cpu_core_energy, SD_INIT_NAME(MC) },
 #endif
- 	{ cpu_cpu_mask, 0, cpu_cluster_energy, SD_INIT_NAME(DIE) },
- 	{ NULL, },
+	{ cpu_cpu_mask, cpu_cpu_flags, cpu_cluster_energy, SD_INIT_NAME(DIE) },
+	{ NULL, },
 };
 
 void __init init_cpu_topology(void)
@@ -574,10 +374,8 @@ void __init init_cpu_topology(void)
 	 */
 	if (parse_dt_topology())
 		reset_cpu_topology();
-        else
- 		set_sched_topology(arm64_topology);
+	else
+		set_sched_topology(arm64_topology);
 
-	reset_cpu_capacity();
- 	parse_dt_cpu_capacity();
- 	init_sched_energy_costs();
+	init_sched_energy_costs();
 }
