@@ -1637,7 +1637,7 @@
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 			<55 512 0 0>,
-			<55 512 400000 400000>;
+			<55 512 393600 393600>;
 		clocks = <&clock_gcc clk_crypto_clk_src>,
 			 <&clock_gcc clk_gcc_crypto_clk>,
 			 <&clock_gcc clk_gcc_crypto_ahb_clk>,
@@ -1650,7 +1650,7 @@
 		qcom,use-sw-ahash-algo;
 		qcom,use-sw-hmac-algo;
 		qcom,use-sw-aead-algo;
-		qcom,ce-opp-freq = <160000000>;
+		qcom,ce-opp-freq = <100000000>;
 	};
 
 	qcom_cedev: qcedev@720000 {
@@ -1668,14 +1668,14 @@
 		qcom,msm-bus,num-paths = <1>;
 		qcom,msm-bus,vectors-KBps =
 			<55 512 0 0>,
-			<55 512 400000 400000>;
+			<55 512 393600 393600>;
 		clocks = <&clock_gcc clk_crypto_clk_src>,
 			 <&clock_gcc clk_gcc_crypto_clk>,
 			 <&clock_gcc clk_gcc_crypto_ahb_clk>,
 			 <&clock_gcc clk_gcc_crypto_axi_clk>;
 		clock-names = "core_clk_src", "core_clk",
 				"iface_clk", "bus_clk";
-		qcom,ce-opp-freq = <160000000>;
+		qcom,ce-opp-freq = <100000000>;
 	};
 
 	qcom_seecom: qseecom@85b00000 {
@@ -1703,7 +1703,7 @@
 			 <&clock_gcc clk_gcc_crypto_axi_clk>;
 		clock-names = "core_clk_src", "core_clk",
 				"iface_clk", "bus_clk";
-		qcom,ce-opp-freq = <160000000>;
+		qcom,ce-opp-freq = <100000000>;
 	};
 
 	qcom,ipc_router {
@@ -1944,12 +1944,12 @@
 		qcom,dcvs-min-mbperframe = <32400>; /* 3840 x 2160 */
 
 		qcom,load-freq-tbl =
-			<979200 512600000 0x55555555>, /* TURBO, UHD30E   */
+			<979200 466000000 0x55555555>, /* TURBO, UHD30E   */
 			<979200 400000000 0xffffffff>, /* NOM+ , UHD30D   */
 			<734400 360000000 0xffffffff>, /* NOM  , 1080p90D */
 			<734400 400000000 0x55555555>, /* NOM+ , 1080p90E */
 			<489600 228570000 0xffffffff>, /* SVS  , 1080p60D */
-			<489600 512600000 0x55555555>, /* TURBO, 1080p60E */
+			<489600 466000000 0x55555555>, /* TURBO, 1080p60E */
 			<432000 228570000 0xffffffff>, /* SVS  , 720p120D */
 			<432000 400000000 0x55555555>, /* NOM+ , 720p120E */
 			<244800 133333333 0xffffffff>, /* SVS- , 1080p30D */
@@ -1983,7 +1983,7 @@
 			<310667000 RPM_SMD_REGULATOR_LEVEL_SVS_PLUS>,
 			<360000000 RPM_SMD_REGULATOR_LEVEL_NOM>,
 			<400000000 RPM_SMD_REGULATOR_LEVEL_NOM_PLUS>,
-			<512600000 RPM_SMD_REGULATOR_LEVEL_TURBO>;
+			<466000000 RPM_SMD_REGULATOR_LEVEL_TURBO>;
 
 		qcom,vp9d-clock-voltage-tbl =
 			<72727200 RPM_SMD_REGULATOR_LEVEL_SVS>,
@@ -2110,7 +2110,7 @@
 					 "bus_clk", "scm_core_clk",
 					 "scm_iface_clk", "scm_bus_clk",
 					 "scm_core_clk_src";
-		qcom,scm_core_clk_src-freq = <250000000>;
+		qcom,scm_core_clk_src-freq = <80000000>;
 
 		qcom,msm-bus,name = "pil-venus";
 		qcom,msm-bus,num-cases = <2>;
@@ -2142,7 +2142,7 @@
 				"scm_bus_clk", "scm_core_clk_src";
 		qcom,proxy-clock-names = "xo", "scm_core_clk", "scm_iface_clk",
 				 "scm_bus_clk", "scm_core_clk_src";
-		qcom,scm_core_clk_src-freq = <250000000>;
+		qcom,scm_core_clk_src-freq = <80000000>;
 
 		qcom,pas-id = <1>;
 		qcom,proxy-timeout-ms = <10000>;
@@ -2228,7 +2228,7 @@
 				"scm_bus_clk", "scm_core_clk_src";
 		qcom,proxy-clock-names = "xo", "scm_core_clk", "scm_iface_clk",
 				 "scm_bus_clk", "scm_core_clk_src";
-		qcom,scm_core_clk_src = <250000000>;
+		qcom,scm_core_clk_src = <80000000>;
 
 		qcom,pas-id = <6>;
 		qcom,proxy-timeout-ms = <10000>;
@@ -2768,7 +2768,7 @@
 			 <&clock_gcc clk_gcc_crypto_axi_clk>;
 		clock-names = "core_clk_src", "core_clk",
 				"iface_clk", "bus_clk";
-		qcom,ce-opp-freq = <160000000>;
+		qcom,ce-opp-freq = <100000000>;
 	};
 
 };
