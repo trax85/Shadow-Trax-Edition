@@ -51,7 +51,6 @@
 #include <linux/qcom_iommu.h>
 #include <linux/msm_iommu_domains.h>
 #include <linux/devfreq_boost.h>
-#include <linux/cpu_boost.h>
 
 #ifdef CONFIG_MACH_XIAOMI_KENZO
 #include "mdss_dsi.h"
@@ -84,9 +83,6 @@
 
 bool backlight_dimmer = false;
 module_param(backlight_dimmer, bool, 0755);
-
-int frame_boost_timeout = 100;
-module_param(frame_boost_timeout, uint, 0755);
 
 static struct fb_info *fbi_list[MAX_FBI_LIST];
 static int fbi_list_index;
@@ -3836,17 +3832,6 @@ int __ioctl_transition_dyn_mode_state(struct msm_fb_data_type *mfd,
 	return 0;
 }
 
-static void mdss_kick_frame_boost(int timeout_ms)
-{
- 	if (!timeout_ms)
- 		return;
-
- 	if (timeout_ms < 0 ) {
- 		do_input_boost_max();
- 		devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
- 	}
-}
-
 /*
  * mdss_fb_do_ioctl() - MDSS Framebuffer ioctl function
  * @info:	pointer to framebuffer info
@@ -3933,7 +3918,7 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 		break;
 
 	case MSMFB_DISPLAY_COMMIT:
-		mdss_kick_frame_boost(frame_boost_timeout);
+                devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
 		ret = mdss_fb_display_commit(info, argp);
 		break;
 
