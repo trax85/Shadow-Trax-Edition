@@ -27,7 +27,7 @@
 			reg = <1>;
 			qcom,supply-name = "vddio";
 			qcom,supply-min-voltage = <1800000>;
-			qcom,supply-max-voltage = <2000000>;
+			qcom,supply-max-voltage = <1800000>;
 			qcom,supply-enable-load = <100000>;
 			qcom,supply-disable-load = <100>;
 		};
@@ -35,8 +35,8 @@
 		qcom,panel-supply-entry@2 {
 			reg = <2>;
 			qcom,supply-name = "lab";
-			qcom,supply-min-voltage = <5600000>;
-			qcom,supply-max-voltage = <9000000>;
+			qcom,supply-min-voltage = <4600000>;
+ 			qcom,supply-max-voltage = <6000000>;
 			qcom,supply-enable-load = <100000>;
 			qcom,supply-disable-load = <100>;
 		};
@@ -45,7 +45,7 @@
 			reg = <3>;
 			qcom,supply-name = "ibb";
 			qcom,supply-min-voltage = <4600000>;
-			qcom,supply-max-voltage = <9000000>;
+			qcom,supply-max-voltage = <6000000>;
 			qcom,supply-enable-load = <100000>;
 			qcom,supply-disable-load = <100>;
 			qcom,supply-post-on-sleep = <20>;
