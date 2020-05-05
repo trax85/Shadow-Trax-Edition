@@ -134,7 +134,7 @@ int adjust_minadj(short *min_score_adj)
 static int lmk_vmpressure_notifier(struct notifier_block *nb,
 			unsigned long action, void *data)
 {
-	int other_free= 0 , other_file=0;
+	int other_free = 0, other_file = 0;
 	unsigned long pressure = action;
 	int array_size = ARRAY_SIZE(lowmem_adj);
 
@@ -265,9 +265,8 @@ void tune_lmk_zone_param(struct zonelist *zonelist, int classzone_idx,
 					  zone_page_state(
 					    zone, NR_FREE_PAGES));
 				} else {
-					if (other_free)
- 					*other_free -=
- 					  zone->lowmem_reserve[classzone_idx];
+					*other_free -=
+					  zone->lowmem_reserve[classzone_idx];
 				}
 			} else {
 				if (other_free)
