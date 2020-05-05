@@ -31,19 +31,19 @@ struct sched_domain;
 extern unsigned long cpufreq_scale_freq_capacity(struct sched_domain *sd, int cpu);
 #define arch_scale_max_freq_capacity cpufreq_scale_max_freq_capacity
 extern unsigned long cpufreq_scale_max_freq_capacity(struct sched_domain *sd, int cpu);
+#define arch_scale_min_freq_capacity cpufreq_scale_min_freq_capacity
+extern unsigned long cpufreq_scale_min_freq_capacity(struct sched_domain *sd, int cpu);
 #endif
 #define arch_scale_cpu_capacity scale_cpu_capacity
 extern unsigned long scale_cpu_capacity(struct sched_domain *sd, int cpu);
 
-#else
-
-static inline void init_cpu_topology(void) { }
-static inline void store_cpu_topology(unsigned int cpuid) { }
-
-#endif
+#define arch_update_cpu_capacity update_cpu_power_capacity
+extern void update_cpu_power_capacity(int cpu);
 
 #define arch_update_cpu_capacity update_cpu_power_capacity
 extern void update_cpu_power_capacity(int cpu);
+
+#endif
 
 
 #include <asm-generic/topology.h>
