@@ -194,5 +194,4 @@ source "drivers/firmware/Kconfig"
 
 source "drivers/dts_eagle/Kconfig"
 
-source "drivers/energy_model/Kconfig"
 endmenu
