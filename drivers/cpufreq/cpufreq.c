@@ -324,23 +324,21 @@ static inline void adjust_jiffies(unsigned long val, struct cpufreq_freqs *ci)
 static DEFINE_PER_CPU(unsigned long, freq_scale) = SCHED_CAPACITY_SCALE;
 static DEFINE_PER_CPU(unsigned long, max_freq_cpu);
 static DEFINE_PER_CPU(unsigned long, max_freq_scale) = SCHED_CAPACITY_SCALE;
-static DEFINE_PER_CPU(unsigned long, min_freq_scale);
 
 static void
 scale_freq_capacity(const cpumask_t *cpus, unsigned long cur_freq,
- 		    unsigned long max_freq)
+		    unsigned long max_freq)
 {
 	unsigned long scale = (cur_freq << SCHED_CAPACITY_SHIFT) / max_freq;
- 	int cpu;
+	int cpu;
 
 	for_each_cpu(cpu, cpus) {
- 		per_cpu(freq_scale, cpu) = scale;
- 		per_cpu(max_freq_cpu, cpu) = max_freq;
- 	}
+		per_cpu(freq_scale, cpu) = scale;
+		per_cpu(max_freq_cpu, cpu) = max_freq;
+	}
 
 	pr_debug("cpus %*pbl cur freq/max freq %lu/%lu kHz freq scale %lu\n",
- 		 cpumask_pr_args(cpus), cur_freq, max_freq, scale);
-
+		 cpumask_pr_args(cpus), cur_freq, max_freq, scale);
 }
 
 unsigned long cpufreq_scale_freq_capacity(struct sched_domain *sd, int cpu)
@@ -351,59 +349,30 @@ unsigned long cpufreq_scale_freq_capacity(struct sched_domain *sd, int cpu)
 static void
 scale_max_freq_capacity(const cpumask_t *cpus, unsigned long policy_max_freq)
 {
- 	unsigned long scale, max_freq;
- 	int cpu = cpumask_first(cpus);
+	unsigned long scale, max_freq;
+	int cpu = cpumask_first(cpus);
 
- 	if (cpu >= nr_cpu_ids)
- 		return;
+	if (cpu >= nr_cpu_ids)
+		return;
 
- 	max_freq = per_cpu(max_freq_cpu, cpu);
+	max_freq = per_cpu(max_freq_cpu, cpu);
 
- 	if (!max_freq)
- 		return;
+	if (!max_freq)
+		return;
 
- 	scale = (policy_max_freq << SCHED_CAPACITY_SHIFT) / max_freq;
+	scale = (policy_max_freq << SCHED_CAPACITY_SHIFT) / max_freq;
 
- 	for_each_cpu(cpu, cpus)
- 		per_cpu(max_freq_scale, cpu) = scale;
+	for_each_cpu(cpu, cpus)
+		per_cpu(max_freq_scale, cpu) = scale;
 
- 	pr_debug("cpus %*pbl policy max freq/max freq %lu/%lu kHz max freq scale %lu\n",
- 		 cpumask_pr_args(cpus), policy_max_freq, max_freq, scale);
+	pr_debug("cpus %*pbl policy max freq/max freq %lu/%lu kHz max freq scale %lu\n",
+		 cpumask_pr_args(cpus), policy_max_freq, max_freq, scale);
 }
 
 unsigned long cpufreq_scale_max_freq_capacity(struct sched_domain *sd, int cpu)
 {
- 	return per_cpu(max_freq_scale, cpu);
+	return per_cpu(max_freq_scale, cpu);
 }
-
-static void
-scale_min_freq_capacity(const cpumask_t *cpus, unsigned long policy_min_freq)
-{
- 	unsigned long scale, max_freq;
- 	int cpu = cpumask_first(cpus);
-
- 	if (cpu >= nr_cpu_ids)
- 		return;
-
- 	max_freq = per_cpu(max_freq_cpu, cpu);
-
- 	if (!max_freq)
- 		return;
-
- 	scale = (policy_min_freq << SCHED_CAPACITY_SHIFT) / max_freq;
-
- 	for_each_cpu(cpu, cpus)
- 		per_cpu(min_freq_scale, cpu) = scale;
-
- 	pr_debug("cpus %*pbl policy min freq/max freq %lu/%lu kHz min freq scale %lu\n",
- 		 cpumask_pr_args(cpus), policy_min_freq, max_freq, scale);
-}
-
-unsigned long cpufreq_scale_min_freq_capacity(struct sched_domain *sd, int cpu)
-{
- 	return per_cpu(min_freq_scale, cpu);
-}
-
 
 static void __cpufreq_notify_transition(struct cpufreq_policy *policy,
 		struct cpufreq_freqs *freqs, unsigned int state)
@@ -699,7 +668,9 @@ static ssize_t store_##file_name					\
 	int ret;							\
 	struct cpufreq_policy new_policy;				\
 									\
-	memcpy(&new_policy, policy, sizeof(*policy));			\
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);		\
+	if (ret)							\
+		return -EINVAL;						\
 									\
 	new_policy.min = new_policy.user_policy.min;			\
 	new_policy.max = new_policy.user_policy.max;			\
@@ -762,7 +733,9 @@ static ssize_t store_scaling_governor(struct cpufreq_policy *policy,
 	char	str_governor[16];
 	struct cpufreq_policy new_policy;
 
-	memcpy(&new_policy, policy, sizeof(*policy));
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);
+	if (ret)
+		return ret;
 
 	ret = sscanf(buf, "%15s", str_governor);
 	if (ret != 1)
@@ -1050,11 +1023,11 @@ EXPORT_SYMBOL(cpufreq_put_global_kobject);
 int cpufreq_sysfs_create_file(const struct attribute *attr)
 {
 	int ret = cpufreq_get_global_kobject();
+
 	if (!ret) {
 		ret = sysfs_create_file(cpufreq_global_kobject, attr);
-		if (ret){
+		if (ret)
 			cpufreq_put_global_kobject();
-		}
 	}
 
 	return ret;
@@ -1929,9 +1902,6 @@ void cpufreq_resume(void)
 	if (!cpufreq_driver)
 		return;
 
-	if (unlikely(!cpufreq_suspended))
- 		return;
-
 	cpufreq_suspended = false;
 
 	if (!has_target())
@@ -2430,9 +2400,7 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 			CPUFREQ_NOTIFY, new_policy);
 
-
 	scale_max_freq_capacity(policy->cpus, policy->max);
-	scale_min_freq_capacity(policy->cpus, policy->min);
 
 	policy->min = new_policy->min;
 	policy->max = new_policy->max;
@@ -2664,13 +2632,6 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 
 	if (cpufreq_disabled())
 		return -ENODEV;
-
-	/*
- 	 * The cpufreq core depends heavily on the availability of device
- 	 * structure, make sure they are available before proceeding further.
- 	 */
- 	if (!get_cpu_device(0))
- 		return -EPROBE_DEFER;
 
 	if (!driver_data || !driver_data->verify || !driver_data->init ||
 	    !(driver_data->setpolicy || driver_data->target_index ||
