@@ -264,6 +264,7 @@ config CPU_FREQ_DEFAULT_GOV_ENERGY
  	  governor will be 'performance'.
 
 config CPU_FREQ_DEFAULT_GOV_HELIX
+	bool "helix_schedutil"
  	depends on SMP
  	select CPU_FREQ_GOV_HELIX
  	select CPU_FREQ_GOV_PERFORMANCE
