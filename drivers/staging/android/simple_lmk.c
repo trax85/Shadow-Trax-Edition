@@ -39,7 +39,6 @@
 #define MAX_VICTIMS 1024
 
 /* Missing bits */
-#define MAX_RT_PRIO 100
 #define MIN_NICE -20
 
 struct victim_info {
@@ -49,7 +48,7 @@ struct victim_info {
 };
 
 /* Pulled from the Android framework. Lower adj means higher priority. */
-static const short adjs[] = {
+static const short adj_prio[] = {
  	1000, /* CACHED_APP_MAX_ADJ + 1 */
  	950,  /* CACHED_APP_LMK_FIRST_ADJ */
  	900,  /* CACHED_APP_MIN_ADJ */
