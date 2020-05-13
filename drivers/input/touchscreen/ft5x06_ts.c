@@ -3161,7 +3161,7 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 
 	err = request_threaded_irq(client->irq, NULL,
 				ft5x06_ts_interrupt,
-				pdata->irqflags | IRQF_ONESHOT | IRQF_TRIGGER_FALLING | IRQF_PERF_CRITICAL,
+				pdata->irqflags | IRQF_ONESHOT | IRQF_TRIGGER_FALLING,
 				client->dev.driver->name, data);
 	if (err) {
 		dev_err(&client->dev, "request irq failed\n");
