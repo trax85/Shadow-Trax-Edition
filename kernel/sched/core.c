@@ -1239,6 +1239,9 @@ get_adjusted_cpumask(const struct task_struct *p,
 	/* Force all low-power kthreads onto the big cluster */
 	if (p->flags & PF_PERF_CRITICAL)
 		return cpu_lp_mask;
+	/* Force all low-power kthreads onto the little cluster */
+ 	if (p->flags & PF_LOW_POWER)
+ 		return cpu_lp_mask;
 
 	return orig_mask;
 }
