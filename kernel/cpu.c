@@ -507,13 +507,15 @@ EXPORT_SYMBOL_GPL(cpu_up);
 #ifdef CONFIG_PM_SLEEP_SMP
 static cpumask_var_t frozen_cpus;
 
-int disable_nonboot_cpus(void)
+int freeze_secondary_cpus(int primary)
 {
-	int cpu, first_cpu, error = 0;
+	int cpu, error = 0;
 
 	cpu_maps_update_begin();
-        unaffine_perf_irqs();
-	first_cpu = cpumask_first(cpu_online_mask);
+        if (!cpu_online(primary))
+ 		primary = cpumask_first(cpu_online_mask);
+
+ 	unaffine_perf_irqs();
 	/*
 	 * We take down all of the non-boot CPUs in one shot to avoid races
 	 * with the userspace trying to use the CPU hotplug at the same time
@@ -522,8 +524,15 @@ int disable_nonboot_cpus(void)
 
 	pr_debug("Disabling non-boot CPUs ...\n");
 	for_each_online_cpu(cpu) {
-		if (cpu == first_cpu)
+		if (cpu == primary)
 			continue;
+
+		if (pm_wakeup_pending()) {
+ 			pr_info("Wakeup pending. Abort CPU freeze\n");
+ 			error = -EBUSY;
+ 			break;
+ 		}
+
 		error = _cpu_down(cpu, 1);
 		if (!error)
 			cpumask_set_cpu(cpu, frozen_cpus);
@@ -579,9 +588,9 @@ void __ref enable_nonboot_cpus(void)
 	arch_enable_nonboot_cpus_end();
 
 	cpumask_clear(frozen_cpus);
+	reaffine_perf_irqs();
 out:
 	cpu_maps_update_done();
-        reaffine_perf_irqs();
 }
 
 static int __init alloc_frozen_cpus(void)
