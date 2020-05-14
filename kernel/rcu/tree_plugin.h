@@ -2271,8 +2271,13 @@ static void __init rcu_spawn_nocb_kthreads(struct rcu_state *rsp)
 		return;
 	for_each_cpu(cpu, rcu_nocb_mask) {
 		rdp = per_cpu_ptr(rsp->rda, cpu);
-		t = kthread_run(rcu_nocb_kthread, rdp,
-				"rcuo%c/%d", rsp->abbr, cpu);
+#ifdef CONFIG_RCU_NOCB_CPU_BIND_LP
+ 		t = kthread_run_low_power(rcu_nocb_kthread, rdp,
+ 			"rcuo%c/%d", rsp->abbr, cpu);
+#else
+ 		t = kthread_run(rcu_nocb_kthread, rdp,
+ 				"rcuo%c/%d", rsp->abbr, cpu);
+#endif
 		BUG_ON(IS_ERR(t));
 		ACCESS_ONCE(rdp->nocb_kthread) = t;
 	}
