@@ -894,7 +894,7 @@ enum cpu_idle_type {
  * Increase resolution of cpu_capacity calculations
  */
 #define SCHED_CAPACITY_SHIFT	10
-#define SCHED_CAPACITY_SCALE	(1L << SCHED_CAPACITY_SHIFT)
+ #define SCHED_CAPACITY_SCALE	(1L << SCHED_CAPACITY_SHIFT)
 
 /*
  * Wake-queues are lists of tasks with a pending wakeup, whose
@@ -994,7 +994,6 @@ extern int sched_domain_level_max;
 
 struct capacity_state {
  	unsigned long cap;	/* compute capacity */
-        unsigned long frequency;/* frequency */
  	unsigned long power;	/* power consumption at this compute capacity */
 };
 
@@ -1546,8 +1545,6 @@ struct task_struct {
 
 	cputime_t utime, stime, utimescaled, stimescaled;
 	cputime_t gtime;
-        atomic64_t *time_in_state;
-	unsigned int max_states;
 	unsigned long long cpu_power;
 #ifndef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 	struct cputime prev_cputime;
