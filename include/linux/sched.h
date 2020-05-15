@@ -30,9 +30,6 @@ struct sched_param {
 
 #include <linux/smp.h>
 #include <linux/sem.h>
-#ifdef TJK_HMP
-#include <linux/shm.h>
-#endif
 #include <linux/signal.h>
 #include <linux/compiler.h>
 #include <linux/completion.h>
@@ -435,18 +432,6 @@ extern int get_dumpable(struct mm_struct *mm);
 #define MMF_DUMPABLE_BITS 2
 #define MMF_DUMPABLE_MASK ((1 << MMF_DUMPABLE_BITS) - 1)
 
-#if 0
-static inline int __get_dumpable(unsigned long mm_flags)
-{
- 	return mm_flags & MMF_DUMPABLE_MASK;
-}
-
-static inline int get_dumpable(struct mm_struct *mm)
-{
- 	return __get_dumpable(mm->flags);
-}
-#endif
-
 /* coredump filter bits */
 #define MMF_DUMP_ANON_PRIVATE	2
 #define MMF_DUMP_ANON_SHARED	3
@@ -543,14 +528,6 @@ struct task_cputime {
 		.stime = 0,					\
 		.sum_exec_runtime = 0,				\
 	}
-
-#ifdef TJK_HMP
-#ifdef CONFIG_PREEMPT_COUNT
-#define PREEMPT_DISABLED	(1 + PREEMPT_ENABLED)
-#else
-#define PREEMPT_DISABLED	PREEMPT_ENABLED
-#endif
-#endif
 
 /*
  * Disable preemption until the scheduler is running.
@@ -1303,12 +1280,10 @@ struct task_struct {
 	 * of this task
 	 */
 	u32 init_load_pct;
-#ifdef CONFIG_SCHED_QHMP
 	u64 run_start;
 	u64 last_sleep_ts;
 	struct related_thread_group *grp;
 	struct list_head grp_list;
-#endif
 #endif
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group *sched_task_group;
@@ -2104,7 +2079,6 @@ extern unsigned int sched_get_group_id(struct task_struct *p);
 extern int sched_set_boost(int enable);
 extern int sched_set_init_task_load(struct task_struct *p, int init_load_pct);
 extern u32 sched_get_init_task_load(struct task_struct *p);
-#ifdef CONFIG_SCHED_QHMP
 extern int sched_set_cpu_prefer_idle(int cpu, int prefer_idle);
 extern int sched_get_cpu_prefer_idle(int cpu);
 extern int sched_set_cpu_mostly_idle_load(int cpu, int mostly_idle_pct);
@@ -2116,7 +2090,6 @@ sched_set_cpu_mostly_idle_freq(int cpu, unsigned int mostly_idle_freq);
 extern unsigned int sched_get_cpu_mostly_idle_freq(int cpu);
 
 void sched_set_shadow_active(bool active);
-#endif
 
 #else
 static inline int sched_set_boost(int enable)

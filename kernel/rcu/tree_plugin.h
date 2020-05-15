@@ -400,10 +400,10 @@ void rcu_read_unlock_special(struct task_struct *t)
 		if (&t->rcu_node_entry == rnp->boost_tasks)
 			rnp->boost_tasks = np;
 		/* Snapshot/clear ->rcu_boost_mutex with rcu_node lock held. */
-		/*if (t->rcu_boost_mutex) {
+		if (t->rcu_boost_mutex) {
 			rbmp = t->rcu_boost_mutex;
 			t->rcu_boost_mutex = NULL;
-		}*/
+		}
 #endif /* #ifdef CONFIG_RCU_BOOST */
 
 		/*
@@ -1207,7 +1207,7 @@ static int rcu_boost(struct rcu_node *rnp)
 	 */
 	t = container_of(tb, struct task_struct, rcu_node_entry);
 	rt_mutex_init_proxy_locked(&mtx, t);
-	//t->rcu_boost_mutex = &mtx;
+	t->rcu_boost_mutex = &mtx;
 	raw_spin_unlock_irqrestore(&rnp->lock, flags);
 	rt_mutex_lock(&mtx);  /* Side effect: boosts task t's priority. */
 	rt_mutex_unlock(&mtx);  /* Keep lockdep happy. */

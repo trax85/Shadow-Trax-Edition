@@ -334,7 +334,6 @@ static struct ctl_table kern_table[] = {
 		.mode           = 0644,
 		.proc_handler   = sched_window_update_handler,
 	},
-#ifdef TJK_HMP
 	{
 		.procname       = "sched_heavy_task",
 		.data           = &sysctl_sched_heavy_task_pct,
@@ -342,7 +341,6 @@ static struct ctl_table kern_table[] = {
 		.mode           = 0644,
 		.proc_handler   = sched_hmp_proc_update_handler,
 	},
-#endif
 #endif
 #ifdef CONFIG_SCHED_HMP
 	{
@@ -387,7 +385,6 @@ static struct ctl_table kern_table[] = {
 		.mode           = 0644,
 		.proc_handler   = sched_window_update_handler,
 	},
-#ifdef TJK_HMP
 	{
 		.procname	= "sched_small_task",
 		.data		= &sysctl_sched_small_task_pct,
@@ -409,7 +406,6 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_hmp_proc_update_handler,
 	},
-#endif
 	{
 		.procname	= "sched_spill_nr_run",
 		.data		= &sysctl_sched_spill_nr_run,
@@ -418,7 +414,6 @@ static struct ctl_table kern_table[] = {
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &zero,
 	},
-#ifdef TJK_HMP
 	{
 		.procname	= "sched_upmigrate",
 		.data		= &sysctl_sched_upmigrate_pct,
@@ -496,7 +491,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_hmp_proc_update_handler,
 	},
-#endif
+#if 0
 	{
 		.procname	= "sched_boost",
 		.data		= &sysctl_sched_boost,
@@ -504,6 +499,7 @@ static struct ctl_table kern_table[] = {
 		.mode		= 0644,
 		.proc_handler	= sched_boost_handler,
 	},
+#endif
 	{
 		.procname	= "sched_enable_power_aware",
 		.data		= &sysctl_sched_enable_power_aware,
