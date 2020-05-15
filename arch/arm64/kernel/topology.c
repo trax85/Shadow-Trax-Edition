@@ -23,7 +23,6 @@
 
 #include <asm/cputype.h>
 #include <asm/topology.h>
-#include <linux/sched_energy.h>
 
 /*
  * cpu power table
@@ -38,15 +37,14 @@
  */
 static DEFINE_PER_CPU(unsigned long, cpu_scale);
 
-unsigned long arch_scale_cpu_capacity(struct sched_domain *sd, int cpu)
+unsigned long arch_scale_freq_power(struct sched_domain *sd, int cpu)
 {
 	return per_cpu(cpu_scale, cpu);
 }
 
-static void set_capacity_scale(unsigned int cpu, unsigned long capacity)
+static void set_power_scale(unsigned int cpu, unsigned long power)
 {
-	per_cpu(cpu_scale, cpu) = capacity;
-
+	per_cpu(cpu_scale, cpu) = power;
 }
 
 static int __init get_cpu_for_node(struct device_node *node)
@@ -196,7 +194,11 @@ struct cpu_efficiency {
  * Table of relative efficiency of each processors
  * The efficiency value must fit in 20bit and the final
  * cpu_scale value must be in the range
- *   0 < cpu_scale < SCHED_CAPACITY_SCALE
+ *   0 < cpu_scale < 3*SCHED_POWER_SCALE/2
+ * in order to return at most 1 when DIV_ROUND_CLOSEST
+ * is used to compute the capacity of a CPU.
+ * Processors that are not defined in the table,
+ * use the default SCHED_POWER_SCALE value for cpu_scale.
  */
 static const struct cpu_efficiency table_efficiency[] = {
 	{ "arm,cortex-a72", 4186 },
@@ -209,14 +211,12 @@ static unsigned long *__cpu_capacity;
 
 static unsigned long middle_capacity = 1;
 
-#ifdef TJK_HMP
-static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_CAPACITY_SCALE;
+static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_POWER_SCALE;
 
 unsigned long arch_get_cpu_efficiency(int cpu)
 {
 	return per_cpu(cpu_efficiency, cpu);
 }
-#endif
 
 /*
  * Iterate all CPUs' descriptor in DT and compute the efficiency
@@ -269,25 +269,7 @@ out:
 	return ret;
 }
 
-/*
-  * Scheduler load-tracking scale-invariance
-  *
-  * Provides the scheduler with a scale-invariance correction factor that
-  * compensates for frequency scaling (arch_scale_freq_capacity()). The scaling
-  * factor is updated in smp.c
-  */
-unsigned long arch_scale_freq_capacity(struct sched_domain *sd, int cpu)
-{
- 	unsigned long curr = atomic_long_read(&per_cpu(cpu_freq_capacity, cpu));
-
- 	if (!curr) {
- 		return SCHED_CAPACITY_SCALE;
- 	}
-
- 	return curr;
-}
-
-static void __init parse_dt_cpu_capacity(void)
+static void __init parse_dt_cpu_power(void)
 {
 	const struct cpu_efficiency *cpu_eff;
 	struct device_node *cn;
@@ -333,9 +315,7 @@ static void __init parse_dt_cpu_capacity(void)
 			efficiency = cpu_eff->efficiency;
 		}
 
-#ifdef TJK_HMP
- 		per_cpu(cpu_efficiency, cpu) = cpu_eff->efficiency;
- #endif
+		per_cpu(cpu_efficiency, cpu) = efficiency;
 
 		rate = of_get_property(cn, "clock-frequency", &len);
 		if (!rate || len != 4) {
@@ -359,18 +339,16 @@ static void __init parse_dt_cpu_capacity(void)
 
 	/* compute a middle_capacity factor that will ensure that the capacity
 	 * of an 'average' CPU of the system will be as close as possible to
-	 * SCHED_CAPACITY_SCALE, which is the default value, but with the
+	 * SCHED_POWER_SCALE, which is the default value, but with the
 	 * constraint explained near table_efficiency[].
 	 */
 	if (4 * max_capacity < (3 * (max_capacity + min_capacity)))
               middle_capacity = (min_capacity + max_capacity)
-				>> (SCHED_CAPACITY_SHIFT+1);
+				>> (SCHED_POWER_SHIFT+1);
 	else
 		middle_capacity = ((max_capacity / 3)
-				>> (SCHED_CAPACITY_SHIFT-1)) + 1;
+				>> (SCHED_POWER_SHIFT-1)) + 1;
 }
-
-#ifdef TJK_HMP
 
 /*
  * Look for a customed capacity of a CPU in the cpu_topo_data table during the
@@ -385,9 +363,8 @@ static void update_cpu_power(unsigned int cpu)
 	set_power_scale(cpu, cpu_capacity(cpu) / middle_capacity);
 
 	pr_info("CPU%u: update cpu_power %lu\n",
-		cpu, arch_scale_cpu_power(NULL, cpu));
+		cpu, arch_scale_freq_power(NULL, cpu));
 }
-#endif
 
 /*
  * cpu topology table
@@ -395,37 +372,9 @@ static void update_cpu_power(unsigned int cpu)
 struct cpu_topology cpu_topology[NR_CPUS];
 EXPORT_SYMBOL_GPL(cpu_topology);
 
-static inline const struct sched_group_energy *cpu_core_energy(int cpu)
-{
- 	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL0];
-
- 	if (!sge) {
- 		pr_warn("Invalid sched_group_energy for CPU%d\n", cpu);
- 		return NULL;
- 	}
-
- 	return sge;
-}
-
 const struct cpumask *cpu_coregroup_mask(int cpu)
 {
 	return &cpu_topology[cpu].core_sibling;
-}
-
-static void update_cpu_capacity(unsigned int cpu)
-{
- 	unsigned long capacity;
-
- 	if (!cpu_core_energy(cpu)) {
- 		capacity = SCHED_CAPACITY_SCALE;
- 	} else {
- 		int max_cap_idx = cpu_core_energy(cpu)->nr_cap_states - 1;
- 		capacity = cpu_core_energy(cpu)->cap_states[max_cap_idx].cap;
- 	}
-
- 	set_capacity_scale(cpu, capacity);
- 	pr_info("CPU%d: update cpu_capacity %lu\n",
- 		cpu, arch_scale_cpu_capacity(NULL, cpu));
 }
 
 static void update_siblings_masks(unsigned int cpuid)
@@ -490,7 +439,7 @@ void store_cpu_topology(unsigned int cpuid)
 
 topology_populated:
 	update_siblings_masks(cpuid);
-	update_cpu_capacity(cpuid);
+	update_cpu_power(cpuid);
 }
 
 static void __init reset_cpu_topology(void)
@@ -511,39 +460,13 @@ static void __init reset_cpu_topology(void)
 	}
 }
 
-static void __init reset_cpu_capacity(void)
+static void __init reset_cpu_power(void)
 {
 	unsigned int cpu;
 
 	for_each_possible_cpu(cpu)
-		set_capacity_scale(cpu, SCHED_CAPACITY_SCALE);
+		set_power_scale(cpu, SCHED_POWER_SCALE);
 }
-
-static inline const struct sched_group_energy *cpu_cluster_energy(int cpu)
-{
- 	struct sched_group_energy *sge = sge_array[cpu][SD_LEVEL1];
-
- 	if (!sge) {
- 		pr_warn("Invalid sched_group_energy for Cluster%d\n", cpu);
- 		return NULL;
- 	}
-
- 	return sge;
-}
-
-static inline int cpu_corepower_flags(void)
-{
- 	return SD_SHARE_PKG_RESOURCES  | SD_SHARE_POWERDOMAIN | \
- 	       SD_SHARE_CAP_STATES;
-}
-
-static struct sched_domain_topology_level arm64_topology[] = {
-#ifdef CONFIG_SCHED_MC
- 	{ cpu_coregroup_mask, cpu_corepower_flags, cpu_core_energy, SD_INIT_NAME(MC) },
-#endif
- 	{ cpu_cpu_mask, 0, cpu_cluster_energy, SD_INIT_NAME(DIE) },
- 	{ NULL, },
-};
 
 void __init init_cpu_topology(void)
 {
@@ -555,10 +478,7 @@ void __init init_cpu_topology(void)
 	 */
 	if (parse_dt_topology())
 		reset_cpu_topology();
-        else
- 		set_sched_topology(arm64_topology);
 
-	reset_cpu_capacity();
- 	parse_dt_cpu_capacity();
- 	init_sched_energy_costs();
+	reset_cpu_power();
+	parse_dt_cpu_power();
 }
