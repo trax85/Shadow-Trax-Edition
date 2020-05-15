@@ -25,13 +25,6 @@
 #include <asm/topology.h>
 #include <linux/sched_energy.h>
 
-static DEFINE_PER_CPU(unsigned long, cpu_efficiency) = SCHED_CAPACITY_SCALE;
-
-unsigned long arch_get_cpu_efficiency(int cpu)
-{
- 	return per_cpu(cpu_efficiency, cpu);
-}
-
 /*
  * cpu power table
  * This per cpu data structure describes the relative capacity of each core.
@@ -238,7 +231,6 @@ static int __init parse_dt_topology(void)
 	struct device_node *cn, *map;
 	int ret = 0;
 	int cpu;
-        u32 efficiency;
 
 	cn = of_find_node_by_path("/cpus");
 	if (!cn) {
@@ -267,14 +259,7 @@ static int __init parse_dt_topology(void)
 			pr_err("CPU%d: No topology information specified\n",
 			       cpu);
 			ret = -EINVAL;
-                }
-                /* The CPU efficiency value passed from the device tree */
- 		cn = of_get_cpu_node(cpu, NULL);
- 		if (of_property_read_u32(cn, "efficiency", &efficiency) < 0) {
- 			WARN_ON(1);
- 			continue;
- 		}
- 		per_cpu(cpu_efficiency, cpu) = efficiency;
+		}
 	}
 
 out_map:
@@ -441,10 +426,6 @@ static void update_cpu_capacity(unsigned int cpu)
  	set_capacity_scale(cpu, capacity);
  	pr_info("CPU%d: update cpu_capacity %lu\n",
  		cpu, arch_scale_cpu_capacity(NULL, cpu));
-}
-void update_cpu_power_capacity(int cpu)
-{
- 	update_cpu_capacity(cpu);
 }
 
 static void update_siblings_masks(unsigned int cpuid)
