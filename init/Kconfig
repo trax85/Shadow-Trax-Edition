@@ -1040,15 +1040,6 @@ config SCHED_HMP
 	  in their instructions per-cycle capability or the maximum
 	  frequency they can attain.
 
-config DYNAMIC_STUNE_BOOST
- 	bool "Dynamic SchedTune boosting support"
- 	depends on SCHED_TUNE
- 	help
- 	  This option extends the SchedTune framework and provides APIs to
- 	  activate and reset SchedTune boosting from anywhere in the kernel.
-
- 	  If unsure, say N.
-
 config CHECKPOINT_RESTORE
 	bool "Checkpoint/restore support" if EXPERT
 	default n
