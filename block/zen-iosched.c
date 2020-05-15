@@ -41,17 +41,17 @@ zen_get_data(struct request_queue *q) {
 static void zen_dispatch(struct zen_data *, struct request *);
 
 static void
-zen_merged_requests(struct request_queue *q, struct request *rq,
+zen_merged_requests(struct request_queue *q, struct request *req,
                     struct request *next)
 {
 	/*
 	 * if next expires before rq, assign its expire time to arq
 	 * and move into next position (next will be deleted) in fifo
 	 */
-	if (!list_empty(&rq->queuelist) && !list_empty(&next->queuelist)) {
-		if (time_before(rq_fifo_time(next), rq_fifo_time(rq))) {
-			list_move(&rq->queuelist, &next->queuelist);
-			rq_set_fifo_time(rq, rq_fifo_time(next));
+	if (!list_empty(&req->queuelist) && !list_empty(&next->queuelist)) {
+		if (time_before(rq_fifo_time(next), rq_fifo_time(req))) {
+			list_move(&req->queuelist, &next->queuelist);
+			rq_set_fifo_time(req, rq_fifo_time(next));
 		}
 	}
 
@@ -65,8 +65,8 @@ static void zen_add_request(struct request_queue *q, struct request *rq)
 	const int sync = rq_is_sync(rq);
 
 	if (zdata->fifo_expire[sync]) {
- 		rq->fifo_time = jiffies + zdata->fifo_expire[sync];
- 		list_add_tail(&rq->queuelist, &zdata->fifo_list[sync]);
+		rq_set_fifo_time(rq, jiffies + zdata->fifo_expire[sync]);
+		list_add_tail(&rq->queuelist, &zdata->fifo_list[sync]);
 	}
 }
 
