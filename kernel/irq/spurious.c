@@ -16,7 +16,7 @@
 
 #include "internals.h"
 
-static int irqfixup __read_mostly = true;
+static int irqfixup __read_mostly;
 
 #define POLL_SPURIOUS_IRQ_INTERVAL (HZ/10)
 static void poll_spurious_irqs(unsigned long dummy);
