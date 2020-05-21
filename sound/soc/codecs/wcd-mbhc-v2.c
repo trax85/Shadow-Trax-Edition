@@ -67,7 +67,7 @@ int wcd_mbhc_btn_press_compl_timeout_ms = 50;
 int max_imped = 60000;
 bool new_jack = true;
 
-static bool __init setup_new_jack(char *str)
+static int __init setup_new_jack(char *str)
 {
 	if (!strncmp(str, "stock", strlen(str))) {
 		new_jack = false;
