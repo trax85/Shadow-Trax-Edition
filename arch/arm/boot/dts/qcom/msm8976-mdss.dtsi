@@ -15,7 +15,7 @@
 		compatible = "qcom,mdss_mdp";
 		reg = <0x1a00000 0x90000>,
 			<0x1ab0000 0x3000>;
-		reg-names = "mdp_phys", "vbif_phys";
+		reg-names = "mdp_phys", "vbif_phys", "vbif_nrt_phys";
 		interrupts = <0 72 0>;
 		vdd-supply = <&gdsc_mdss>;
 
