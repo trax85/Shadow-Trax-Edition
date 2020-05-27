@@ -739,6 +739,7 @@ static ssize_t pm_qos_power_write(struct file *filp, const char __user *buf,
 		if (copy_from_user(&value, buf, sizeof(s32)))
 			return -EFAULT;
 	} else {
+		int ret;
 
 		ret = kstrtos32_from_user(buf, count, 16, &value);
  		if (ret)
