@@ -50,7 +50,7 @@
 
 		qcom,chipid = <0x05010000>;
 
-		qcom,initial-pwrlevel = <4>;
+		qcom,initial-pwrlevel = <5>;
 
 		qcom,idle-timeout = <80>; //msecs
 		qcom,strtstp-sleepwake;
@@ -147,7 +147,7 @@
 		qcom,gpu-speed-config@0 {
 			compatible = "gpu-speed-config@0";
 
-			qcom,initial-pwrlevel = <4>;
+		qcom,initial-pwrlevel = <7>;
 
 			/* Power levels */
 			qcom,gpu-pwrlevels {
@@ -161,7 +161,7 @@
 					reg = <0>;
 					qcom,gpu-freq = <710000000>;
 					qcom,bus-freq = <10>;
-					qcom,bus-min = <10>;
+					qcom,bus-min = <9>;
 					qcom,bus-max = <10>;
 				};
 
@@ -262,7 +262,7 @@
 					reg = <0>;
 					qcom,gpu-freq = <710000000>;
 					qcom,bus-freq = <10>;
-					qcom,bus-min = <10>;
+					qcom,bus-min = <9>;
 					qcom,bus-max = <10>;
 				};
 
