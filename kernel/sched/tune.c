@@ -283,7 +283,7 @@ schedtune_accept_deltas(int nrg_delta, int cap_delta,
  *    implementation especially for the computation of the per-CPU boost
  *    value
  */
-#define BOOSTGROUPS_COUNT 6
+#define BOOSTGROUPS_COUNT 5
 
 /* Array of configured boostgroups */
 static struct schedtune *allocated_group[BOOSTGROUPS_COUNT] = {
@@ -787,16 +787,16 @@ boost_write(struct cgroup *cgrp, struct cftype *cft,
 int
 dynamic_boost_write(struct cgroup_subsys_state *css, int boost)
 {
-        struct schedtune *st;
-        unsigned threshold_idx;
-        int boost_pct;
 	/* if dynamic schedtune boost doesnt't have 
 	 * its topapp_css, return 
 	 */
 	if (!unlikely(dynamic_schedtune_initialized))
 		return -EINVAL;
 
-	st = css_st(css);
+	struct schedtune *st = css_st(css);
+	unsigned threshold_idx;
+	int boost_pct;
+
 	if (boost < -100 || boost > 100)
 		return -EINVAL;
 	boost_pct = boost;

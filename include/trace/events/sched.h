@@ -1365,12 +1365,32 @@ TRACE_EVENT(sched_tune_config,
  		__entry->boost,
  		__entry->pb_nrg_gain, __entry->pb_cap_gain,
  		__entry->pc_nrg_gain, __entry->pc_cap_gain)
- );
+);
+/*
+ * Tracepoint for system overutilized flag
+ */
+TRACE_EVENT(sched_overutilized,
+
+	TP_PROTO(bool overutilized),
+
+	TP_ARGS(overutilized),
+
+	TP_STRUCT__entry(
+		__field( bool,	overutilized	)
+	),
+
+	TP_fast_assign(
+		__entry->overutilized	= overutilized;
+	),
+
+	TP_printk("overutilized=%d",
+		__entry->overutilized ? 1 : 0)
+);
 
 #ifdef CONFIG_SCHED_WALT
- struct rq;
+struct rq;
 
- TRACE_EVENT(walt_update_task_ravg,
+TRACE_EVENT(walt_update_task_ravg,
 
  	TP_PROTO(struct task_struct *p, struct rq *rq, int evt,
  						u64 wallclock, u64 irqtime),
@@ -1436,9 +1456,9 @@ TRACE_EVENT(sched_tune_config,
                   __entry->nt_cs, __entry->nt_ps,
  		  __entry->active_windows
  		)
- );
+);
 
- TRACE_EVENT(walt_update_history,
+TRACE_EVENT(walt_update_history,
 
  	TP_PROTO(struct rq *rq, struct task_struct *p, u32 runtime, int samples,
  			int evt),
@@ -1483,9 +1503,9 @@ TRACE_EVENT(sched_tune_config,
  		__entry->hist[0], __entry->hist[1],
  		__entry->hist[2], __entry->hist[3],
  		__entry->hist[4], __entry->cpu)
- );
+);
 
- TRACE_EVENT(walt_migration_update_sum,
+TRACE_EVENT(walt_migration_update_sum,
 
  	TP_PROTO(struct rq *rq, struct task_struct *p),
 
@@ -1512,8 +1532,8 @@ TRACE_EVENT(sched_tune_config,
  	TP_printk("cpu %d: cs %llu ps %llu nt_cs %lld nt_ps %lld pid %d",
  		  __entry->cpu, __entry->cs, __entry->ps,
  		 __entry->nt_cs, __entry->nt_ps, __entry->pid)
- );
- #endif /* CONFIG_SCHED_WALT */
+);
+#endif /* CONFIG_SCHED_WALT */
 #endif /* _TRACE_SCHED_H */
 
 /* This part must be outside protection */

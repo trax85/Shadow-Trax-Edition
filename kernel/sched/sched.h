@@ -1425,8 +1425,8 @@ static inline void __add_nr_running(struct rq *rq, unsigned count)
 
 	if (prev_nr < 2 && rq->nr_running >= 2) {
 #ifdef CONFIG_SMP
-		if (!READ_ONCE(rq->rd->overload))
- 			WRITE_ONCE(rq->rd->overload, true);
+		if (!rq->rd->overload)
+			rq->rd->overload = true;
 #endif
 
 #ifdef CONFIG_NO_HZ_FULL
@@ -1568,7 +1568,7 @@ static inline unsigned long task_util(struct task_struct *p)
 		return (demand << 10) / walt_ravg_window;
 	}
 #endif
-	return READ_ONCE(p->se.avg.util_avg);
+	return p->se.avg.util_avg;
 }
 
 /*
