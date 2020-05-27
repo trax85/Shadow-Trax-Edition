@@ -37,7 +37,6 @@ export ARCH=arm64
 #export CROSS_COMPILE="/home/nesara/gcc-8/bin/aarch64-linux-gnu-"
 #export CROSS_COMPILE="/home/nesara/gcc-linaro-7/bin/aarch64-linux-gnu-"
 export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
-#export CROSS_COMPILE="/home/nesara/aarch64-linux-android/bin/aarch64-linux-android-"
 if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
 make clean > /dev/null
