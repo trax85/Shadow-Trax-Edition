@@ -90,12 +90,12 @@ EXPORT_SYMBOL(synchronize_irq);
 #ifdef CONFIG_SMP
 cpumask_var_t irq_default_affinity;
 
-static int __irq_can_set_affinity(struct irq_desc *desc)
+static bool __irq_can_set_affinity(struct irq_desc *desc)
 {
  	if (!desc || !irqd_can_balance(&desc->irq_data) ||
  	    !desc->irq_data.chip || !desc->irq_data.chip->irq_set_affinity)
- 		return 0;
- 	return 1;
+ 		return false;
+ 	return true;
 }
 
 /**
@@ -108,6 +108,20 @@ int irq_can_set_affinity(unsigned int irq)
 	return __irq_can_set_affinity(irq_to_desc(irq));
 }
 
+/**
+ * irq_can_set_affinity_usr - Check if affinity of a irq can be set from user space
+ * @irq:	Interrupt to check
+ *
+ * Like irq_can_set_affinity() above, but additionally checks for the
+ * AFFINITY_MANAGED flag.
+ */
+bool irq_can_set_affinity_usr(unsigned int irq)
+{
+ 	struct irq_desc *desc = irq_to_desc(irq);
+
+ 	return __irq_can_set_affinity(desc) &&
+ 		!irqd_affinity_is_managed(&desc->irq_data);
+}
 /**
  *	irq_set_thread_affinity - Notify irq threads to adjust affinity
  *	@desc:		irq descriptor which has affitnity changed
@@ -971,6 +985,10 @@ static void add_desc_to_perf_list(struct irq_desc *desc)
  	struct irq_desc_list *item;
 
 	item = kmalloc(sizeof(*item), GFP_ATOMIC | __GFP_NOFAIL);
+
+	if (WARN_ON(!item))
+ 		return;
+
  	item->desc = desc;
 
  	raw_spin_lock(&perf_irqs_lock);
