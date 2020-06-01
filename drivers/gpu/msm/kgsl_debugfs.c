@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2008-2015, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2002,2008-2015,2017. The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -144,12 +144,20 @@ static int print_mem_entry(void *data, void *ptr)
 
 	kgsl_get_memory_usage(usage, sizeof(usage), m->flags);
 
-	seq_printf(s, "%pK %pK %16llu %5d %8s %10s %16s %5d\n",
+ 	if (usermem_type == KGSL_MEM_ENTRY_ION)
+ 		kgsl_get_egl_counts(entry, &egl_surface_count,
+ 						&egl_image_count);
+
+ 	seq_printf(s, "%pK %pK %16llu %5d %8s %10s %16s %5d %16llu %6d %6d",
 			(uint64_t *)(uintptr_t) m->gpuaddr,
 			(unsigned long *) m->useraddr,
 			m->size, entry->id, flags,
-			memtype_str(kgsl_memdesc_usermem_type(m)),
-			usage, m->sgt->nents);
+			memtype_str(usermem_type),
+ 			usage, m->sgt->nents, m->mapsize,
+ 			egl_surface_count, egl_image_count);
+
+	seq_putc(s, '\n');
+ 	return 0;
 }
 
 static struct kgsl_mem_entry *process_mem_seq_find(struct seq_file *s,
