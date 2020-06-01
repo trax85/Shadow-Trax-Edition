@@ -2386,21 +2386,14 @@ video_usercopy(struct file *file, unsigned int cmd, unsigned long arg,
 		 * array) fits into sbuf (so that mbuf will still remain
 		 * unused up to here).
 		 */
-<<<<<<< HEAD
-		mbuf = kmalloc(array_size, GFP_KERNEL);
- 		err = -ENOMEM;
- 		if (NULL == mbuf)
- 			goto out_array_args;
-=======
 		if (array_size <= ARRAY_SIZE(mbuf_onstack)) {
- 			mbuf = mbuf_onstack;
- 		} else {
- 			mbuf = kmalloc(array_size, GFP_KERNEL);
- 			err = -ENOMEM;
- 			if (NULL == mbuf)
- 				goto out_array_args;
- 		}
->>>>>>> 0ab871d5... media: v4l2-ioctl: Use larger on-stack video copy buffers
+  			mbuf = mbuf_onstack;
+  		} else {
+  			mbuf = kmalloc(array_size, GFP_KERNEL);
+  			err = -ENOMEM;
+  			if (NULL == mbuf)
+  				goto out_array_args;
+  		}
 		err = -EFAULT;
 		if (copy_from_user(mbuf, user_ptr, array_size))
 			goto out_array_args;
