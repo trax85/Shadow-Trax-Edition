@@ -722,8 +722,8 @@ EXPORT_SYMBOL(cpu_active_mask);
 
 /*
  * This assumes that half of the CPUs are little and that they have lower
- * CPU numbers than the big CPUs (e.g., on an 8-core system, CPUs 0-3 would be
- * little and CPUs 4-7 would be big).
+ * CPU numbers than the big CPUs (e.g., on an 6-core system, CPUs 0-3 would be
+ * little and CPUs 4-5 would be big).
  */
 #define LITTLE_CPU_MASK ((1UL << (NR_CPUS / 2)) - 1)
 #define BIG_CPU_MASK    (((1UL << NR_CPUS) - 1) & ~LITTLE_CPU_MASK)
