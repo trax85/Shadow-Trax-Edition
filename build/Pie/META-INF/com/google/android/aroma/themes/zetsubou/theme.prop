@@ -36,24 +36,24 @@ color.dialogfg        = #ffffff
 color.textbg          = #000000
 color.textfg          = #ffffff
 color.textfg_gray     = #808080
-color.controlbg       = #149d8f
-color.controlbg_g     = #149d8f
+color.controlbg       = #178dbf
+color.controlbg_g     = #178dbf
 color.controlfg       = #ffffff
 color.selectbg        = #000000
 color.selectbg_g      = #ffffff
 color.selectfg        = #ffffff
 color.titlebg         = #212121
 color.titlebg_g       = #212121
-color.titlefg         = #149d8f
+color.titlefg         = #178dbf
 color.dlgtitlebg      = #212121
 color.dlgtitlebg_g    = #212121
 color.dlgtitlefg      = #ffffff
-color.scrollbar       = #149d8f
+color.scrollbar       = #178dbf
 color.navbg           = #212121
 color.navbg_g         = #212121
 color.border          = #212121
 color.border_g        = #212121
-color.progressglow    = #7cecab
+color.progressglow    = #5cc9ed
 
 
 
