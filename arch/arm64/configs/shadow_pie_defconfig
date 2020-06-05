@@ -389,7 +389,7 @@ CONFIG_SECCOMP=y
 #
 # Boot options
 #
-CONFIG_CMDLINE="androidboot.bps=24bit"
+CONFIG_CMDLINE=""
 CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE=y
 # CONFIG_EFI is not set
 
