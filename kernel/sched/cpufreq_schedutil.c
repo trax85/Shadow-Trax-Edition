@@ -184,7 +184,7 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 				policy->cpuinfo.max_freq : policy->cur;
 
 	if (sg_policy->tunables->exp_util)
- 		freq = (freq + (freq >> 2)) * int_sqrt(util * 85 / max) / 10;
+ 		freq = (freq + (freq >> 2)) * int_sqrt(util * 75 / max) / 10;
  	else
  		freq = (freq + (freq >> 2)) * util / max;
 
