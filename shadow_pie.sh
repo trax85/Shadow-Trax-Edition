@@ -71,6 +71,6 @@ echo -e "$yellow $KERNEL_DIR/export/$VERSION/shadow-$DEVICE-$VERSION-$date.zip \
 echo -e "$gre << Build completed in $(($Diff / 60)) minutes and $(($Diff % 60)) seconds, variant($qc) >> \n $white"
 fi
 cd $KERNEL_DIR
-if [ $qc == 2 ]; then
-git apply -R qc.patch
-fi
+#if [ $qc == 2 ]; then
+#git apply -R qc.patch
+#fi
