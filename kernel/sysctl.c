@@ -1377,13 +1377,13 @@ static struct ctl_table vm_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
-	{
+	/*{
 		.procname	= "oom_count",
 		.data		= &sysctl_oom_count,
 		.maxlen		= sizeof(sysctl_oom_count),
 		.mode		= 0444,
 		.proc_handler	= proc_dointvec,
-	},
+	},*/
 	{
 		.procname	= "overcommit_ratio",
 		.data		= &sysctl_overcommit_ratio,
