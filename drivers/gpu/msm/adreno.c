@@ -1053,13 +1053,13 @@ static int adreno_of_get_pdata(struct platform_device *pdev)
 	if (of_property_read_u32(pdev->dev.of_node,
 		"qcom,pm-qos-active-latency",
 		&pdata->pm_qos_active_latency))
-		pdata->pm_qos_active_latency = 1000;
+		pdata->pm_qos_active_latency = 501;
 
 	/* get pm-qos-wakeup-latency, set it to default if not found */
 	if (of_property_read_u32(pdev->dev.of_node,
 		"qcom,pm-qos-wakeup-latency",
 		&pdata->pm_qos_wakeup_latency))
-		pdata->pm_qos_wakeup_latency = 100;
+		pdata->pm_qos_wakeup_latency = 101;
 
 	if (of_property_read_u32(pdev->dev.of_node, "qcom,idle-timeout",
 		&pdata->idle_timeout))
