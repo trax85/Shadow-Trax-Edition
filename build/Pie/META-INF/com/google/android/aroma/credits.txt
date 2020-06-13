@@ -1,0 +1,26 @@
+
+
+Special Thanks To These Wonderful People !
+
+-@ScremMyScillEX - For Being there all the time and Helping with the kernel and Giving us asm AROMA
+-@Perre2324 - For Helping me with driver issues ,other kernel mods and for wonderful commits
+
+
+Thanks To All My Testers For Supporting Me All The Way !!
+
+-@PranavRenz
+-@Kenzobestphone
+-@Skyking469
+-@hckd1
+-@GhostLeader37
+-@brownnibba
+
+Thanks To All These People For Helping With All The Other Stuff !
+
+-@psndna881
+-@wight554
+-energyspear17@xda
+-@felix3000
+-@Sevensquad2309
+
+Thanks to all the other people involved in this project.It was an amazing experience doing this project with yall;) !!

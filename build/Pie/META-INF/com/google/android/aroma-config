@@ -71,12 +71,6 @@ alert(
   "@dragon",
   "OK"
 );
-alert(
-  "Greetings:",
-  "<b>Thank you for using Shadow Installer</b>\n\nI hope that Shadow Kernel will further enhance your kekzo experience.\n\nTEJTRAX:This window is a small Tribute and Thanks to people involved in this project and helping me out getting things worked and the motivation going.\n\n",
-  "@dragon",
-  "OK"
-);
 
 viewbox(
     "<@center>\n\nShadow Kernel\nKenzo",
@@ -91,9 +85,16 @@ viewbox(
 
 alert(
   "NOTICE:",
-  "For best experience -\n\n1.Don't flash over other kernels. Ensure that you either have a previous version of Shadow or the kernel that came with your rom.\n\n2.Do not use any scripts to tune cpu governors, this kernel already does that for your cpu.\n\n",
+  "For best experience -\n\n1.Don't FLASH over other kernels. Ensure that you either have the kernel that came with your rom.\n\n2.Do not use any scripts or MODS to tune cpu governors, this kernel already does that for your cpu.\n\n",
   "@warning",
   "OK"
+);
+
+textbox(
+  "\nCredits Page\n",
+  "\n\n\n<@center>BIG Thanks To All The People Involved In This Project</@>",
+  "@credits",
+   resread("credits.txt")
 );
 
 selectbox(
@@ -130,27 +131,41 @@ selectbox(
   "Performance ","\nmay yield poor backup",0
 );
 
+alert(
+  "NOTICE:",
+  "Please Read -\n\nInstall Spectrum App/Spectrum supported KM After Flashing kernel as each profile Concentrates to do one thing. So Please use Spectrum to change between profiles to get optimum perf and battery while gaming browsing etc.\n\n",
+  "@warning",
+  "OK"
+);
+
 selectbox(
   "\n\nEnable/Disable ZRAM","<@center><b>\n\n\n\n\n\nThis will configure kernel to have additional ram for 2gb devices.\n</b></@>","","ram.prop",
-  "Enabled ","\nBest for UI experience not recomended for gaming",1,
-  "Disabled ","\nRecommended for 3Gb Devices(Better performance)",0
+  "Enabled ","\nBest for UI experience not recomended for gaming",0,
+  "Disabled ","\nRecommended for 3Gb Devices (Better performance)",1
 );
 
 selectbox(
   "\n\nSet RefreshRate","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","refresh.prop",
   "60 Hz","\nStock af",1,
-  "62 Hz","\nlil OC",0,
+  "62 Hz","\nlil OC :)",0,
   "64 Hz","\nTianma panel limit",0,
   "66 Hz","\nBoe and Sharp panel stable limit",0,
   "68 Hz","\nOC all the way",0,
-  "70 Hz","\nKBOOM!!",0
+  "70 Hz","\nKBOOM!!",0,
+  "Disabled","\nStock refresh rates with no VaribleRefreshRate toggles",0
 );
 
 selectbox(
   "\n\n<@center>Apply UV to CPU and GPU ?\nWarning ! </@>","<@center><b>\n\n\n\n\nThis will change your stock voltages.\nSelect NO if you are unsure about this.\n</b></@>","","uv.prop",
-  "Heavy UV ","",0,
-  "Light UV ","",0, 
-  "No UV ","",1
+  "Heavy UV ","\nVery low Voltages for Both CPU and GPU",0,
+  "Light UV ","\nLow Volatges for CPU and slight uv for GPU",0, 
+  "No UV ","\nNo Voltage changes For CPU and GPU",1
+);
+
+selectbox(
+  "\n\nApply Charging Current ?","<@center><b>\n\n\n\n\nIThis will change your stock Charging Current.\nSelect Stock if you are unsure about this</b></@>","","charge.prop",
+  "Slow Charging Speed","\nFor people facing high speed charging on stock values",0,
+  "Default Speed","\nStock charging values",1
 );
 
 selectbox(
@@ -170,10 +185,11 @@ selectbox(
 
 checkbox(
   "\n\nOther settings","<@center><b>\n\nSelect the mods you want to install</b>\n\n</@>","","mods.prop",
-  "Disable fsync","Faster fileystem performance, but risk of data loss",0,
-  "USB fastcharge","Increase charge current while charging via USB",0,
-  "Audio mod capability","Disable audio codec power gating",0,
-  "New Jack Detection","Enable this if you have headset jack issues",0
+  "Disable Fsync","\nFaster fileystem performance, but risk of data loss",0,
+  "USB Fastcharge","\nIncrease charge current while charging via USB",0,
+  "Backlight Dimmer","\nThis lowers Max-Min brightness of display",0,
+  "Audio Mod Capability","\nDisable audio codec power gating",0,
+  "New Jack Detection","\nEnable this if you have headset jack issues",0
 );
 
 menubox(
@@ -181,7 +197,7 @@ menubox(
   "<@center>\n\nReady to install\n\n</@>",
   "",
   "menu.prop",
-  "Install Shadow","","@install",
+  "Install Shadow EAS","","@install",
   "Abort installation","","@trash"
 );
 
