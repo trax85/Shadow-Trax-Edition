@@ -57,11 +57,11 @@ if [ $ROM == 3 ]; then
 	cp /tmp/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	cp /tmp/profile.balance.sh /system/system/vendor/etc/init/hw/
 	cp /tmp/profile.performance.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.power.sh /system/system/vendor/etc/init/hw/
+	cp /tmp/profile.battery.sh /system/system/vendor/etc/init/hw/
 	cp /tmp/profile.gaming.sh /system/system/vendor/etc/init/hw/
 	chmod 755 /system/system/vendor/etc/init/hw/profile.balance.sh
 	chmod 755 /system/system/vendor/etc/init/hw/profile.performance.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.power.sh
+	chmod 755 /system/system/vendor/etc/init/hw/profile.battery.sh
 	chmod 755 /system/system/vendor/etc/init/hw/profile.gaming.sh
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.sh
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.rc
@@ -100,8 +100,8 @@ else
 	chmod 0754 /tmp/ramdisk/profile.balance.sh
 	cp /tmp/profile.performance.sh /tmp/ramdisk/
 	chmod 0754 /tmp/ramdisk/profile.performance.sh
-	cp /tmp/profile.power.sh /tmp/ramdisk/
-	chmod 0754 /tmp/ramdisk/profile.power.sh
+	cp /tmp/profile.battery.sh /tmp/ramdisk/
+	chmod 0754 /tmp/ramdisk/profile.battery.sh
 	cp /tmp/profile.gaming.sh /tmp/ramdisk/
 	chmod 0754 /tmp/ramdisk/profile.gaming.sh
 	cp /tmp/init.spectrum.rc /tmp/ramdisk/
