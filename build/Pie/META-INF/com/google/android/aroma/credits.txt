@@ -1,0 +1,25 @@
+
+
+Special Thanks To These Wonderful People !
+
+-@ScremMyScillEX - For Being there all the time and Helping me with the kernel and Giving us asm AROMA
+-@Perre2324 - For Helping me with EAS and all those wonderful commits and Upstreams
+
+
+Thanks To All My Testers For Supporting Me All The Way !!
+
+-@PranavRenz
+-@brownnibba
+-@Kenzobestphone
+-@Skyking469
+-@hckd1
+-@GhostLeader37
+
+Thanks To All These People For Helping With All The Other Stuff !
+
+-energyspear17@xda
+-@felix3000
+-@psndna881
+-@wight554
+
+Thanks to all the other people involved in this project.It was an amazing experience doing this project with yall;) !!

@@ -16,14 +16,18 @@
     # Set ALMK parameters (usually above the highest minfree values)
     # 64 bit will have 81K 
     chmod 0660 /sys/module/lowmemorykiller/parameters/minfree
-    echo "interactive" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    echo "interactive" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 
     if [ $MemTotal -gt 2000000 ]; then
         echo 1 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
         echo "18432,23040,27648,32256,55296,80640" > /sys/module/lowmemorykiller/parameters/minfree
     else
-        echo 1 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
+        echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
         echo "16384,20992,24064,30720,46080,66560" > /sys/module/lowmemorykiller/parameters/minfree
-	echo 10 > /proc/sys/vm/dirty_background_ratio
+	    echo 10 > /proc/sys/vm/dirty_background_ratio
     fi
+    sleep 10
+    echo 1 > /sys/devices/virtual/block/zram0/reset
+    echo "0" > /sys/block/zram0/disksize
+    swapoff /dev/block/zram0
+    echo 1 > /dev/stune/top-app/schedtune.boost
+    
