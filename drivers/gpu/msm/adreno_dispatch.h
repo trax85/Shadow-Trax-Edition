@@ -113,21 +113,13 @@ struct adreno_dispatcher {
 	atomic_t fault;
 	struct plist_head pending;
 	spinlock_t plist_lock;
+	struct kthread_work work;
 	struct kobject kobj;
 	struct completion idle_gate;
 	atomic_t preemption_state;
 	int preempt_token_submit;
 	struct timer_list preempt_timer;
 	unsigned int disp_preempt_fair_sched;
-	struct task_struct *thread;
- 	wait_queue_head_t cmd_waitq;
- 	atomic_t state;
-};
-
-enum adreno_dispatcher_thread_state {
- 	THREAD_IDLE,
- 	THREAD_REQ,
- 	THREAD_ACTIVE
 };
 
 enum adreno_dispatcher_flags {
@@ -136,9 +128,6 @@ enum adreno_dispatcher_flags {
 };
 
 void adreno_dispatcher_start(struct kgsl_device *device);
-void adreno_dispatcher_halt(struct kgsl_device *device);
-void adreno_dispatcher_unhalt(struct kgsl_device *device);
-
 int adreno_dispatcher_init(struct adreno_device *adreno_dev);
 void adreno_dispatcher_close(struct adreno_device *adreno_dev);
 int adreno_dispatcher_idle(struct adreno_device *adreno_dev);

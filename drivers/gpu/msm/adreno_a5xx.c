@@ -470,7 +470,7 @@ static void a5xx_regulator_disable(struct adreno_device *adreno_dev)
 	struct kgsl_device *device = &adreno_dev->dev;
 
 	if (adreno_is_a510(adreno_dev))
- 		return;
+		return;
 
 	/* If feature is not supported or not enabled */
 	if (!adreno_is_a510(adreno_dev) &&
@@ -726,7 +726,7 @@ static void a5xx_enable_pc(struct adreno_device *adreno_dev)
 	kgsl_regwrite(device, A5XX_GPMU_PWR_COL_INTER_FRAME_HYST, 0x000A0080);
 	kgsl_regwrite(device, A5XX_GPMU_PWR_COL_STAGGER_DELAY, 0x00600040);
 
-	//trace_adreno_sp_tp((unsigned long) __builtin_return_address(0));
+	trace_adreno_sp_tp((unsigned long) __builtin_return_address(0));
 };
 
 /*
@@ -1209,7 +1209,7 @@ static void a5xx_lm_init(struct adreno_device *adreno_dev)
 	kgsl_regwrite(device, A5XX_GPMU_TEMP_SENSOR_CONFIG, 0x1);
 
 	kgsl_regwrite(device, A5XX_GPMU_GPMU_VOLTAGE,
-			(0x80000000 | (device->pwrctrl.num_pwrlevels - 1)));
+			(0x80000000 | device->pwrctrl.default_pwrlevel));
 	/* todo use the iddq fuse to correct this value at runtime */
 	kgsl_regwrite(device, A5XX_GPMU_BASE_LEAKAGE, 0x00640002);
 	/* default of 6A */
@@ -2091,10 +2091,6 @@ struct adreno_ft_perf_counters a5xx_ft_perf_counters[] = {
 	{KGSL_PERFCOUNTER_GROUP_TSE, A5XX_TSE_INPUT_PRIM_NUM},
 };
 
-static unsigned int a5xx_int_bits[ADRENO_INT_BITS_MAX] = {
-	ADRENO_INT_DEFINE(ADRENO_INT_RBBM_AHB_ERROR, A5XX_INT_RBBM_AHB_ERROR),
-};
-
 /* Register offset defines for A5XX, in order of enum adreno_regs */
 static unsigned int a5xx_register_offsets[ADRENO_REG_REGISTER_MAX] = {
 	ADRENO_REG_DEFINE(ADRENO_REG_CP_WFI_PEND_CTR, A5XX_CP_WFI_PEND_CTR),
@@ -2318,7 +2314,6 @@ void a5x_gpc_err_int_callback(struct adreno_device *adreno_dev, int bit)
 	 (1 << A5XX_INT_CP_IB1) |			\
 	 (1 << A5XX_INT_CP_IB2) |			\
 	 (1 << A5XX_INT_CP_RB) |			\
-	 (1 << A5XX_INT_CP_CACHE_FLUSH_TS) |		\
 	 (1 << A5XX_INT_RBBM_ATB_BUS_OVERFLOW) |	\
 	 (1 << A5XX_INT_UCHE_OOB_ACCESS)) |		\
 	 (1 << A5XX_INT_UCHE_TRAP_INTR)
@@ -2353,7 +2348,7 @@ static struct adreno_irq_funcs a5xx_irq_funcs[] = {
 	ADRENO_IRQ_CALLBACK(NULL), /* 17 - CP_RB_DONE_TS */
 	ADRENO_IRQ_CALLBACK(NULL), /* 18 - CP_WT_DONE_TS */
 	ADRENO_IRQ_CALLBACK(NULL), /* 19 - UNKNOWN_1 */
-	ADRENO_IRQ_CALLBACK(adreno_cp_callback), /* 20 - CP_CACHE_FLUSH_TS */
+	ADRENO_IRQ_CALLBACK(NULL), /* 20 - CP_CACHE_FLUSH_TS */
 	/* 21 - UNUSED_2 */
 	ADRENO_IRQ_CALLBACK(NULL),
 	ADRENO_IRQ_CALLBACK(a5xx_err_callback), /* 22 - RBBM_ATB_BUS_OVERFLOW */
@@ -2587,7 +2582,6 @@ static struct adreno_coresight a5xx_coresight = {
 
 struct adreno_gpudev adreno_a5xx_gpudev = {
 	.reg_offsets = &a5xx_reg_offsets,
-	.int_bits = a5xx_int_bits,
 	.ft_perf_counters = a5xx_ft_perf_counters,
 	.ft_perf_counters_count = ARRAY_SIZE(a5xx_ft_perf_counters),
 	.coresight = &a5xx_coresight,
@@ -2595,7 +2589,7 @@ struct adreno_gpudev adreno_a5xx_gpudev = {
 	.snapshot = a5xx_snapshot,
 	.irq = &a5xx_irq,
 	.snapshot_data = &a5xx_snapshot_data,
-//	.irq_trace = trace_kgsl_a5xx_irq_status,
+	.irq_trace = trace_kgsl_a5xx_irq_status,
 	.num_prio_levels = 1,
 	.gpudev_init = a5xx_gpudev_init,
 	.rb_init = a5xx_rb_init,

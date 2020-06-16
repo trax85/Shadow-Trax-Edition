@@ -1,11 +1,6 @@
 ccflags-y := -Ofast -ffast-math -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -Iinclude/uapi/drm -Iinclude/drm -Idrivers/gpu/msm
 ccflags-y += $(call cc-option,-mcpu=cortex-a72.cortex-a53,)
 
-
- msm_kgsl_core-y = \
- 	kgsl.o \
-
-
 msm_kgsl_core-y = \
 	kgsl.o \
 	kgsl_trace.o \
@@ -33,7 +28,11 @@ msm_adreno-y += \
 	adreno_snapshot.o \
 	adreno_coresight.o \
 	adreno_trace.o \
+	adreno_a3xx.o \
+	adreno_a4xx.o \
 	adreno_a5xx.o \
+	adreno_a3xx_snapshot.o \
+	adreno_a4xx_snapshot.o \
 	adreno_a5xx_snapshot.o \
 	adreno_sysfs.o \
 	adreno.o \
