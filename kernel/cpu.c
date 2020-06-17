@@ -21,7 +21,6 @@
 #include <linux/suspend.h>
 
 #include <trace/events/sched.h>
-#include <linux/interrupt.h>
 
 #include "smpboot.h"
 
@@ -368,14 +367,11 @@ out_release:
 
 int __ref cpu_down(unsigned int cpu)
 {
-	struct cpumask newmask;
+	const unsigned int blocked_cpus = 0xf;
 	int err;
 
-	cpumask_andnot(&newmask, cpu_online_mask, cpumask_of(cpu));
-
-	/* One big cluster CPU and one little cluster CPU must remain online */
-	if (!cpumask_intersects(&newmask, cpu_perf_mask) ||
-		!cpumask_intersects(&newmask, cpu_lp_mask))
+	/* kthreads and workqueues require the little cluster to stay online */
+	if ((cpu == 0 || cpu == 1 || cpu == 2 || cpu == 4) & blocked_cpus)
 		return -EINVAL;
 
 	cpu_maps_update_begin();
@@ -513,7 +509,6 @@ int disable_nonboot_cpus(void)
 	int cpu, first_cpu, error = 0;
 
 	cpu_maps_update_begin();
-	unaffine_perf_irqs();
 	first_cpu = cpumask_first(cpu_online_mask);
 	/*
 	 * We take down all of the non-boot CPUs in one shot to avoid races
@@ -580,7 +575,6 @@ void __ref enable_nonboot_cpus(void)
 	arch_enable_nonboot_cpus_end();
 
 	cpumask_clear(frozen_cpus);
-	reaffine_perf_irqs();
 out:
 	cpu_maps_update_done();
 }
@@ -711,15 +705,6 @@ EXPORT_SYMBOL(cpu_present_mask);
 static DECLARE_BITMAP(cpu_active_bits, CONFIG_NR_CPUS) __read_mostly;
 const struct cpumask *const cpu_active_mask = to_cpumask(cpu_active_bits);
 EXPORT_SYMBOL(cpu_active_mask);
-
-#define LITTLE_CPU_MASK 0xf
-static const unsigned long little_cluster_cpus = LITTLE_CPU_MASK;
-const struct cpumask *const cpu_lp_mask = to_cpumask(&little_cluster_cpus);
-EXPORT_SYMBOL(cpu_lp_mask);
-
-static const unsigned long big_cluster_cpus = ((1UL << NR_CPUS) - 1) & ~LITTLE_CPU_MASK;
-const struct cpumask *const cpu_perf_mask = to_cpumask(&big_cluster_cpus);
-EXPORT_SYMBOL(cpu_perf_mask);
 
 void set_cpu_possible(unsigned int cpu, bool possible)
 {
