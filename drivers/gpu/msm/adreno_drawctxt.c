@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2007-2015,2017 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2002,2007-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -162,7 +162,7 @@ int adreno_drawctxt_wait(struct adreno_device *adreno_dev,
 	if (kgsl_context_invalid(context))
 		return -EDEADLK;
 
-	//trace_adreno_drawctxt_wait_start(-1, context->id, timestamp);
+	trace_adreno_drawctxt_wait_start(-1, context->id, timestamp);
 
 	ret = kgsl_add_event(device, &context->events, timestamp,
 		wait_callback, (void *) drawctxt);
@@ -199,7 +199,7 @@ int adreno_drawctxt_wait(struct adreno_device *adreno_dev,
 		ret = -ENOENT;
 
 done:
-	//trace_adreno_drawctxt_wait_done(-1, context->id, timestamp, ret);
+	trace_adreno_drawctxt_wait_done(-1, context->id, timestamp, ret);
 	return ret;
 }
 
@@ -229,13 +229,13 @@ static int adreno_drawctxt_wait_rb(struct adreno_device *adreno_dev,
 	if (kgsl_context_invalid(context))
 		goto done;
 
-	//trace_adreno_drawctxt_wait_start(drawctxt->rb->id, context->id,
-	//				timestamp);
+	trace_adreno_drawctxt_wait_start(drawctxt->rb->id, context->id,
+					timestamp);
 
 	ret = adreno_ringbuffer_waittimestamp(drawctxt->rb, timestamp, timeout);
 done:
-	//trace_adreno_drawctxt_wait_done(drawctxt->rb->id, context->id,
-	//				timestamp, ret);
+	trace_adreno_drawctxt_wait_done(drawctxt->rb->id, context->id,
+					timestamp, ret);
 	return ret;
 }
 
@@ -252,7 +252,7 @@ void adreno_drawctxt_invalidate(struct kgsl_device *device,
 {
 	struct adreno_context *drawctxt = ADRENO_CONTEXT(context);
 
-	//trace_adreno_drawctxt_invalidate(drawctxt);
+	trace_adreno_drawctxt_invalidate(drawctxt);
 
 	spin_lock(&drawctxt->lock);
 	set_bit(KGSL_CONTEXT_PRIV_INVALID, &context->priv);
@@ -336,7 +336,6 @@ adreno_drawctxt_create(struct kgsl_device_private *dev_priv,
 		KGSL_CONTEXT_PER_CONTEXT_TS |
 		KGSL_CONTEXT_USER_GENERATED_TS |
 		KGSL_CONTEXT_NO_FAULT_TOLERANCE |
-		KGSL_CONTEXT_INVALIDATE_ON_FAULT |
 		KGSL_CONTEXT_CTX_SWITCH |
 		KGSL_CONTEXT_PRIORITY_MASK |
 		KGSL_CONTEXT_TYPE_MASK |
@@ -579,8 +578,8 @@ int adreno_drawctxt_switch(struct adreno_device *adreno_dev,
 	if (rb->drawctxt_active == drawctxt)
 		return ret;
 
-	//trace_adreno_drawctxt_switch(rb,
-	//	drawctxt, flags);
+	trace_adreno_drawctxt_switch(rb,
+		drawctxt, flags);
 
 	/* Get a refcount to the new instance */
 	if (drawctxt) {

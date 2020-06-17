@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2008-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -771,15 +771,13 @@ static int kgsl_suspend_device(struct kgsl_device *device, pm_message_t state)
 	if (!device)
 		return -EINVAL;
 
-	//KGSL_PWR_WARN(device, "suspend start\n");
+	KGSL_PWR_WARN(device, "suspend start\n");
 
 	mutex_lock(&device->mutex);
 	status = kgsl_pwrctrl_change_state(device, KGSL_STATE_SUSPEND);
-	if (status == 0)
-	      device->ftbl->dispatcher_halt(device);
 	mutex_unlock(&device->mutex);
 
-	//KGSL_PWR_WARN(device, "suspend end\n");
+	KGSL_PWR_WARN(device, "suspend end\n");
 	return status;
 }
 
@@ -788,11 +786,10 @@ static int kgsl_resume_device(struct kgsl_device *device)
 	if (!device)
 		return -EINVAL;
 
-	//KGSL_PWR_WARN(device, "resume start\n");
+	KGSL_PWR_WARN(device, "resume start\n");
 	mutex_lock(&device->mutex);
 	if (device->state == KGSL_STATE_SUSPEND) {
 		kgsl_pwrctrl_change_state(device, KGSL_STATE_SLUMBER);
-		device->ftbl->dispatcher_unhalt(device);
 	} else if (device->state != KGSL_STATE_INIT) {
 		/*
 		 * This is an error situation,so wait for the device
@@ -808,7 +805,7 @@ static int kgsl_resume_device(struct kgsl_device *device)
 	}
 
 	mutex_unlock(&device->mutex);
-	//KGSL_PWR_WARN(device, "resume end\n");
+	KGSL_PWR_WARN(device, "resume end\n");
 	return 0;
 }
 
@@ -949,14 +946,12 @@ static struct kgsl_process_private *kgsl_process_private_new(
 	/* Allocate a pagetable for the new process object */
 	if (kgsl_mmu_enabled()) {
 		private->pagetable = kgsl_mmu_getpagetable(&device->mmu, tgid);
-		if (IS_ERR(private->pagetable)) {
-			int err = PTR_ERR(private->pagetable);
-
+		if (private->pagetable == NULL) {
 			idr_destroy(&private->mem_idr);
 			idr_destroy(&private->syncsource_idr);
 
 			kfree(private);
-			private = ERR_PTR(err);
+			private = ERR_PTR(-ENOMEM);
 		}
 	}
 
@@ -2537,6 +2532,8 @@ static int kgsl_setup_dma_buf(struct kgsl_device *device,
 	meta->dmabuf = dmabuf;
 	meta->attach = attach;
 
+	attach->priv = entry;
+
 	entry->priv_data = meta;
 	entry->memdesc.pagetable = pagetable;
 	entry->memdesc.size = 0;
@@ -2586,6 +2583,45 @@ out:
 	}
 
 	return ret;
+}
+#endif
+
+#ifdef CONFIG_DMA_SHARED_BUFFER
+void kgsl_get_egl_counts(struct kgsl_mem_entry *entry,
+		int *egl_surface_count, int *egl_image_count)
+{
+	struct kgsl_dma_buf_meta *meta = entry->priv_data;
+	struct dma_buf *dmabuf = meta->dmabuf;
+	struct dma_buf_attachment *mem_entry_buf_attachment = meta->attach;
+	struct device *buf_attachment_dev = mem_entry_buf_attachment->dev;
+	struct dma_buf_attachment *attachment = NULL;
+
+	mutex_lock(&dmabuf->lock);
+	list_for_each_entry(attachment, &dmabuf->attachments, node) {
+		struct kgsl_mem_entry *scan_mem_entry = NULL;
+
+		if (attachment->dev != buf_attachment_dev)
+			continue;
+
+		scan_mem_entry = attachment->priv;
+		if (!scan_mem_entry)
+			continue;
+
+		switch (kgsl_memdesc_get_memtype(&scan_mem_entry->memdesc)) {
+		case KGSL_MEMTYPE_EGL_SURFACE:
+			(*egl_surface_count)++;
+			break;
+		case KGSL_MEMTYPE_EGL_IMAGE:
+			(*egl_image_count)++;
+			break;
+		}
+	}
+	mutex_unlock(&dmabuf->lock);
+}
+#else
+void kgsl_get_egl_counts(struct kgsl_mem_entry *entry,
+		int *egl_surface_count, int *egl_image_count)
+{
 }
 #endif
 
@@ -2964,7 +3000,7 @@ long kgsl_ioctl_gpuobj_sync(struct kgsl_device_private *dev_priv,
 	entries = kzalloc(param->count * sizeof(*entries), GFP_KERNEL);
 	if (entries == NULL) {
 		kfree(objs);
- 		return -ENOMEM;
+		return -ENOMEM;
 	}
 
 	ptr = to_user_ptr(param->objs);
@@ -2981,7 +3017,6 @@ long kgsl_ioctl_gpuobj_sync(struct kgsl_device_private *dev_priv,
 		if (entries[i] == NULL)
 			continue;
 
-
 		if (!(objs[i].op & KGSL_GPUMEM_CACHE_RANGE))
 			size += entries[i]->memdesc.size;
 		else if (objs[i].offset < entries[i]->memdesc.size)
@@ -2989,22 +3024,21 @@ long kgsl_ioctl_gpuobj_sync(struct kgsl_device_private *dev_priv,
 
 		full_flush = check_full_flush(size, objs[i].op);
 		if (full_flush) {
- 			trace_kgsl_mem_sync_full_cache(i, size);
- 			flush_cache_all();
- 			goto out;
- 		}
+			trace_kgsl_mem_sync_full_cache(i, size);
+			flush_cache_all();
+			goto out;
+		}
 
 		ptr += sizeof(*objs);
 	}
 
 	for (i = 0; !ret && i < param->count; i++)
- 		if (entries[i])
- 			ret = _kgsl_gpumem_sync_cache(entries[i],
- 					objs[i].offset, objs[i].length,
- 					objs[i].op);
+		if (entries[i])
+			ret = _kgsl_gpumem_sync_cache(entries[i],
+					objs[i].offset, objs[i].length,
+					objs[i].op);
 
 out:
-
 	for (i = 0; i < param->count; i++)
 		if (entries[i])
 			kgsl_mem_entry_put(entries[i]);
@@ -4150,7 +4184,8 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 	}
 
 	status = devm_request_irq(device->dev, device->pwrctrl.interrupt_num,
-				  kgsl_irq_handler, IRQF_TRIGGER_HIGH,
+				  kgsl_irq_handler,
+				  IRQF_TRIGGER_HIGH | IRQF_PERF_CRITICAL,
 				  device->name, device);
 	if (status) {
 		KGSL_DRV_ERR(device, "request_irq(%d) failed: %d\n",
@@ -4234,8 +4269,8 @@ int kgsl_device_platform_probe(struct kgsl_device *device)
 				PM_QOS_DEFAULT_VALUE);
 	}
 
-	device->events_wq = alloc_workqueue("kgsl-events",
-		WQ_UNBOUND | WQ_MEM_RECLAIM, 0);
+
+	device->events_wq = create_workqueue("kgsl-events");
 
 	/* Initalize the snapshot engine */
 	kgsl_device_snapshot_init(device);
@@ -4387,7 +4422,7 @@ static int __init kgsl_core_init(void)
 
 	init_kthread_worker(&kgsl_driver.worker);
 
-	kgsl_driver.worker_thread = kthread_run(kthread_worker_fn,
+	kgsl_driver.worker_thread = kthread_run_perf_critical(kthread_worker_fn,
 		&kgsl_driver.worker, "kgsl_worker_thread");
 
 	if (IS_ERR(kgsl_driver.worker_thread)) {
