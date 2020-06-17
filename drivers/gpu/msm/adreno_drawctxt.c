@@ -230,12 +230,12 @@ static int adreno_drawctxt_wait_rb(struct adreno_device *adreno_dev,
 		goto done;
 
 	//trace_adreno_drawctxt_wait_start(drawctxt->rb->id, context->id,
-					timestamp);
+	//				timestamp);
 
 	ret = adreno_ringbuffer_waittimestamp(drawctxt->rb, timestamp, timeout);
 done:
 	//trace_adreno_drawctxt_wait_done(drawctxt->rb->id, context->id,
-					timestamp, ret);
+	//				timestamp, ret);
 	return ret;
 }
 
