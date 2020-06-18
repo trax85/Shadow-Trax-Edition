@@ -30,50 +30,38 @@ ui_print(" ");
 ui_print("Summoning Shadow Kernel");
 run_program("/tmp/aroma/sleep","500");
 if
-  file_getprop("/tmp/aroma/rom.prop","selected") == "3"
+	file_getprop("/tmp/aroma/rom.prop","selected") == "3"
 then
 if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
+	file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
 then  
-  package_extract_dir("thermal/old", "/system/system");
-  set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
-  set_perm(0, 0, 0644, "/system/system/vendor/lib/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalioctl.so");
-  unmount("/system/system");
+	package_extract_dir("thermal/old", "/system/system");
+	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
+	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
+	unmount("/system/system");
 endif;  
 if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
+ 	file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
 then
-  package_extract_dir("thermal/new", "/system/system");
-  set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
-  set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config"); 
-  set_perm(0, 0, 0644, "/system/system/vendor/lib/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/system/vendor/lib64/libthermalioctl.so");
-  unmount("/system/system");
+  	package_extract_dir("thermal/new", "/system/system");
+  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config"); 
+  	unmount("/system/system");
 endif;  
 else
 if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
+  	file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
 then  
-  package_extract_dir("thermal/old", "/system");
-  set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
-  set_perm(0, 0, 0644, "/system/vendor/lib/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalioctl.so");
-  unmount("/system");
+  	package_extract_dir("thermal/old", "/system");
+  	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
+	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
+  	unmount("/system");
 endif;
 if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
+  	file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
 then
-  package_extract_dir("thermal/new", "/system"); 
-  set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
-  set_perm(0, 0, 0644, "/system/vendor/etc/thermal-engine.config");
-  set_perm(0, 0, 0644, "/system/vendor/lib/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalclient.so");
-  set_perm(0, 0, 0644, "/system/vendor/lib64/libthermalioctl.so");
-  unmount("/system");
+  	package_extract_dir("thermal/new", "/system"); 
+  	set_perm(0, 0, 0644, "/system/vendor/etc/thermal-engine.config");
+  	unmount("/system");
 endif;
 endif;
 ui_print(" ");

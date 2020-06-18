@@ -53,16 +53,9 @@ if [ $ROM == 3 ]; then
 	cp /tmp/init.shadow.rc /system/system/vendor/etc/init/hw/
 	chmod 0644 /system/system/vendor/etc/init/hw/init.shadow.rc
 	# ADD SPECTRUM SUPPORT
-	cp /tmp/init.spectrum.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/init.spectrum.rc /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.balance.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.performance.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.battery.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.gaming.sh /system/system/vendor/etc/init/hw/
-	chmod 755 /system/system/vendor/etc/init/hw/profile.balance.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.performance.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.battery.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.gaming.sh
+	# ADD SPECTRUM SUPPORT
+	cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.sh
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.rc
 	if [ $(grep -c "import /vendor/etc/init/hw/init.shadow.rc" /system/system/vendor/etc/init/hw/init.qcom.rc) == 0 ]; then
