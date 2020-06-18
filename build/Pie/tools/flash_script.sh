@@ -28,7 +28,7 @@ cmd=$cmd" androidboot.selinux=permissive"
 cmd=$cmd" cpu_max_c1=1401600"" cpu_max_c2=1804800"
 AUDIO=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $AUDIO = 1 ]; then
-	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0"
+	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0 androidboot.bps=24bit"
 fi
 JACK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $JACK = 0 ]; then
