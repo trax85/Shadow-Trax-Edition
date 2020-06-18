@@ -27,15 +27,11 @@ cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sd
 cmd=$cmd" androidboot.selinux=permissive"
 cmd=$cmd" cpu_max_c1=1401600"" cpu_max_c2=1804800"
 ##
-AUD=$(cat /tmp/aroma/aud.prop | cut -d '=' -f2)
-if [ $AUD = 1 ]; then
-	cmd=$cmd" androidboot.bps=24bit"
-else
-        cmd=$cmd" androidboot.bps=16bit"
-fi
-##
+AUDIO`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $AUDIO = 1 ]; then
-	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0"
+	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0 androidboot.bps=24bit"
+else 
+	cmd=$cmd"androidboot.bps=16bit"
 fi
 JACK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $JACK = 0 ]; then
@@ -61,16 +57,8 @@ if [ $ROM == 3 ]; then
 	cp /tmp/init.shadow.rc /system/system/vendor/etc/init/hw/
 	chmod 0644 /system/system/vendor/etc/init/hw/init.shadow.rc
 	# ADD SPECTRUM SUPPORT
-	cp /tmp/init.spectrum.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/init.spectrum.rc /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.balance.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.performance.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.power.sh /system/system/vendor/etc/init/hw/
-	cp /tmp/profile.gaming.sh /system/system/vendor/etc/init/hw/
-	chmod 755 /system/system/vendor/etc/init/hw/profile.balance.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.performance.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.power.sh
-	chmod 755 /system/system/vendor/etc/init/hw/profile.gaming.sh
+	cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.sh
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.rc
 	if [ $(grep -c "import /vendor/etc/init/hw/init.shadow.rc" /system/system/vendor/etc/init/hw/init.qcom.rc) == 0 ]; then

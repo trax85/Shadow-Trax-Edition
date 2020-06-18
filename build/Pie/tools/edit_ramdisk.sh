@@ -334,7 +334,7 @@ fi
 echo "# MISC TWEAKS" >> $CONFIGFILE
 echo "setprop video.accelerate.hw 1" >> $CONFIGFILE
 echo "setprop debug.composition.type c2d" >> $CONFIGFILE
-echo "write /sys/kernel/debug/debug_enabled N" >> $CONFIGFILE
+echo "/sys/kernel/debug/debug_enabled N" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# RUN USERTWEAKS SERVICE" >> $CONFIGFILE

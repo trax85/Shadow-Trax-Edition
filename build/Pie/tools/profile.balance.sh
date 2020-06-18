@@ -9,7 +9,7 @@ function write() {
 #Cpu Governor And Frequencies Scaling Settings
 #A53
 echo interactive > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 
+echo 691200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 
 echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 0
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 100
@@ -22,7 +22,7 @@ write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 0
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
 #A72
 echo interactive > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
-echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 
+echo 672000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 
 echo 1612800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay "19000 1382400:39000"
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 95
