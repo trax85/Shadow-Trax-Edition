@@ -36,7 +36,7 @@ if
 	file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
 then  
 	package_extract_dir("thermal/old", "/system/system");
-	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
+	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
 	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
 	unmount("/system/system");
 endif;  
@@ -53,13 +53,14 @@ if
 then  
   	package_extract_dir("thermal/old", "/system");
   	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
-	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
+	set_perm(0, 0, 0644, "/system/vendor/etc/thermal-engine.config");
   	unmount("/system");
 endif;
 if
   	file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
 then
-  	package_extract_dir("thermal/new", "/system"); 
+  	package_extract_dir("thermal/new", "/system");
+	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine"); 
   	set_perm(0, 0, 0644, "/system/vendor/etc/thermal-engine.config");
   	unmount("/system");
 endif;
