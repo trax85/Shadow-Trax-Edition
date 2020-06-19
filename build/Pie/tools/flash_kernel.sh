@@ -96,8 +96,8 @@ else
 	chmod 0754 /tmp/ramdisk/profile.balance.sh
 	cp /tmp/profile.performance.sh /tmp/ramdisk/
 	chmod 0754 /tmp/ramdisk/profile.performance.sh
-	cp /tmp/profile.power.sh /tmp/ramdisk/
-	chmod 0754 /tmp/ramdisk/profile.power.sh
+	cp /tmp/profile.battery.sh /tmp/ramdisk/
+	chmod 0754 /tmp/ramdisk/profile.battery.sh
 	cp /tmp/profile.gaming.sh /tmp/ramdisk/
 	chmod 0754 /tmp/ramdisk/profile.gaming.sh
 	cp /tmp/init.spectrum.rc /tmp/ramdisk/

@@ -1,21 +1,68 @@
 V5.6-
-* EAS initial port
-* EAS energy module fixup.
-* Sched boost feature initial import.
-* Sched improvements code rectification and removal of hanging functions and hooks.
--Audio:
-* 24bit default packed audio output on kernel side(needs shox audio libs to work on roms).
-* Pdesire audio mods from psndna88 Agni kernel, DTS ainur module import. Allow 320k AAC encoding, APTX Encoding, add G711 Audio encoding Rebalance gains in headphone(L-R).
-* Fine tune wcd9326 reduce static noise, reduce voltage output for better audio quality and less breaks in audio.
-* Add high End AW8738 Amp driver from agni kernel(Lot of thnx to psndna88).
--Device tree changes:
-* GPU oc to 753MHz, Add Gpll3 clocks, Improve ddr bus clocks.
-* Sound and oc slimbus changes.
-* Panel oc for Boe, Tianma, Sharp(66Hz,64Hz,64Hz Respectively), Add Analog dim for panel for smoother transition.
--Other:
-* Gpu flags and other flag optimization.
-* Remove unnecessary stuff and nuke stuff that dont work and not required anymore.
-* Add mdss triple buffering support(Testing).
-* Add Wakeboost interface, Dynamic fsync.
-* Initial HDR feature import from 4.4 and 3.18 kernel.
+-GPU Driver
+* Improve existing flags and add New flags for better perf
+* Increse priotiy of RT threads And remove deadlocks
+* Increase Data Processing limit
+* Skip unnessary calls and remove files  from compilation which are not required(a3xx/a4xx)
+* Remove spams and Debug msgs
+
+-Cpufreq Drvier
+* Fixes and Optimizations
+
+-Devfreq Driver
+* Add Devfreq boost Driver For boosting cpubw Bus Frequencies
+* Add More Fixes and optimizations
+
+-Media
+* Enable Decoder DCVS for vp9
+* kill opening/closing video instance logspam
+* Clean session when failed to open instance
+
+-Video 
+* Make Refreshrate Varible and export it to userspace
+* Add Frame Boost Disbled by Default
+* Mdss Save state of vsync handler
+* Silence mdss log spams and Fix Derps
+* Fix potential deadlocks
+
+-Prima
+* Fixes for GCC 5 and 6 
+* Remove spams from dmesg logs
+* Update prima to LA.BR.1.3.7_rb1.11
+
+-Kernel
+* Fix GCC 7.x and 6.x warnings ,Uninitializeed Warnings , Duplicate Const warnings all sorts of stuff
+* Implement lockless wakeups In futex
+* Add Devfreq boosting and cpuboosting at various points to improve perf and reduce latency
+* Add crypto_crc32_arm64
+* Add missing crc32-arm64 hw acclerted module
+* Reduce priority of core AES cipher
+* Crypto Optimise flags for arm a72 and a53
+* Nuke a lots of Unwanted useless modules from Defconfig
+* Disbale logging for many modules so less Cpu time is consumed
+-Device Tree
+* REmove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock
+* Nuke Unwanted Intermediate Cpu Freqs And add 672Mhz and 960Mhz Intermediates to get smoother transistion
+* Correct Voltage values for Both CPU & GPU
+* Add Current values for New freqs and adjust them a bit
+* Reduce Gpu OC to 710Mhz as 753Mhz and anything higher than 710 causes kgsl faults and FC's in game
+* Optimize Gpu Pwrlvl
+* Add DFPS for Boe,Tinema ,Sharp panels
+* Add missing Nodes and blobs for our dt
+
+-Lowmemorykiller
+* Restore stock Shadow lmk module as more performance improvemets were seen there
+
+-File-sys
+* EXT4 Enhancemets and remove spams and other fixes
+* Fs Remove taint warnings and tracing logs
+ 
+-Aroma & Other
+* Script Changes and New theme for our Shadow 
+* Spectrum New implimentaion as many modules had trouble with our traditional Spectrum implimentation
+* Spectrum Modification to accomodate our new changes
+* Add Refresh rate option
+* Add better support for Android Q
+* Add Support form Android ver 7.1-10 MIUI not supported if it works be happy if it doesnt well:(
+
 

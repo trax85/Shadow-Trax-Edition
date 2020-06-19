@@ -57,7 +57,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 0
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
 	#Cpu-Boost
-	write /sys/module/cpu_boost/parameters/input_boost_enabled 1
+	write /sys/module/cpu_boost/parameters/input_boost_enabled 0
 	write /sys/module/cpu_boost/parameters/input_boost_freq "0:691000 1:691000 2:691000 3:691000 4:0 5:0"
 	write /sys/module/cpu_boost/parameters/input_boost_ms 10
 	write /sys/module/msm_performance/parameters/touchboost 0
@@ -274,7 +274,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	#echo 9887 > /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/max_freq 
 	echo 805 > /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/min_freq 
 	#echo 9887 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/max_freq 
-	echo 4173 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq 
+	echo 805 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq 
 	#Msm-Thermals
 	echo 90 > /sys/module/msm_thermal/parameters/temp_threshold 
 	echo 90 > /sys/module/msm_thermal/parameters/core_limit_temp_degC 
