@@ -170,16 +170,10 @@ selectbox(
 );
 
 selectbox(
-  "\n\nWant Higher Bitrate Audio?","<@center><b>\n\n\n\n\nIf you choose yes then audio will be tuned for higher bitrate.\n</b></@>","","aud.prop",
-  "Yes, 24bit Audio","\nSupports 24bit audio but requires Rom support for 24bit output",0,
-  "No, 16bit Audio","\Standard 16bit audio output",1
-);
-
-selectbox(
-  "\n\nThermal engine ?","<@center><b>\n\n\n\n\nIf you have any slow charging issue then only it is recommended to select yes here.\n</b></@>","","thermal.prop",
-  "Old thermal","Potential charging speed fix",0,
-  "New thermal","Recommended thermal config for shadow",0,
-  "Default thermals","Doesnt replace thermals",1
+  "\n\nWant New Thermal Engine ?","<@center><b>\n\n\n\n\nReplaces thermals with shadow customized thermals for better compatiblity with shadow.\n</b></@>","","thermal.prop",
+  "Old thermal","\nPotential charging speed fix",0,
+  "New thermal","\nRecommended thermal config for shadow",0,
+  "Default thermals","\NDoes not replace/edit thermals",1
 );
 
 checkbox(
