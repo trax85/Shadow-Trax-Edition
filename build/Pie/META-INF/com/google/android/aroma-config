@@ -177,7 +177,7 @@ selectbox(
 );
 
 selectbox(
-  "\n\nWant old thermal engine ?","<@center><b>\n\n\n\n\nIf you have any slow charging issue then only it is recommended to select yes here.\n</b></@>","","thermal.prop",
+  "\n\nWant New Thermal Engine ?","<@center><b>\n\n\n\n\nReplaces thermlas with roms default thermals with thermals tuned for shadow.\n</b></@>","","thermal.prop",
   "Old thermal","\nPotential fix for slow charging",0,
   "New thermal","\nRecommended thermal config for shadow",0,
   "Default thermal","\nDoes not replace/edit thermals",1
