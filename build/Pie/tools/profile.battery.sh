@@ -8,17 +8,19 @@ function write() {
 }
 
 #Cpu Governor And Frequencies Scaling Settings
+echo 0 > /sys/devices/system/cpu/cpu3/online
+echo 0 > /sys/devices/system/cpu/cpu5/online
 #A53
 echo pwrutilx > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-echo 1305600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+echo 1382400 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 echo 990 > /sys/devices/system/cpu/cpu0/cpufreq/pwrutilx/up_rate_limit_us
 echo 1000 > /sys/devices/system/cpu/cpu0/cpufreq/pwrutilx/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/pwrutilx/iowait_boost_enable
 #A72
 echo pwrutilx > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-echo 1382400 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
 echo 1000 > /sys/devices/system/cpu/cpu4/cpufreq/pwrutilx/up_rate_limit_us
 echo 1000 > /sys/devices/system/cpu/cpu4/cpufreq/pwrutilx/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/pwrutilx/iowait_boost_enable

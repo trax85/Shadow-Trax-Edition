@@ -8,6 +8,8 @@ function write() {
 }
 
 #Cpu Governor And Frequencies Scaling Settings
+echo 1 > /sys/devices/system/cpu/cpu3/online
+echo 1 > /sys/devices/system/cpu/cpu5/online
 #A53
 echo electroutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo 691200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
