@@ -23,7 +23,7 @@
     else
         echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
         echo "16384,20992,24064,30720,46080,66560" > /sys/module/lowmemorykiller/parameters/minfree
-	    echo 10 > /proc/sys/vm/dirty_background_ratio
+	echo 10 > /proc/sys/vm/dirty_background_ratio
     fi
     sleep 10
     echo 1 > /sys/devices/virtual/block/zram0/reset

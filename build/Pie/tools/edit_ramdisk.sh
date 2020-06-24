@@ -108,9 +108,9 @@ fi
 	echo "on property:init.svc.vendor.qcom-post-boot=stopped" >> $CONFIGFILE
 fi
 echo "" >> $CONFIGFILE
-echo "# REFRESHRATE" >> $CONFIGFILE
+echo "# REFRESH RATE" >> $CONFIGFILE
 echo "chmod 666 /sys/module/mdss_dsi/parameters/dsi_refreshrate" >> $CONFIGFILE
-echo "write /sys/module/mdss_dsi/parameters/dsi_refreshrate $RFS" >> $CONFIGFILE
+echo "write /sys/module/mdss_dsi/parameters/dsi_refreshrate " $RFS >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 COLOR=$(cat /tmp/aroma/color.prop | cut -d '=' -f2)
 echo "# KCAL" >> $CONFIGFILE
@@ -172,12 +172,12 @@ echo "" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# FSYNC" >> $CONFIGFILE
-echo "write /sys/module/sync/parameters/fsync_enabled $DFS" >> $CONFIGFILE
+echo "write /sys/module/sync/parameters/fsync_enabled " $DFS >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 BDM=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
-if [ $DFSC = 1 ]; then
+if [ $BDM = 1 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer Y" >> $CONFIGFILE
-elif [ $DFSC = 0 ]; then
+elif [ $BDM = 0 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer N" >> $CONFIGFILE
 fi
 echo "write /sys/block/mmcblk0/queue/iostats 0" >> $CONFIGFILE
@@ -194,13 +194,13 @@ echo "" >> $CONFIGFILE
 VOLT=$(cat /tmp/aroma/uv.prop | cut -d '=' -f2)
 if [ $VOLT == 1 ]; then
 	echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 910 970 1010 1020\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 790 890 930 940 940 680 700 710 800 810 810 820 900 930 950\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 910 970 1020 1050\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 790 890 910 920 940 950 680 710 740 800 810 810 820 900 930 950 980\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 elif [ $VOLT == 2 ]; then
 	echo "# CPU & GPU LIGHT UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"720 720 770 820 880 940 970 1030 1050\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 940 950 980 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 710 720 760 800 830 850 870 950 960 980 1000\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 fi
 echo "# MISC" >> $CONFIGFILE
