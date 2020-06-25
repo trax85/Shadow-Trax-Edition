@@ -13,8 +13,8 @@ obj-$(CONFIG_MSM_CLK_CONTROLLER_V2)	+= msm-clock-controller.o
 obj-$(CONFIG_DEBUG_FS)		+= clock-debug.o
 
 # MSM8916
-obj-$(CONFIG_ARCH_MSM8916)	+= clock-rpm-8916.o
-obj-$(CONFIG_ARCH_MSM8916)	+= clock-gcc-8916.o
+#obj-$(CONFIG_ARCH_MSM8916)	+= clock-rpm-8916.o
+#obj-$(CONFIG_ARCH_MSM8916)	+= clock-gcc-8916.o
 obj-$(CONFIG_ARCH_MSM8909)	+= clock-rpm-8909.o
 obj-$(CONFIG_ARCH_MSM8909)	+= clock-gcc-8909.o
 
@@ -31,11 +31,11 @@ obj-$(CONFIG_ARCH_MSM8992)	+= clock-mmss-8992.o
 obj-$(CONFIG_ARCH_MSM8992)	+= clock-cpu-8994.o
 
 # MSM8936
-obj-$(CONFIG_ARCH_MSM8916)	+= clock-rpm-8936.o
-obj-$(CONFIG_ARCH_MSM8916)	+= clock-gcc-8936.o
+#obj-$(CONFIG_ARCH_MSM8916)	+= clock-rpm-8936.o
+#obj-$(CONFIG_ARCH_MSM8916)	+= clock-gcc-8936.o
 
 # MSM8952
-obj-$(CONFIG_ARCH_MSM8916)	+=clock-gcc-8952.o
+#obj-$(CONFIG_ARCH_MSM8916)	+=clock-gcc-8952.o
 
 # MSM8976
 obj-$(CONFIG_ARCH_MSM8916)	+=clock-gcc-8976.o
@@ -51,8 +51,8 @@ obj-$(CONFIG_ARCH_MSM8226)	+= clock-a7.o
 obj-$(CONFIG_ARCH_MDM9630)	+= clock-a7.o
 obj-$(CONFIG_ARCH_MSM8916)	+= clock-a7.o
 obj-$(CONFIG_ARCH_MDM9640)	+= clock-a7.o
-obj-$(CONFIG_ARCH_MSM8916)	+= clock-cpu-8939.o
-obj-$(CONFIG_ARCH_MSM8916)	+= clock-cpu-8936.o
+#obj-$(CONFIG_ARCH_MSM8916)	+= clock-cpu-8939.o
+#obj-$(CONFIG_ARCH_MSM8916)	+= clock-cpu-8936.o
 obj-$(CONFIG_ARCH_MSM8909)	+= clock-a7.o
 obj-$(CONFIG_ARCH_FSM9010)	+= clock-a7.o
 
