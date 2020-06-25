@@ -108,9 +108,9 @@ fi
 	echo "on property:init.svc.vendor.qcom-post-boot=stopped" >> $CONFIGFILE
 fi
 echo "" >> $CONFIGFILE
-echo "# REFRESH RATE" >> $CONFIGFILE
+echo "# REFRESHRATE" >> $CONFIGFILE
 echo "chmod 666 /sys/module/mdss_dsi/parameters/dsi_refreshrate" >> $CONFIGFILE
-echo "write /sys/module/mdss_dsi/parameters/dsi_refreshrate " $RFS >> $CONFIGFILE
+echo "write /sys/module/mdss_dsi/parameters/dsi_refreshrate $RFS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 COLOR=$(cat /tmp/aroma/color.prop | cut -d '=' -f2)
 echo "# KCAL" >> $CONFIGFILE
@@ -172,12 +172,12 @@ echo "" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# FSYNC" >> $CONFIGFILE
-echo "write /sys/module/sync/parameters/fsync_enabled " $DFS >> $CONFIGFILE
+echo "write /sys/module/sync/parameters/fsync_enabled $DFS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 BDM=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
-if [ $BDM = 1 ]; then
+if [ $DFSC = 1 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer Y" >> $CONFIGFILE
-elif [ $BDM = 0 ]; then
+elif [ $DFSC = 0 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer N" >> $CONFIGFILE
 fi
 echo "write /sys/block/mmcblk0/queue/iostats 0" >> $CONFIGFILE

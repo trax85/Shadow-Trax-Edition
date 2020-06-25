@@ -50,9 +50,6 @@ echo 550000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
 echo 266666667 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 
 echo 4 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel
 #Devfreq-Drivers
-#echo 9887 > /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/max_freq
-echo 805 > /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/min_freq
-#echo 9887 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/max_freq
 echo 0 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq
 #Walt-Toggles
 echo 1 > /proc/sys/kernel/sched_use_walt_cpu_util
