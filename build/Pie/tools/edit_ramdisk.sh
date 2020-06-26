@@ -191,7 +191,7 @@ fi
 echo "" >> $CONFIGFILE
 echo "# REFRESHRATE" >> $CONFIGFILE
 echo "chmod 666 /sys/module/mdss_dsi/parameters/dsi_refreshrate" >> $CONFIGFILE
-echo "write /sys/module/mdss_dsi/parameters/dsi_refreshrate $RFS" >> $CONFIGFILE
+echo "write /sys/module/mdss_dsi/parameters/dsi_refreshrate " $RFS >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# WAKE GESTURES" >> $CONFIGFILE
@@ -201,37 +201,37 @@ echo "write /sys/android_touch/vib_strength " $VIBS >> $CONFIGFILE
 COLOR=$(cat /tmp/aroma/color.prop | cut -d '=' -f2)
 echo "# KCAL" >> $CONFIGFILE
 if [ $COLOR == 1 ]; then
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 269" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 256" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 256" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"254 252 230"\" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 269" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 256" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 256" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"254 252 230"\" >> $CONFIGFILE
 elif [ $COLOR == 2 ]; then
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 269" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 256" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 256" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"254 254 240"\" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 269" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 256" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 256" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"254 254 240"\" >> $CONFIGFILE
 elif [ $COLOR == 3 ]; then
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 270" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 257" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 265" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"256 256 256"\" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 270" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 257" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 265" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"256 256 256"\" >> $CONFIGFILE
 elif [ $COLOR == 4 ]; then
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 255" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 255" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 255" >> $CONFIGFILE
-echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"256 256 256"\" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 255" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 255" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 255" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"256 256 256"\" >> $CONFIGFILE
 fi
 echo "" >> $CONFIGFILE
 CHG=$(cat /tmp/aroma/charge.prop | cut -d '=' -f2)
 if [ $CHG == 1 ]; then
 	RATE=1400
-echo "# CHARGING RATE" >> $CONFIGFILE
-echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_dcp_icl_ma" >> $CONFIGFILE
-echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_hvdcp_icl_ma" >> $CONFIGFILE
-echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_hvdcp3_icl_ma" >> $CONFIGFILE
-echo "write /sys/module/qpnp_smbcharger/parameters/default_dcp_icl_ma $RATE" >> $CONFIGFILE
-echo "write /sys/module/qpnp_smbcharger/parameters/default_hvdcp_icl_ma $RATE" >> $CONFIGFILE
-echo "write /sys/module/qpnp_smbcharger/parameters/default_hvdcp3_icl_ma $RATE" >> $CONFIGFILE
+	echo "# CHARGING RATE" >> $CONFIGFILE
+	echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_dcp_icl_ma" >> $CONFIGFILE
+	echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_hvdcp_icl_ma" >> $CONFIGFILE
+	echo "chmod 666 /sys/module/qpnp_smbcharger/parameters/default_hvdcp3_icl_ma" >> $CONFIGFILE
+	echo "write /sys/module/qpnp_smbcharger/parameters/default_dcp_icl_ma $RATE" >> $CONFIGFILE
+	echo "write /sys/module/qpnp_smbcharger/parameters/default_hvdcp_icl_ma $RATE" >> $CONFIGFILE
+	echo "write /sys/module/qpnp_smbcharger/parameters/default_hvdcp3_icl_ma $RATE" >> $CONFIGFILE
 fi
 echo "# FAST CHARGE" >> $CONFIGFILE
 echo "write /sys/kernel/fast_charge/force_fast_charge $USB" >> $CONFIGFILE
@@ -253,11 +253,11 @@ echo "" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# SET IO SCHEDULER" >> $CONFIGFILE
 if [ $PROFILE == 1 ]; then
-echo "setprop sys.io.scheduler \"maple\"" >> $CONFIGFILE
+	echo "setprop sys.io.scheduler \"maple\"" >> $CONFIGFILE
 elif [ $PROFILE == 2 ]; then
-echo "setprop sys.io.scheduler \"fiops\"" >> $CONFIGFILE
+	echo "setprop sys.io.scheduler \"fiops\"" >> $CONFIGFILE
 elif [ $PROFILE == 3 ]; then
-echo "setprop sys.io.scheduler \"deadline\"" >> $CONFIGFILE
+	echo "setprop sys.io.scheduler \"deadline\"" >> $CONFIGFILE
 fi
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
@@ -274,9 +274,9 @@ echo "# FSYNC" >> $CONFIGFILE
 echo "write /sys/module/sync/parameters/fsync_enabled $DFS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 BDM=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
-if [ $DFSC = 1 ]; then
+if [ $BDM = 1 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer Y" >> $CONFIGFILE
-elif [ $DFSC = 0 ]; then
+elif [ $BDM = 0 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer N" >> $CONFIGFILE
 fi
 echo "write /sys/block/mmcblk0/queue/iostats 0" >> $CONFIGFILE
@@ -289,11 +289,11 @@ echo "write /sys/kernel/mm/ksm/run_charging 0" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# CORE MODE" >> $CONFIGFILE
 if [ $CMODE == 1 ]; then
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 0" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 0" >> $CONFIGFILE
 elif [ $CMODE == 2 ]; then
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 2" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 2" >> $CONFIGFILE
 fi
 echo "" >> $CONFIGFILE
 echo "# CPU SCHEDULER" >> $CONFIGFILE
@@ -321,15 +321,15 @@ echo "write /sys/kernel/fp_boost/enabled 1" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 VOLT=$(cat /tmp/aroma/uv.prop | cut -d '=' -f2)
 if [ $VOLT == 1 ]; then
-echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 910 970 1010 1020\"" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 765 790 890 930 940 940 680 710 710 800 810 810 820 900 930 950\"" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
+	echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"700 710 760 790 890 920 930 940 950 700 700 740 800 810 810 820 900 950 960\"" >> $CONFIGFILE
+	echo "" >> $CONFIGFILE
 elif [ $VOLT == 2 ]; then
-echo "# CPU & GPU LIGHT UV" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"720 720 770 820 880 940 970 1030 1050\"" >> $CONFIGFILE
-echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 940 950 980 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
-echo "" >> $CONFIGFILE
+	echo "# CPU & GPU LIGHT UV" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"720 720 770 820 880 940 970 1030 1050\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
+	echo "" >> $CONFIGFILE
 fi
 echo "# MISC TWEAKS" >> $CONFIGFILE
 echo "setprop video.accelerate.hw 1" >> $CONFIGFILE
