@@ -61,4 +61,4 @@ echo 1 > /dev/stune/top-app/schedtune.boost
 echo 45 > /sys/module/msm_thermal/parameters/temp_threshold
 echo 60 > /sys/module/msm_thermal/parameters/core_limit_temp_degC
 #Vmpressure
-echo 70 > /proc/sys/vm/vfs_cache_pressure
+echo 100 > /proc/sys/vm/vfs_cache_pressure
