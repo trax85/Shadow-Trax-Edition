@@ -390,8 +390,8 @@
 		regulator-max-microvolt = <9>;
 
 		qcom,cpr-fuse-corners = <3>;
-		qcom,cpr-voltage-ceiling = <920000 1020000 1120000>;
-		qcom,cpr-voltage-floor =   <740000  810000  920000>;
+		qcom,cpr-voltage-ceiling = <920000 1020000 1140000>;
+		qcom,cpr-voltage-floor =   <760000  810000  920000>;
 		vdd-apc-supply = <&pm8950_s5>;
 
 		vdd-mx-supply = <&pm8950_s6_level_ao>;
@@ -489,7 +489,7 @@
 		regulator-max-microvolt = <10>;
 
 		qcom,cpr-fuse-corners = <3>;
-		qcom,cpr-voltage-ceiling = <920000 1000000 1120000>;
+		qcom,cpr-voltage-ceiling = <920000 1000000 1140000>;
 		qcom,cpr-voltage-floor =   <760000  800000  900000>;
 		vdd-apc-supply = <&pm8004_s2>;
 
