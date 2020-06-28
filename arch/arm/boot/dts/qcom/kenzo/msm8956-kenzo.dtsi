@@ -251,8 +251,8 @@
 		gpu_handle = <&msm_gpu>;
                 qcom,gfxfreq-corner =
 			<         0   0 >,
-			< 266666667   1 >,  /* Min SVS   */
-			< 300000000   2 >,  /* Low SVS   */
+			< 200000000   1 >,  /* Min SVS   */
+			< 266666667   2 >,  /* Low SVS   */
 			< 366670000   3 >,  /* SVS Minus */
 			< 400000000   4 >,  /* SVS       */
 			< 432000000   5 >,  /* SVS Plus  */
