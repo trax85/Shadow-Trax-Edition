@@ -58,8 +58,8 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
 	#Cpu-Boost
 	write /sys/module/cpu_boost/parameters/input_boost_enabled 0
-	write /sys/module/cpu_boost/parameters/input_boost_freq "0:691000 1:691000 2:691000 3:691000 4:0 5:0"
-	write /sys/module/cpu_boost/parameters/input_boost_ms 10
+	write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0 4:0 5:0"
+	write /sys/module/cpu_boost/parameters/input_boost_ms 0
 	write /sys/module/msm_performance/parameters/touchboost 0
 	#Hotplug
 	write /sys/module/lazyplug/parameters/nr_run_profile_sel 4
@@ -87,7 +87,6 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo 60 > /sys/module/msm_thermal/parameters/core_limit_temp_degC 
 	#Vmpressure
 	echo 100 > /proc/sys/vm/vfs_cache_pressure 
-	write /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk 0
 
     elif [[ $value -eq 1 ]]; then
     	#Cpu Governor And Frequencies Scaling Settings
@@ -199,14 +198,14 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo noop > /sys/block/mmcblk1/queue/scheduler 
 	#Adreno-Driver and Gpu
 	echo 0 > /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost 
-	echo N > /sys/module/adreno_idler/parameters/adreno_idler_active 
+	echo y > /sys/module/adreno_idler/parameters/adreno_idler_active 
 	echo 90 > /sys/module/adreno_idler/parameters/adreno_idler_downdiffrential 
 	echo 4 > /sys/module/adreno_idler/parameters/adreno_idler_idlewait 
 	echo 9000 > /sys/module/adreno_idler/parameters/adreno_idler_idleworkload 
 	echo 550000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk 
 	echo 550000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq 
 	echo 266666667 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 
-	echo 4 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel 
+	echo 5 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel 
 	#Devfreq-Drivers 
 	echo 0 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq 
 	#Msm-Thermals

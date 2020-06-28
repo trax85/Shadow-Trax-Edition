@@ -22,7 +22,7 @@ write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 0
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
 #A72
 echo interactive > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
-echo 672000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 
+echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 
 echo 1612800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay "19000 1382400:39000"
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 95
@@ -35,8 +35,8 @@ write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 0
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
 #Cpu-Boost
 write /sys/module/cpu_boost/parameters/input_boost_enabled 0
-write /sys/module/cpu_boost/parameters/input_boost_freq "0:691000 1:691000 2:691000 3:691000 4:0 5:0"
-write /sys/module/cpu_boost/parameters/input_boost_ms 10
+write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0 4:0 5:0"
+write /sys/module/cpu_boost/parameters/input_boost_ms 0
 write /sys/module/msm_performance/parameters/touchboost 0
 #Hotplug
 write /sys/module/lazyplug/parameters/nr_run_profile_sel 4
@@ -45,8 +45,8 @@ write /sys/module/lazyplug/parameters/cpu_nr_run_threshold 500
 #Workqueue
 echo Y > /sys/module/workqueue/parameters/power_efficient 
 #Scheduler
-echo maple > /sys/block/mmcblk0/queue/scheduler
-echo maple > /sys/block/mmcblk1/queue/scheduler
+echo deadline > /sys/block/mmcblk0/queue/scheduler
+echo deadline > /sys/block/mmcblk1/queue/scheduler
 #Adreno-Driver and Gpu
 echo Y > /sys/module/adreno_idler/parameters/adreno_idler_active 
 echo 80 > /sys/module/adreno_idler/parameters/adreno_idler_downdiffrential 
