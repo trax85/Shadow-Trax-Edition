@@ -29,4 +29,5 @@
     echo 1 > /sys/devices/virtual/block/zram0/reset
     echo "0" > /sys/block/zram0/disksize
     swapoff /dev/block/zram0
+    echo 1 > /dev/stune/top-app/schedtune.boost
     

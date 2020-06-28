@@ -27,11 +27,12 @@
     fi
     echo /sys/block/zram0/comp_algorithm "lz4"
     if [ $MemTotal -gt 2000000 ]; then
-         echo /proc/sys/vm/swappiness 60
-         echo /sys/block/zram0/disksize 805306368
+         echo 60 >/proc/sys/vm/swappiness 
+         echo 805306368 > /sys/block/zram0/disksize 
          
     else
-         echo /proc/sys/vm/swappiness 50
-         echo /sys/block/zram0/disksize 805306368
+         echo 50 > /proc/sys/vm/swappiness 
+         echo 805306368 > /sys/block/zram0/disksize 
     fi
+    echo 1 > /dev/stune/top-app/schedtune.boost
     

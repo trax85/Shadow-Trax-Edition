@@ -69,7 +69,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo 0 > /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost
 	echo 550000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 	echo 550000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
-	echo 266666667 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 
+	echo 200000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 
 	echo 3 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel
 	#Devfreq-Drivers
 	echo 805 > /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/min_freq
@@ -180,7 +180,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo 9000 > /sys/module/adreno_idler/parameters/adreno_idler_idleworkload
 	echo 550000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 	echo 550000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
-	echo 266666667 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
+	echo 200000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
 	echo 4 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel
 	#Devfreq-Drivers
 	echo 805 > /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/min_freq
