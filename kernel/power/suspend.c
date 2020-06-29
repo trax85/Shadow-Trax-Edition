@@ -28,9 +28,6 @@
 #include <linux/rtc.h>
 #include <trace/events/power.h>
 #include <linux/wakeup_reason.h>
-#include <linux/cpufreq.h>
-#include <linux/devfreq_boost.h>
-#include <linux/cpu_boost.h>
 
 #include "power.h"
 
@@ -50,7 +47,9 @@ static bool need_suspend_ops(suspend_state_t state)
 static DECLARE_WAIT_QUEUE_HEAD(suspend_freeze_wait_head);
 static bool suspend_freeze_wake;
 
+#ifdef CONFIG_QUICK_THAW_FINGERPRINTD
 extern void thaw_fingerprintd(void);
+#endif
 
 static void freeze_begin(void)
 {
@@ -173,10 +172,6 @@ void __attribute__ ((weak)) arch_suspend_enable_irqs(void)
  *
  * This function should be called after devices have been suspended.
  */
-#ifdef VENDOR_EDIT
-extern void regulator_suspend_dump(void);
-extern void pinctrl_suspend_dump(void);
-#endif /* VENDOR_EDIT */
 static int suspend_enter(suspend_state_t state, bool *wakeup)
 {
 	char suspend_abort[MAX_SUSPEND_ABORT_LEN];
@@ -231,10 +226,6 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	if (!error) {
 		*wakeup = pm_wakeup_pending();
 		if (!(suspend_test(TEST_CORE) || *wakeup)) {
-#ifdef VENDOR_EDIT
-			regulator_suspend_dump();
-			pinctrl_suspend_dump();
-#endif /* VENDOR_EDIT */
 			error = suspend_ops->enter(state);
 			events_check_enabled = false;
 		} else if (*wakeup) {
@@ -256,7 +247,9 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	if (need_suspend_ops(state) && suspend_ops->wake)
 		suspend_ops->wake();
 
+#ifdef CONFIG_QUICK_THAW_FINGERPRINTD
 	thaw_fingerprintd();
+#endif
 
 	dpm_resume_start(PMSG_RESUME);
 
@@ -291,7 +284,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 	error = dpm_suspend_start(PMSG_SUSPEND);
 	if (error) {
 		pr_err("PM: Some devices failed to suspend, or early wake event detected\n");
-		log_suspend_abort_reason("Some devices failed to suspend, or early wake event detected");
+		log_suspend_abort_reason("Some devices failed to suspend");
 		goto Recover_platform;
 	}
 	suspend_test_finish("suspend devices");
@@ -329,9 +322,6 @@ int suspend_devices_and_enter(suspend_state_t state)
  */
 static void suspend_finish(void)
 {
-	devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 2500);
-	do_input_boost_max();
-	msm_do_pm_boost(true);
 	suspend_thaw_processes();
 	pm_notifier_call_chain(PM_POST_SUSPEND);
 	pm_restore_console();
@@ -400,7 +390,7 @@ static void pm_suspend_marker(char *annotation)
 
 	getnstimeofday(&ts);
 	rtc_time_to_tm(ts.tv_sec, &tm);
-	pr_info("PM: suspend %s %d-%02d-%02d %02d:%02d:%02d.%09lu UTC\n",
+	pr_debug("PM: suspend %s %d-%02d-%02d %02d:%02d:%02d.%09lu UTC\n",
 		annotation, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 		tm.tm_hour, tm.tm_min, tm.tm_sec, ts.tv_nsec);
 }
