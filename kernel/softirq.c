@@ -231,9 +231,9 @@ restart:
 
 			kstat_incr_softirqs_this_cpu(vec_nr);
 
-			trace_softirq_entry(vec_nr);
+//			trace_softirq_entry(vec_nr);
 			h->action(h);
-			trace_softirq_exit(vec_nr);
+//			trace_softirq_exit(vec_nr);
 			if (unlikely(prev_count != preempt_count())) {
 				printk(KERN_ERR "huh, entered softirq %u %s %p"
 				       "with preempt_count %08x,"
@@ -351,7 +351,7 @@ void irq_exit(void)
 #endif
 
 	account_irq_exit_time(current);
-	trace_hardirq_exit();
+//	trace_hardirq_exit();
 	preempt_count_sub(HARDIRQ_OFFSET);
 	if (!in_interrupt() && local_softirq_pending())
 		invoke_softirq();
@@ -391,7 +391,7 @@ void raise_softirq(unsigned int nr)
 
 void __raise_softirq_irqoff(unsigned int nr)
 {
-	trace_softirq_raise(nr);
+//	trace_softirq_raise(nr);
 	or_softirq_pending(1UL << nr);
 }
 
@@ -697,7 +697,7 @@ static void takeover_tasklets(unsigned int cpu)
 }
 #endif /* CONFIG_HOTPLUG_CPU */
 
-static int cpu_callback(struct notifier_block *nfb,
+static int __cpuinit cpu_callback(struct notifier_block *nfb,
 				  unsigned long action,
 				  void *hcpu)
 {
@@ -712,7 +712,7 @@ static int cpu_callback(struct notifier_block *nfb,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block cpu_nfb = {
+static struct notifier_block __cpuinitdata cpu_nfb = {
 	.notifier_call = cpu_callback
 };
 
