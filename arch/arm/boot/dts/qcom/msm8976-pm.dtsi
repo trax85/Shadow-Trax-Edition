@@ -264,7 +264,6 @@
 						qcom,latency-us = <99>;
  						qcom,ss-power = <540>;
  						qcom,energy-overhead = <150122>;
- 						qcom,time-overhead = <239>;
  						qcom,time-overhead = <241>;
 						qcom,use-broadcast-timer;
 					};
