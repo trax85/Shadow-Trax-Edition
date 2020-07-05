@@ -23,11 +23,10 @@ if [ $REFRESH == 6 ]; then
 else
 	dim=/tmp/dt1.img
 fi
-cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 ramoops_memreserve=4M loop.max_part=7"
+cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 ramoops_memreserve=4M"
 cmd=$cmd" androidboot.selinux=permissive"
-cmd=$cmd" cpu_max_c1=1401600"" cpu_max_c2=1804800"
-##
-AUDIO`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
+cmd=$cmd" cpu_max_c1=1768800"" cpu_max_c2=1804800"
+AUDIO=`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $AUDIO = 1 ]; then
 	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0 androidboot.bps=24bit"
 fi
@@ -35,7 +34,6 @@ JACK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $JACK = 0 ]; then
 	cmd=$cmd" android.audiojackmode=stock"
 fi
-##
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
 cp -f /tmp/cpio /sbin/cpio
@@ -54,6 +52,7 @@ if [ $ROM == 3 ]; then
     fi
 	cp /tmp/init.shadow.rc /system/system/vendor/etc/init/hw/
 	chmod 0644 /system/system/vendor/etc/init/hw/init.shadow.rc
+	# ADD SPECTRUM SUPPORT
 	# ADD SPECTRUM SUPPORT
 	cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
 	cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
