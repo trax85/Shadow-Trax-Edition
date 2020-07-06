@@ -356,6 +356,7 @@ static int AKECS_SetMode(
 	return err;
 }
 
+#if 0
 static void AKECS_SetYPR(
 	struct akm_compass_data *akm,
 	int *rbuf)
@@ -448,6 +449,7 @@ static int AKECS_GetData(
 
 	return 0;
 }
+#endif
 
 static int AKECS_GetData_Poll(
 	struct akm_compass_data *akm,
@@ -491,7 +493,7 @@ static int AKECS_GetData_Poll(
 	return 0;
 }
 
-static int AKECS_GetOpenStatus(
+/*static int AKECS_GetOpenStatus(
 	struct akm_compass_data *akm)
 {
 	return wait_event_interruptible(
@@ -515,7 +517,8 @@ static int AKECS_Release(struct inode *inode, struct file *file)
 {
 	return 0;
 }
-
+*/
+#if 0
 static long
 AKECS_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -741,12 +744,14 @@ AKECS_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	return 0;
 }
 
+
 static const struct file_operations AKECS_fops = {
 	.owner = THIS_MODULE,
 	.open = AKECS_Open,
 	.release = AKECS_Release,
 	.unlocked_ioctl = AKECS_ioctl,
 };
+#endif
 
 /***** akm sysfs functions ******************************************/
 static int create_device_attributes(
