@@ -589,7 +589,7 @@ static int psensor_disable(struct cm36283_info *lpi)
 	return ret;
 }
 
-static int psensor_open(struct inode *inode, struct file *file)
+/*static int psensor_open(struct inode *inode, struct file *file)
 {
 	struct cm36283_info *lpi = lp_info;
 
@@ -647,7 +647,7 @@ static const struct file_operations psensor_fops = {
 	.open = psensor_open,
 	.release = psensor_release,
 	.unlocked_ioctl = psensor_ioctl
-};
+};*/
 
 void lightsensor_set_kvalue(struct cm36283_info *lpi)
 {
@@ -738,7 +738,7 @@ static int lightsensor_disable(struct cm36283_info *lpi)
 	return ret;
 }
 
-static int lightsensor_open(struct inode *inode, struct file *file)
+/*static int lightsensor_open(struct inode *inode, struct file *file)
 {
 	struct cm36283_info *lpi = lp_info;
 	int rc = 0;
@@ -794,7 +794,7 @@ static const struct file_operations lightsensor_fops = {
 	.open = lightsensor_open,
 	.release = lightsensor_release,
 	.unlocked_ioctl = lightsensor_ioctl
-};
+};*/
 
 static ssize_t ps_adc_show(struct device *dev,
 			struct device_attribute *attr, char *buf)

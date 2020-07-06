@@ -789,11 +789,11 @@ inline void wlan_hdd_cfg80211_nan_init(hdd_context_t *pHddCtx)
 #define STATION_MAX \
 	QCA_WLAN_VENDOR_ATTR_GET_STATION_MAX
 
-static const struct nla_policy
+/*static const struct nla_policy
 hdd_get_station_policy[STATION_MAX + 1] = {
 	[STATION_INFO] = {.type = NLA_FLAG},
 	[STATION_ASSOC_FAIL_REASON] = {.type = NLA_FLAG},
-};
+};*/
 
 /**
  * hdd_get_station_assoc_fail() - Handle get station assoc fail
@@ -5005,7 +5005,7 @@ wlan_hdd_tdls_config_disable_policy[QCA_WLAN_VENDOR_ATTR_TDLS_DISABLE_MAX +1] =
 
 };
 
-static const struct nla_policy
+/*static const struct nla_policy
 wlan_hdd_tdls_config_state_change_policy[
                     QCA_WLAN_VENDOR_ATTR_TDLS_STATE_MAX +1] =
 {
@@ -5018,7 +5018,7 @@ wlan_hdd_tdls_config_state_change_policy[
     [QCA_WLAN_VENDOR_ATTR_TDLS_STATE_GLOBAL_OPERATING_CLASS] =
                                                 {.type = NLA_S32 },
 
-};
+};*/
 
 static const struct nla_policy
 wlan_hdd_tdls_config_get_status_policy[

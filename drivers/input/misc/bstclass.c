@@ -207,6 +207,7 @@ void bst_unregister_device(struct bst_dev *dev)
 }
 EXPORT_SYMBOL(bst_unregister_device);
 
+#if 0
 static int bst_open_file(struct inode *inode, struct file *file)
 {
 	const struct file_operations *old_fops, *new_fops = NULL;
@@ -234,12 +235,12 @@ static int bst_open_file(struct inode *inode, struct file *file)
 out:
 	return err;
 }
+#endif
 
-static const struct file_operations bst_fops = {
+/*static const struct file_operations bst_fops = {
 	.owner = THIS_MODULE,
 	.open = bst_open_file,
-	/*.llseek = noop_llseek,*/
-};
+};*/
 
 static int __init bst_init(void)
 {
