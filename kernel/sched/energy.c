@@ -149,7 +149,7 @@ static int sched_energy_probe(struct platform_device *pdev)
 	 */
 	for_each_possible_cpu(cpu) {
 		struct device *cpu_dev;
-		struct dev_pm_opp *opp;
+		struct opp *opp;
 		int efficiency = arch_get_cpu_efficiency(cpu);
 
 		max_efficiency = max(efficiency, max_efficiency);
