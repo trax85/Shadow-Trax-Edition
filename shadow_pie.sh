@@ -34,9 +34,10 @@ Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
 export ARCH=arm64
-#export CROSS_COMPILE="/home/nesara/gcc-8/bin/aarch64-linux-gnu-"
-#export CROSS_COMPILE="/home/nesara/gcc-linaro-7/bin/aarch64-linux-gnu-"
-export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
+export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.5/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.3/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
 if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
 make clean > /dev/null
@@ -48,8 +49,7 @@ fi
 #git apply -R qc.patch > /dev/null 2>&1
 #fi
 make shadow_pie_defconfig
-export KBUILD_BUILD_HOST="xda"
-export KBUILD_BUILD_USER="energyspear17"
+export KBUILD_BUILD_USER="trax85"
 make -j4
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
@@ -67,7 +67,7 @@ echo -e "$yellow\n Build succesful, generating flashable zip now \n $white"
 zip -r shadow-$DEVICE-$VERSION-$date.zip * > /dev/null
 End=$(date +"%s")
 Diff=$(($End - $Start))
-echo -e "$yellow $KERNEL_DIR/export/$VERSION/shadow-$DEVICE-$VERSION-$date.zip \n$white"
+echo -e "$yellow $KERNEL_DIR/export/$VERSION/Shadow-Kernel-Test-$date.zip \n$white"
 echo -e "$gre << Build completed in $(($Diff / 60)) minutes and $(($Diff % 60)) seconds, variant($qc) >> \n $white"
 fi
 cd $KERNEL_DIR

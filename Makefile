@@ -242,10 +242,26 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 # CCACHE
 CCACHE := $(shell which ccache)
 
+O3_OPTS := -falign-functions=32 -fgcse-las \
+	   -fivopts -fgcse-sm \
+	   -fipa-pta -fomit-frame-pointer \
+	   -frename-registers -ftracer \
+	   -ftree-loop-im -ftree-loop-ivcanon \
+	   -funsafe-loop-optimizations  \
+	   -funswitch-loops -fpredictive-commoning \
+	   -fgcse-after-reload -ftree-loop-vectorize \
+	   -ftree-loop-distribution -ftree-loop-distribute-patterns \
+	   -fpeel-loops -fsplit-loops  \
+	   -ftree-slp-vectorize -ftree-partial-pre \
+	   -fsplit-paths -fipa-cp-clone \
+	   -ffast-math -fweb \
+	   -fvect-cost-model -fvect-cost-model=dynamic 
+	   
+
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 $(O3_OPTS) -fomit-frame-pointer -std=gnu89
+HOSTCXXFLAGS = -O2 $(O3_OPTS) 
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -330,6 +346,8 @@ include $(srctree)/scripts/Kbuild.include
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
 CC		= $(CCACHE) $(CROSS_COMPILE)gcc
+LD		+= -O2 --strip-debug
+CC		+= -O2 $(O3_OPTS)
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -349,11 +367,11 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   =
-AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -mcpu=cortex-a72.cortex-a53+crypto -mtune=cortex-a72.cortex-a53
-AFLAGS_KERNEL	=
+CFLAGS_MODULE   = $(O3_OPTS)
+AFLAGS_MODULE   = $(O3_OPTS)
+LDFLAGS_MODULE  = --strip-debug
+CFLAGS_KERNEL	= $(O3_OPTS) -mcpu=cortex-a72.cortex-a53+crypto -mtune=cortex-a72.cortex-a53 -march=armv8-a+crypto+crc+fp+simd -mfix-cortex-a53-843419 -mfix-cortex-a53-835769
+AFLAGS_KERNEL	= $(O3_OPTS)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -382,6 +400,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -march=armv8-a+crypto+crc \
+		   -mcpu=cortex-a72.cortex-a53 -mtune=cortex-a72.cortex-a53 \
 		   -fno-delete-null-pointer-checks \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
@@ -391,7 +410,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-memset-transposed-args \
 		   -Wno-discarded-array-qualifiers -std=gnu89 \
 		   -Wno-tautological-compare -Wno-array-bounds \
-                   -mcpu=cortex-a72.cortex-a53 -mtune=cortex-a72.cortex-a53 \
 		   -Wno-nonnull
 
 KBUILD_AFLAGS_KERNEL :=
@@ -593,14 +611,24 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= -O2 $(O3_OPTS)
 endif
 
 # Disable all maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
+
+# Disable unused-constant-variable warnings
+KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
+# Disable format-truncation warnings
+KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
+
+# Needed to unbreak GCC 7.x and above
+KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
