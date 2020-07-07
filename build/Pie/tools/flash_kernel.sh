@@ -25,7 +25,12 @@ else
 fi
 cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 ramoops_memreserve=4M"
 cmd=$cmd" androidboot.selinux=permissive"
-cmd=$cmd" cpu_max_c1=1768800"" cpu_max_c2=1804800"
+OC=$(cat /tmp/aroma/occore.prop | cut -d '=' -f2)
+if [ $OC = 1 ]; then
+	cmd=$cmd" cpu_max_c1=1768800"" cpu_max_c2=1804800"
+else
+	cmd=$cmd" cpu_max_c1=1401600"" cpu_max_c2=1804800"
+fi
 AUDIO=`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $AUDIO = 1 ]; then
 	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0 androidboot.bps=24bit"
@@ -53,11 +58,15 @@ if [ $ROM == 3 ]; then
 	cp /tmp/init.shadow.rc /system/system/vendor/etc/init/hw/
 	chmod 0644 /system/system/vendor/etc/init/hw/init.shadow.rc
 	# ADD SPECTRUM SUPPORT
-	# ADD SPECTRUM SUPPORT
-	cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	if [ $OC = 1 ]; then
+		cp /tmp/occore/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	else
+		cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	fi
 	cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.sh
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.rc
+	#
 	if [ $(grep -c "import /vendor/etc/init/hw/init.shadow.rc" /system/system/vendor/etc/init/hw/init.qcom.rc) == 0 ]; then
 		cp -p /system/system/vendor/etc/init/hw/init.qcom.rc /system/system/vendor/etc/init/hw/init.qcom.rc.bak
 		sed -i "/import \/vendor\/etc\/init\/hw\/init\.target.rc/aimport /vendor/etc/init/hw/init.shadow.rc" /system/system/vendor/etc/init/hw/init.qcom.rc
@@ -91,12 +100,18 @@ else
 	chmod 0754 /tmp/ramdisk/init.spectrum.sh
 	cp /tmp/profile.balance.sh /tmp/ramdisk/
 	chmod 0754 /tmp/ramdisk/profile.balance.sh
-	cp /tmp/profile.performance.sh /tmp/ramdisk/
-	chmod 0754 /tmp/ramdisk/profile.performance.sh
 	cp /tmp/profile.battery.sh /tmp/ramdisk/
 	chmod 0754 /tmp/ramdisk/profile.battery.sh
-	cp /tmp/profile.gaming.sh /tmp/ramdisk/
+	if [ $OC = 1 ]; then
+		cp /tmp/occore/profile.gaming.sh /tmp/ramdisk/
+		cp /tmp/occore/profile.performance.sh /tmp/ramdisk/
+	else
+		cp /tmp/profile.gaming.sh /tmp/ramdisk/
+		cp /tmp/profile.performance.sh /tmp/ramdisk/
+	fi
 	chmod 0754 /tmp/ramdisk/profile.gaming.sh
+	chmod 0754 /tmp/ramdisk/profile.performance.sh
+	#
 	cp /tmp/init.spectrum.rc /tmp/ramdisk/
 	# COMPATIBILITY FIXES START
 	if [ $ROM == 2 ]; then

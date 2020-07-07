@@ -132,6 +132,12 @@ selectbox(
 );
 
 selectbox(
+  "\n\nWhat Oc for A53Core ?","<@center><b>\n\n\n\n\nThis will Increase nax freq in your spectrum gaming and performance profile. Use at your own risk. If unsure then choose 'No' in the below option.\n</b></@>","","profile.prop",
+  "Yes","\nUnlocked 1.7Ghz in Gaming profile",0,
+  "No","\nDefault 1.4Ghz max in all profiles",1
+);
+
+selectbox(
   "\n\nEnable/Disable ZRAM","<@center><b>\n\n\n\n\n\nThis will configure kernel to have additional ram for 2gb devices.\n</b></@>","","ram.prop",
   "Enabled ","\nBest for UI experience not recomended for gaming",0,
   "Disabled ","\nRecommended for 3Gb Devices (Better performance)",1
