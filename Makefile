@@ -611,8 +611,6 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
-
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
@@ -621,12 +619,15 @@ endif
 
 # Disable all maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
-
+KBUILD_CFLAGS	+= $(call cc-disable-warning,packed-not-aligned,)
 # Disable unused-constant-variable warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
 # Disable format-truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
-
+# Disable address-of-packed-member
+KBUILD_CFLAGS   += $(call cc-disable-warning,address-of-packed-member,)
+# Disable cpp
+KBUILD_CFLAGS   += $(call cc-disable-warning,cpp,)
 # Needed to unbreak GCC 7.x and above
 KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
 
