@@ -399,9 +399,13 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
+		   -g0 -DNDEBUG -fmodulo-sched -fivopts \
+ 		   -fmodulo-sched-allow-regmoves \
+ 		   -fno-asynchronous-unwind-tables \
+ 		   -mpc-relative-literal-loads \
 		   -Wno-format-security \
 		   -march=armv8-a+crypto+crc \
-		   -mcpu=cortex-a72.cortex-a53 -mtune=cortex-a72.cortex-a53 \
+		   -mcpu=cortex-a72.cortex-a53+crc+crypto \
 		   -fno-delete-null-pointer-checks \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
