@@ -63,8 +63,18 @@ if [ $ROM == 3 ]; then
 	cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	#OC-Profile
 	if [ $OC == 1 ]; then
-		cp /tmp/occore/init.spectrum.sh /system/system/vendor/etc/init/hw/
-	else
+		cp /tmp/typea/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	fi
+	if [ $OC == 2 ]; then
+		cp /tmp/typeb/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	fi
+	if [ $OC == 3 ]; then
+		cp /tmp/typec/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	fi
+	if [ $OC == 4 ]; then
+		cp /tmp/typed/init.spectrum.sh /system/system/vendor/etc/init/hw/
+	fi
+	if [ $OC == 5 ]; then
 		cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
 	fi
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.sh
@@ -108,9 +118,22 @@ else
 	chmod 0754 /tmp/ramdisk/profile.battery.sh
 	#OC-Profile
 	if [ $OC == 1 ]; then
-		cp /tmp/occore/profile.gaming.sh /tmp/ramdisk/
-		cp /tmp/occore/profile.performance.sh /tmp/ramdisk/
-	else
+		cp /tmp/typea/profile.gaming.sh /tmp/ramdisk/
+		cp /tmp/typea/profile.performance.sh /tmp/ramdisk/
+	fi
+	if [ $OC == 2 ]; then
+		cp /tmp/typeb/profile.gaming.sh /tmp/ramdisk/
+		cp /tmp/typeb/profile.performance.sh /tmp/ramdisk/
+	fi
+	if [ $OC == 3 ]; then
+		cp /tmp/typec/profile.gaming.sh /tmp/ramdisk/
+		cp /tmp/typec/profile.performance.sh /tmp/ramdisk/
+	fi
+	if [ $OC == 4 ]; then
+		cp /tmp/typed/profile.gaming.sh /tmp/ramdisk/
+		cp /tmp/typed/profile.performance.sh /tmp/ramdisk/
+	fi
+	if [ $OC == 5 ]; then
 		cp /tmp/profile.gaming.sh /tmp/ramdisk/
 		cp /tmp/profile.performance.sh /tmp/ramdisk/
 	fi

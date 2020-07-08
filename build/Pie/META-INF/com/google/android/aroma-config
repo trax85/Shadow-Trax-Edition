@@ -132,14 +132,17 @@ selectbox(
 );
 
 selectbox(
-  "\n\nWant High OC freq for A53 Cores ?","<@center><b>\n\n\n\n\nThis will Unlock the max freq 1.7Ghz for the little cores in spectrum Gaming profile. Use at your own risk. Choose 'No' if you are unsure about this.\n</b></@>","","occore.prop",
-  "Yes","\nHigh Freq 1.7Ghz unlocked in spectrum",0,
-  "No ","\nGaming mode in spectrum set max at 1.4Ghz",1
+  "\n\nWant High OC freq for A53 Cores ?","<@center><b>\n\n\n\n\nThis will change max frequency for Little cores(a53) for performance and gaming profiles.Choose 'Default' if you are unsure about this.\n</b></@>","","occore.prop",
+  "Type A","\nPerformance and gaming mode both same only max freq 1.6 and 1.7Ghz respectively",0,
+  "Type B","\nPerformance and gaming mode both same only max freq 1.4 and 1.7Ghz respectively",0,
+  "Type C","\nPerformance mode max freq 1.6, gaming mode max freq 1.7Ghz",0,
+  "Type D","\nPerformance mode max freq 1.4, gaming mode max freq 1.7Ghz",0,
+  "Default","\nPerformance and gaming mode both set max at 1.4Ghz",1
 );
 
 alert(
   "NOTICE:",
-  "Please Read -\n\nInstall Spectrum App/Spectrum supported KM After Flashing kernel as each profile Concentrates to do one thing. So Please use Spectrum to change between profiles to get optimum perf and battery.\n\nBalance - For Normal use like Browsing, Chatting Streaming and other daily tasks.\n\nBattery - Very Light use like calls and chat.\n\nPerformance - Intermediate of balance and Gaming.\n\nGaming - Heavily Focused on gaming performance.\n\n",
+  "Please Read -\n\nInstall Spectrum App/Spectrum supported KM After Flashing kernel as each profile Concentrates to do one thing. So Please use Spectrum to change between profiles to get optimum perf and battery.\n\nBalance - For Normal use like Browsing, Chatting Streaming and other daily tasks.\n\nBattery - Very Light use like calls and chat.\n\nPerformance - Intermediate of balance and Gaming(if you chose Type A/B then gaming and perf profiles are the same)\n\nGaming - Heavily Focused on gaming performance.\n\n",
   "@warning",
   "OK"
 );
@@ -152,11 +155,11 @@ selectbox(
 
 selectbox(
   "\n\nSet RefreshRate","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","refresh.prop",
-  "60 Hz","\nStock af",1,
+  "60 Hz","\nStock af!",1,
   "62 Hz","\nlil OC :)",0,
-  "64 Hz","\nTianma panel limit",0,
-  "66 Hz","\nBoe and Sharp panel stable limit",0,
-  "68 Hz","\nOC all the way",0,
+  "64 Hz","\nTianma panel limit.",0,
+  "66 Hz","\nBoe and Sharp panel stable limit.",0,
+  "68 Hz","\nOC all the way!",0,
   "70 Hz","\nKABOOM!!",0,
   "Disabled","\nStock refresh rates with no VaribleRefreshRate toggles",0
 );
