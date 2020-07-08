@@ -132,9 +132,12 @@ selectbox(
 );
 
 selectbox(
-  "\n\nWhat Oc for A53Core ?","<@center><b>\n\n\n\n\nThis will Increase nax freq in your spectrum gaming and performance profile. Use at your own risk. If unsure then choose 'No' in the below option.\n</b></@>","","profile.prop",
-  "Yes","\nUnlocked 1.7Ghz in Gaming profile",0,
-  "No","\nDefault 1.4Ghz max in all profiles",1
+  "\n\nWant High OC freq for A53 Cores ?","<@center><b>\n\n\n\n\nThis will change max frequency for Little cores(a53) for performance and gaming profiles.Choose 'Default' if you are unsure about this.\n</b></@>","","occore.prop",
+  "Type A","\nPerformance and gaming mode both same only max freq 1.6 and 1.7Ghz respectively",0,
+  "Type B","\nPerformance and gaming mode both same only max freq 1.4 and 1.7Ghz respectively",0,
+  "Type C","\nPerformance mode max freq 1.6, gaming mode max freq 1.7Ghz",0,
+  "Type D","\nPerformance mode max freq 1.4, gaming mode max freq 1.7Ghz",0,
+  "Default","\nPerformance and gaming mode both set max at 1.4Ghz",1
 );
 
 selectbox(
@@ -145,11 +148,11 @@ selectbox(
 
 selectbox(
   "\n\nSet RefreshRate","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","refresh.prop",
-  "60 Hz","\nStock af",1,
-  "62 Hz","\nlil OC",0,
+  "60 Hz","\nStock AF!",1,
+  "62 Hz","\nlil OC:)",0,
   "64 Hz","\nTianma panel limit",0,
   "66 Hz","\nBoe and Sharp panel stable limit",0,
-  "68 Hz","\nOC all the way",0,
+  "68 Hz","\nOC all the way!",0,
   "70 Hz","\nKBOOM!!",0,
   "Disabled","\nStock refresh rates with no VaribleRefreshRate toggles",0
 );

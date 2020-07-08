@@ -98,7 +98,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 90
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1401600
-	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 960000:50 1017600:60 1190400:70 	1305600:80 1401600:90 1632000:95"
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 960000:50 1017600:60 1190400:70 1305600:80 1401600:90 1632000:95"
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
@@ -226,7 +226,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 20000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
-	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "80 960000:30 1017600:40 1190400:50 	1305600:60 1401600:75 1799040:80"
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "80 960000:30 1017600:40 1190400:50 1305600:60 1401600:75 1799040:80"
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
 	#A72

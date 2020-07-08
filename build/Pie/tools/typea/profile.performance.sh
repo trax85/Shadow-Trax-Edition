@@ -1,0 +1,55 @@
+#!/system/bin/sh
+# SPECTRUM & FRANCO KERNEL MANAGERS
+# Profile initialization by Zile995
+
+#A53
+echo interactive > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+echo 691200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+echo 1632000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 75
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 25000
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1401600
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 20000
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "80 960000:30 1017600:40 1190400:50 1305600:60 1401600:75 1799040:80"
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
+#A72
+echo interactive > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+echo 883200 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 
+echo 1804800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 50
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay "15000 1382400:25000"
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1804800
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 20000
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads "50 1190400:35 1382400:50 1612800:60 1747200:70 1804800:75"
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/max_freq_hysteresis 45000
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1
+#Cpu-Boost
+write /sys/module/cpu_boost/parameters/input_boost_enabled 0
+write /sys/module/cpu_boost/parameters/input_boost_freq "0:1305600 1:1305600 2:1305600 3:1305600 4:1190400 5:1190400"
+write /sys/module/cpu_boost/parameters/input_boost_ms 500
+#Hotplug
+write /sys/module/lazyplug/parameters/lazyplug_active 0
+#Workqueue
+echo N > /sys/module/workqueue/parameters/power_efficient 
+#Scheduler
+echo deadline > /sys/block/mmcblk0/queue/scheduler
+echo deadline > /sys/block/mmcblk1/queue/scheduler 
+#Adreno-Driver and Gpu
+echo 3 > /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost 
+echo N > /sys/module/adreno_idler/parameters/adreno_idler_active 
+echo 710000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk 
+echo 710000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq 
+echo 480000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 
+echo 0 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel 
+#Devfreq-Drivers
+echo 805 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq 
+#Msm-Thermals
+echo 90 > /sys/module/msm_thermal/parameters/temp_threshold 
+echo 90 > /sys/module/msm_thermal/parameters/core_limit_temp_degC 
+#Vmpressure
+echo 75 > /proc/sys/vm/vfs_cache_pressure 
