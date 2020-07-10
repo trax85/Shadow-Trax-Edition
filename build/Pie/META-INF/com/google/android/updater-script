@@ -30,6 +30,32 @@ ui_print(" ");
 ui_print("Finished Runnning Scripts");
 run_program("/tmp/aroma/sleep","500");
 if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "1"
+then
+	ui_print("Profile Type A Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "2"
+then
+	ui_print("Profile Type B Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "3"
+then
+	ui_print("Profile Type C Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "4"
+then
+	ui_print("Profile Type D Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "5"
+then
+	ui_print("Profile Type Default Selected");
+endif;
+
+if
 	file_getprop("/tmp/aroma/rom.prop","selected") == "3"
 then
 if

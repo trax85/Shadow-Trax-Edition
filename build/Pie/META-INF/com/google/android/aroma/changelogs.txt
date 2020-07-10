@@ -89,7 +89,8 @@ V5.7-
 * Crypto Optimise flags for arm a72 and a53.
 * Crypto add NEON-accelerated implementation of Speck-XTS add add test vectors for Speck64-XTS and Speck128-XTS.
 * Random Backport from linux-4.2.
-* Nuke unused and old modules from our configs and disasble logging of many modules in kernellogs.
+* Timer Backport from linux-3.18.
+* Nuke unused and old modules from our configs and disable logging of many modules in kernel logs.
 
 -Device Tree
 * REmove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock.
@@ -109,7 +110,8 @@ V5.7-
 * Add proper hardware flags.
 * Compile with o2.
 * Flag optimizations from O3 and Ofast specific flags.
-* Support for GCC 7.xx.
+* Support for GCC 7.xx. and 8.xx.
+* Added Graphite optimizations.
 
 -Aroma & Other
 * Script Changes and New theme for our Shadow .

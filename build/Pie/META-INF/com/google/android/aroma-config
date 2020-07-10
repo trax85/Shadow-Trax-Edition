@@ -131,20 +131,27 @@ selectbox(
   "Performance ","\nmay yield poor backup",0
 );
 
-selectbox(
-  "\n\nWant High OC freq for A53 Cores ?","<@center><b>\n\n\n\n\nThis will change max frequency for Little cores(a53) for performance and gaming profiles.Choose 'Default' if you are unsure about this.\n</b></@>","","occore.prop",
-  "Type A","\nPerformance and gaming mode both same only max freq 1.6 and 1.7Ghz respectively",0,
-  "Type B","\nPerformance and gaming mode both same only max freq 1.4 and 1.7Ghz respectively",0,
-  "Type C","\nPerformance mode max freq 1.6, gaming mode max freq 1.7Ghz",0,
-  "Type D","\nPerformance mode max freq 1.4, gaming mode max freq 1.7Ghz",0,
-  "Default","\nPerformance and gaming mode both set max at 1.4Ghz",1
+alert(
+  "NOTICE:",
+  "Please Read -\n\nInstall Spectrum App/Spectrum supported KM After Flashing kernel as each profile Concentrates to do one thing. So Please use Spectrum to change between profiles to get Optimum Perf and Battery.\n\nBalance - For Normal use like Browsing, Chatting Streaming and other daily tasks.\n\nBattery - Very Light use like Calls and Chat.\n\nPerformance - Intermediate of Balance and Gaming(Depends on your profile Type).\n\nGaming - Heavily Focused on Gaming Performance.\n\n",
+  "@warning",
+  "OK"
 );
 
 alert(
-  "NOTICE:",
-  "Please Read -\n\nInstall Spectrum App/Spectrum supported KM After Flashing kernel as each profile Concentrates to do one thing. So Please use Spectrum to change between profiles to get optimum perf and battery.\n\nBalance - For Normal use like Browsing, Chatting Streaming and other daily tasks.\n\nBattery - Very Light use like calls and chat.\n\nPerformance - Intermediate of balance and Gaming(if you chose Type A/B then gaming and perf profiles are the same)\n\nGaming - Heavily Focused on gaming performance.\n\n",
+  "Profile Types",
+  "Please Read :- I presume many won't use performance mode so I made 'Profile Types'. Gaming mode has a max freq of 1.7Ghz in all types except Default type.\n\nIn type 'A & B' Performance and Gaming mode settings for Cpu & Gpu are identical(maxed out) But Performance mode has lower Max frequency depending on your selection. \n\nIn types 'C,D & Default' the Performance mode has lower settings for Cpu & Gpu compared to Gaming mode and lower max frequency depending on your selection in the next menu.\n\n",
   "@warning",
   "OK"
+);
+
+selectbox(
+  "\n\nProfile Types","<@center><b>\n\n\n\n\nChosing any of these 4 Profile Types will enable OC of 1.7Ghz for little cores in gaming mode and the below listed frequencies are for the little cores in Perfromance mode. Choose 'Default' if you are unsure about this.\n</b></@>","","occore.prop",
+  "Type 'A'","\nPerformance max freq:1.6Ghz",0,
+  "Type 'B'","\nPerformance max freq:1.4Ghz",0,
+  "Type 'C'","\nPerformance max freq:1.6Ghz",0,
+  "Type 'D'","\nPerformance max freq:1.4Ghz",0,
+  "Default","\nPerformance & gaming mode max freq:1.4Ghz",1
 );
 
 selectbox(
