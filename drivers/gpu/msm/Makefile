@@ -1,5 +1,4 @@
-ccflags-y := -Ofast -ffast-math -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -Iinclude/uapi/drm -Iinclude/drm -Idrivers/gpu/msm
-ccflags-y += $(call cc-option,-mcpu=cortex-a72.cortex-a53,)
+ccflags-y := -Iinclude/uapi/drm -Iinclude/drm -Idrivers/gpu/msm
 
 msm_kgsl_core-y = \
 	kgsl.o \
