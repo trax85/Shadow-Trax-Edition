@@ -64,9 +64,9 @@ V5.7-
 -Lowmemeorykiller
 * Replace with stock Shadow lmk module.
 * Impliment a few fixes for better memory management.
-
+* Remove adaptive lmk.
 -Prima
-* Update prima to LA.BR.1.3.7_rb1.11.
+* Downgrade prima to LA.BR.1.3.6_rb1.25.
 * Misc fixes for GCC 5 and 6.
 * Kill logspam.
 
@@ -76,7 +76,7 @@ V5.7-
 * Misc fixes and remove spams.
 
 -Kernel
-* Compiled with Linaro GCC 7.5.0.
+* Compiled with Linaro GCC 8.0 UberTC.
 * Add API to mark IRQs and kthreads as performance critical.
 * Add API to create kthreads bound to low-power CPUs.
 * Fix GCC 7.x and 6.x warnings ,Uninitializeed Warnings , Duplicate Const warnings all sorts of stuff.
@@ -90,6 +90,7 @@ V5.7-
 * Crypto add NEON-accelerated implementation of Speck-XTS add add test vectors for Speck64-XTS and Speck128-XTS.
 * Random Backport from linux-4.2.
 * Timer Backport from linux-3.18.
+* Optimise timer for performace.
 * Nuke unused and old modules from our configs and disable logging of many modules in kernel logs.
 
 -Device Tree
@@ -111,6 +112,7 @@ V5.7-
 * Compile with o2.
 * Flag optimizations from O3 and Ofast specific flags.
 * Support for GCC 7.xx. and 8.xx.
+* Disable stack conservation.
 * Added Graphite optimizations.
 
 -Aroma & Other
