@@ -18,7 +18,7 @@
     chmod 0660 /sys/module/lowmemorykiller/parameters/minfree
 
     if [ $MemTotal -gt 2000000 ]; then
-        echo 1 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
+        echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
         echo "18432,23040,27648,32256,55296,80640" > /sys/module/lowmemorykiller/parameters/minfree
     else
         echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
