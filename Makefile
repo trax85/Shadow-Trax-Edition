@@ -347,8 +347,6 @@ include $(srctree)/scripts/Kbuild.include
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
 CC		= $(CCACHE) $(CROSS_COMPILE)gcc
-LD		+= -O2 --strip-debug
-CC		+= -O2 $(O3_OPTS) $(O3_OPTS2)
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -371,7 +369,7 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   = $(O3_OPTS) $(O3_OPTS2)
 AFLAGS_MODULE   = $(O3_OPTS) $(O3_OPTS2)
 LDFLAGS_MODULE  = --strip-debug
-CFLAGS_KERNEL	= $(O3_OPTS) $(O3_OPTS2) -mcpu=cortex-a72.cortex-a53+crypto -mtune=cortex-a72.cortex-a53 -march=armv8-a+crypto+crc+fp+simd -mfix-cortex-a53-843419 -mfix-cortex-a53-835769
+CFLAGS_KERNEL	= $(O3_OPTS) $(O3_OPTS2)
 AFLAGS_KERNEL	= $(O3_OPTS) $(O3_OPTS2)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
