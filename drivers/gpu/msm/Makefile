@@ -3,7 +3,6 @@ ccflags-y += $(call cc-option,-mcpu=cortex-a72.cortex-a53,)
 
 msm_kgsl_core-y = \
 	kgsl.o \
-	kgsl_trace.o \
 	kgsl_cmdbatch.o \
 	kgsl_ioctl.o \
 	kgsl_sharedmem.o \
@@ -27,7 +26,6 @@ msm_adreno-y += \
 	adreno_dispatch.o \
 	adreno_snapshot.o \
 	adreno_coresight.o \
-	adreno_trace.o \
 	adreno_a5xx.o \
 	adreno_a5xx_snapshot.o \
 	adreno_sysfs.o \
