@@ -278,7 +278,7 @@ static void start_fault_timer(struct adreno_device *adreno_dev)
 static void _retire_marker(struct kgsl_cmdbatch *cmdbatch)
 {
 	struct kgsl_context *context = cmdbatch->context;
-	struct adreno_context *drawctxt = ADRENO_CONTEXT(cmdbatch->context);
+	//struct adreno_context *drawctxt = ADRENO_CONTEXT(cmdbatch->context);
 	struct kgsl_device *device = context->device;
 
 	/*
@@ -297,7 +297,7 @@ static void _retire_marker(struct kgsl_cmdbatch *cmdbatch)
 	/* Retire pending GPU events for the object */
 	kgsl_process_event_group(device, &context->events);
 
-	trace_adreno_cmdbatch_retired(cmdbatch, -1, 0, 0, drawctxt->rb);
+	//trace_adreno_cmdbatch_retired(cmdbatch, -1, 0, 0, drawctxt->rb);
 	kgsl_cmdbatch_destroy(cmdbatch);
 }
 
@@ -1020,8 +1020,8 @@ static void __adreno_dispatcher_preempt_trig_state(
 		if (val && rbbase == adreno_dev->next_rb->buffer_desc.gpuaddr) {
 			KGSL_DEV_ERR_ONCE(device,
 			"Preemption completed w/o interrupt\n");
-			trace_adreno_hw_preempt_trig_to_comp(adreno_dev->cur_rb,
-					adreno_dev->next_rb);
+			//trace_adreno_hw_preempt_trig_to_comp(adreno_dev->cur_rb,
+			//		adreno_dev->next_rb);
 			atomic_set(&dispatcher->preemption_state,
 				ADRENO_DISPATCHER_PREEMPT_COMPLETE);
 			return adreno_dispatcher_schedule(device);
@@ -1068,8 +1068,8 @@ static void __adreno_dispatcher_preempt_trig_state(
 		BUG();
 	dispatcher->preempt_token_submit = 1;
 	adreno_dev->cur_rb->wptr_preempt_end = adreno_dev->cur_rb->wptr;
-	trace_adreno_hw_preempt_token_submit(adreno_dev->cur_rb,
-						adreno_dev->next_rb);
+	//trace_adreno_hw_preempt_token_submit(adreno_dev->cur_rb,
+	//					adreno_dev->next_rb);
 
 	return;
 }
@@ -1214,8 +1214,8 @@ static void __adreno_dispatcher_preempt_clear_state(
 	mod_timer(&dispatcher->preempt_timer, jiffies +
 		msecs_to_jiffies(ADRENO_DISPATCH_PREEMPT_TIMEOUT));
 
-	trace_adreno_hw_preempt_clear_to_trig(adreno_dev->cur_rb,
-						adreno_dev->next_rb);
+	//trace_adreno_hw_preempt_clear_to_trig(adreno_dev->cur_rb,
+	//					adreno_dev->next_rb);
 	/* issue PREEMPT trigger */
 	adreno_writereg(adreno_dev, ADRENO_REG_CP_PREEMPT, 1);
 	/*
@@ -1298,8 +1298,8 @@ static void __adreno_dispatcher_preempt_complete_state(
 
 	dispatch_q = &(adreno_dev->cur_rb->dispatch_q);
 	/* new RB is the current RB */
-	trace_adreno_hw_preempt_comp_to_clear(adreno_dev->next_rb,
-						adreno_dev->cur_rb);
+	//trace_adreno_hw_preempt_comp_to_clear(adreno_dev->next_rb,
+	//					adreno_dev->cur_rb);
 	adreno_dev->prev_rb = adreno_dev->cur_rb;
 	adreno_dev->cur_rb = adreno_dev->next_rb;
 	adreno_dev->cur_rb->preempted_midway = 0;
@@ -1592,7 +1592,7 @@ int adreno_dispatcher_queue_cmd(struct adreno_device *adreno_dev,
 	}
 
 	drawctxt->queued++;
-	trace_adreno_cmdbatch_queued(cmdbatch, drawctxt->queued);
+	//trace_adreno_cmdbatch_queued(cmdbatch, drawctxt->queued);
 
 	_track_context(dispatch_q, drawctxt->base.id);
 
@@ -2935,8 +2935,8 @@ void adreno_dispatcher_preempt_callback(struct adreno_device *adreno_dev,
 			"Preemption interrupt generated w/o trigger!\n");
 		return;
 	}
-	trace_adreno_hw_preempt_trig_to_comp(adreno_dev->cur_rb,
-			      adreno_dev->next_rb);
+	//trace_adreno_hw_preempt_trig_to_comp(adreno_dev->cur_rb,
+	//		      adreno_dev->next_rb);
 	atomic_set(&dispatcher->preemption_state,
 			ADRENO_DISPATCHER_PREEMPT_COMPLETE);
 	adreno_dispatcher_schedule(device);

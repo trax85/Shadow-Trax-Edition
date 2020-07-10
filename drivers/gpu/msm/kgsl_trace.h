@@ -821,7 +821,7 @@ TRACE_EVENT(kgsl_constraint,
 		__entry->on ? "ON" : "OFF"
 	)
 );
-
+#if 0
 TRACE_EVENT(kgsl_mmu_pagefault,
 
 	TP_PROTO(struct kgsl_device *device, unsigned int page,
@@ -849,7 +849,7 @@ TRACE_EVENT(kgsl_mmu_pagefault,
 		__get_str(op)
 	)
 );
-
+#endif
 TRACE_EVENT(kgsl_regwrite,
 
 	TP_PROTO(struct kgsl_device *device, unsigned int offset,
@@ -1013,7 +1013,7 @@ TRACE_EVENT(kgsl_active_count,
 		__get_str(device_name), __entry->count, (void *) __entry->ip
 	)
 );
-
+#if 0
 TRACE_EVENT(kgsl_pagetable_destroy,
 	TP_PROTO(phys_addr_t ptbase, unsigned int name),
 	TP_ARGS(ptbase, name),
@@ -1027,7 +1027,7 @@ TRACE_EVENT(kgsl_pagetable_destroy,
 	),
 	TP_printk("ptbase=%pa name=%u", &__entry->ptbase, __entry->name)
 );
-
+#endif
 DECLARE_EVENT_CLASS(syncpoint_timestamp_template,
 	TP_PROTO(struct kgsl_cmdbatch *cmdbatch, struct kgsl_context *context,
 		unsigned int timestamp),
