@@ -261,8 +261,8 @@ O3_OPTS2 := -fgraphite-identity -floop-interchange -floop-strip-mine -ftree-loop
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 $(O3_OPTS) $(O3_OPTS2) -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O2 $(O3_OPTS) $(O3_OPTS2)
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 $(O3_OPTS) -fomit-frame-pointer -std=gnu89
+HOSTCXXFLAGS = -O2 $(O3_OPTS)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -614,7 +614,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2 $(O3_OPTS) $(O3_OPTS2)
+KBUILD_CFLAGS	+= -O2 $(O3_OPTS)
 endif
 
 # Disable all maybe-uninitialized warnings
