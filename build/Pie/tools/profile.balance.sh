@@ -11,21 +11,19 @@ function write() {
 echo 1 > /sys/devices/system/cpu/cpu3/online
 echo 0 > /sys/devices/system/cpu/cpu5/online
 #Core-A53
-echo schedutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+echo pwrutilx > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-echo 1382400 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-echo 950 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
-echo 1000 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
-echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/io_wait_boost
-echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/exp_util
+echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+echo 960 > /sys/devices/system/cpu/cpu0/cpufreq/pwrutilx/up_rate_limit_us
+echo 1000 > /sys/devices/system/cpu/cpu0/cpufreq/pwrutilx/down_rate_limit_us
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/pwrutilx/io_wait_boost
 #Core-A72 
-echo schedutil > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+echo pwrutilx > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-echo 998400 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
-echo 3000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
-echo 1000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
-echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/io_wait_boost
-echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/exp_util
+echo 1382400 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+echo 3000 > /sys/devices/system/cpu/cpu4/cpufreq/pwrutilx/up_rate_limit_us
+echo 1000 > /sys/devices/system/cpu/cpu4/cpufreq/pwrutilx/down_rate_limit_us
+echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/pwrutilx/io_wait_boost
 #Cpu-Boost
 echo 1 > /sys/module/cpu_boost/parameters/input_boost_enabled
 echo 0:0 1:0 2:0 3:0 4:0 5:0 > /sys/module/cpu_boost/parameters/input_boost_freq
@@ -33,7 +31,7 @@ echo 100 > /sys/module/cpu_boost/parameters/input_boost_ms
 echo 1 > /sys/module/cpu_boost/parameters/input_devfreq_boost
 echo 15 > /sys/module/cpu_boost/parameters/dynamic_stune_boost
 #Frame-Boost
-echo N > /sys/module/mdss_mdp/parameters/frame_boost
+echo Y > /sys/module/mdss_mdp/parameters/frame_boost
 #Workqueue
 echo Y > /sys/module/workqueue/parameters/power_efficient
 #Scheduler

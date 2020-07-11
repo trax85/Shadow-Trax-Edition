@@ -23,7 +23,7 @@ V5.7-
 -EAS Scheduler
 * Upstream EAS scheduler and add bits from NGK, HANA Cl, AGNi Whyred Sources.
 * Add Walt & Pelt Load Tracking(Pelt 8ms).
-* Add New fair and topology codes for better Cpu capacity calculation and load transistion to cores.
+* Add New fair and core codes for better Cpu capacity calculation and load transistion to cores.
 * Add CpuGovernors Based on Schedutil-Blu_SChedutil-Electroutil-Pwrutilx-Energy-DCFC-HelixSchedutil-Darkutil.
 * Add Proper Energy-model For kenzo and Update Them to Freq-Power Style Tuples.
 * Add Dynamic Schedtune boost(DSB) Enabled for top-app.
@@ -50,6 +50,12 @@ V5.7-
 * Add Devfreq boost Driver For boosting cpubw Bus Frequencies.
 * Add More Fixes and optimizations.
 
+-Sound
+* Add PDesire UHQA Driver v10.1.
+* Fix some memory leaks and compiler warnings.
+* Add build optimizations for sound driver.
+* Stop log spam.
+
 -Media
 * Enable Decoder DCVS for vp9.
 * kill opening/closing video instance logspam.
@@ -64,7 +70,8 @@ V5.7-
 -Lowmemeorykiller
 * Replace with stock Shadow lmk module.
 * Impliment a few fixes for better memory management.
-* Remove adaptive lmk.
+* Disable lmk_run_fast by default as it leads to killing of our running tasks.
+
 -Prima
 * Downgrade prima to LA.BR.1.3.6_rb1.25.
 * Misc fixes for GCC 5 and 6.
@@ -74,6 +81,15 @@ V5.7-
 * Update lz4 module from 4.14 backports
 * Update decompression algo which can be helpful for zram decompression speeds.
 * Misc fixes and remove spams.
+
+-ARM64
+* Enable Dcache and word access.
+* Topology upstream now uses the em table data to calculate load-freq.
+* Disable tracing.
+* Strcmp align to 64B cache line.
+* Remove hack in mmap randomize layout.
+* Move post_ttbr_update_workaround to C code. 
+* Reduce log spam.
 
 -Kernel
 * Compiled with Linaro GCC 8.0 UberTC.
@@ -113,7 +129,6 @@ V5.7-
 * Flag optimizations from O3 and Ofast specific flags.
 * Support for GCC 7.xx. and 8.xx.
 * Disable stack conservation.
-* Added Graphite optimizations.
 
 -Aroma & Other
 * Script Changes and New theme for our Shadow .
