@@ -255,14 +255,13 @@ O3_OPTS := -falign-functions=32 -fgcse-las \
 	   -ftree-slp-vectorize -ftree-partial-pre \
 	   -fsplit-paths -fipa-cp-clone \
 	   -ffast-math -fweb \
-	   -fvect-cost-model -fvect-cost-model=dynamic
-
-O3_OPTS2 := -fgraphite-identity -floop-interchange -floop-strip-mine -ftree-loop-if-convert -floop-block -floop-interchange
+	   -fvect-cost-model -fvect-cost-model=dynamic 
+	   
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 $(O3_OPTS) -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O2 $(O3_OPTS)
+HOSTCXXFLAGS = -O2 $(O3_OPTS) 
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -619,15 +618,14 @@ endif
 
 # Disable all maybe-uninitialized warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
-KBUILD_CFLAGS	+= $(call cc-disable-warning,packed-not-aligned,)
+
 # Disable unused-constant-variable warnings
 KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
 # Disable format-truncation warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
-# Disable address-of-packed-member
-KBUILD_CFLAGS   += $(call cc-disable-warning,address-of-packed-member,)
 # Disable cpp
 KBUILD_CFLAGS   += $(call cc-disable-warning,cpp,)
+
 # Needed to unbreak GCC 7.x and above
 KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
 
