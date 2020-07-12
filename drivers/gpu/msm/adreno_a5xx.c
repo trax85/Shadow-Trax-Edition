@@ -19,7 +19,7 @@
 #include "adreno_a3xx.h"
 #include "adreno_a5xx.h"
 #include "adreno_cp_parser.h"
-#include "adreno_trace.h"
+//#include "adreno_trace.h"
 #include "adreno_pm4types.h"
 #include "adreno_perfcounter.h"
 #include "kgsl_sharedmem.h"
@@ -726,7 +726,7 @@ static void a5xx_enable_pc(struct adreno_device *adreno_dev)
 	kgsl_regwrite(device, A5XX_GPMU_PWR_COL_INTER_FRAME_HYST, 0x000A0080);
 	kgsl_regwrite(device, A5XX_GPMU_PWR_COL_STAGGER_DELAY, 0x00600040);
 
-	trace_adreno_sp_tp((unsigned long) __builtin_return_address(0));
+	//trace_adreno_sp_tp((unsigned long) __builtin_return_address(0));
 };
 
 /*
@@ -2589,7 +2589,7 @@ struct adreno_gpudev adreno_a5xx_gpudev = {
 	.snapshot = a5xx_snapshot,
 	.irq = &a5xx_irq,
 	.snapshot_data = &a5xx_snapshot_data,
-	.irq_trace = trace_kgsl_a5xx_irq_status,
+	//.irq_trace = trace_kgsl_a5xx_irq_status,
 	.num_prio_levels = 1,
 	.gpudev_init = a5xx_gpudev_init,
 	.rb_init = a5xx_rb_init,

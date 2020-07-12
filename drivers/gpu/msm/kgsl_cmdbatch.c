@@ -33,7 +33,7 @@
 #include "kgsl_device.h"
 #include "kgsl_cmdbatch.h"
 #include "kgsl_sync.h"
-#include "kgsl_trace.h"
+//#include "kgsl_trace.h"
 #include "kgsl_compat.h"
 #include "adreno.h"
 
@@ -238,8 +238,8 @@ static void kgsl_cmdbatch_sync_func(struct kgsl_device *device,
 {
 	struct kgsl_cmdbatch_sync_event *event = priv;
 
-	trace_syncpoint_timestamp_expire(event->cmdbatch,
-		event->context, event->timestamp);
+	//trace_syncpoint_timestamp_expire(event->cmdbatch,
+	//	event->context, event->timestamp);
 
 	kgsl_cmdbatch_sync_expire(device, event);
 	kgsl_context_put(event->context);
@@ -357,8 +357,8 @@ static void kgsl_cmdbatch_sync_fence_func(void *priv)
 {
 	struct kgsl_cmdbatch_sync_event *event = priv;
 
-	trace_syncpoint_fence_expire(event->cmdbatch,
-		event->handle ? event->handle->name : "unknown");
+	//trace_syncpoint_fence_expire(event->cmdbatch,
+	//	event->handle ? event->handle->name : "unknown");
 
 	kgsl_cmdbatch_sync_expire(event->device, event);
 	/* Put events that have signaled */
@@ -436,13 +436,13 @@ static int kgsl_cmdbatch_add_sync_fence(struct kgsl_device *device,
 		 * If ret == 0 the fence was already signaled - print a trace
 		 * message so we can track that
 		 */
-		if (ret == 0)
-			trace_syncpoint_fence_expire(cmdbatch, "signaled");
+		//if (ret == 0)
+			//trace_syncpoint_fence_expire(cmdbatch, "signaled");
 
 		return ret;
 	}
 
-	trace_syncpoint_fence(cmdbatch, event->handle->name);
+	//trace_syncpoint_fence(cmdbatch, event->handle->name);
 	spin_unlock_irqrestore(&cmdbatch->lock, flags);
 
 	/*
@@ -533,9 +533,9 @@ static int kgsl_cmdbatch_add_sync_timestamp(struct kgsl_device *device,
 
 		kgsl_cmdbatch_put(cmdbatch);
 		kfree(event);
-	} else {
-		trace_syncpoint_timestamp(cmdbatch, context, sync->timestamp);
-	}
+	} //else {
+		//trace_syncpoint_timestamp(cmdbatch, context, sync->timestamp);
+	//}
 
 done:
 	if (ret)
