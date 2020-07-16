@@ -36,7 +36,6 @@
 #include <linux/uio_driver.h>
 #include <asm/smp_plat.h>
 #include <stdbool.h>
-#include <linux/charging_state.h>
 #define CREATE_TRACE_POINTS
 #include <trace/events/trace_msm_core.h>
 
@@ -320,14 +319,9 @@ static __ref int do_sampling(void *data)
 		if (!poll_ms)
 			goto unlock;
 
-		if (charging_detected()) {
-			schedule_delayed_work(&sampling_work,
-				msecs_to_jiffies(poll_ms));
-		} else {
-			queue_delayed_work(system_power_efficient_wq,
-				&sampling_work,
-				msecs_to_jiffies(poll_ms));
-		}
+		queue_delayed_work(system_power_efficient_wq,
+			&sampling_work,
+			msecs_to_jiffies(poll_ms));
 unlock:
 		mutex_unlock(&kthread_update_mutex);
 	}
