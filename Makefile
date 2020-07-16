@@ -398,8 +398,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -march=armv8-a+crypto+crc \
-		   -mfix-cortex-a53-843419 \
-		   -mcpu=cortex-a72.cortex-a53+crc+crypto \
+		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 \
 		   -fno-delete-null-pointer-checks \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
