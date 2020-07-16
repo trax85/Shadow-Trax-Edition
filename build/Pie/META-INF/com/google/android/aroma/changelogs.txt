@@ -92,7 +92,7 @@ V5.7-
 * Reduce log spam.
 
 -Kernel
-* Compiled with Linaro GCC 8.0 UberTC.
+* Compiled with Linaro Linaro GCC 7.5.
 * Add API to mark IRQs and kthreads as performance critical.
 * Add API to create kthreads bound to low-power CPUs.
 * Fix GCC 7.x and 6.x warnings ,Uninitializeed Warnings , Duplicate Const warnings all sorts of stuff.
@@ -125,7 +125,7 @@ V5.7-
 * Nuke useless flags.
 * Remove disable warinings.
 * Add proper hardware flags.
-* Compile with o2.
+* Compile with O2.
 * Flag optimizations from O3 and Ofast specific flags.
 * Support for GCC 7.xx. and 8.xx.
 * Disable stack conservation.

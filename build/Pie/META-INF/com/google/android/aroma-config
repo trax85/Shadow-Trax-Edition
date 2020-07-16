@@ -201,7 +201,7 @@ selectbox(
 
 checkbox(
   "\n\nOther settings","<@center><b>\n\nSelect the mods you want to install</b>\n\n</@>","","mods.prop",
-  "Disable Fsync","\nFaster fileystem performance, but risk of data loss",0,
+  "Disable Fsync","\nFaster fileystem performance, but risk of Data Loss",0,
   "USB Fastcharge","\nIncrease charge current while charging via USB",0,
   "Backlight Dimmer","\nThis lowers Max-Min brightness of display",0,
   "Audio Mod Capability","\nDisable audio codec power gating",0,

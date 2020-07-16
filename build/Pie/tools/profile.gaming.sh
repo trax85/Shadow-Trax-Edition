@@ -47,6 +47,8 @@ echo 710000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 echo 710000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
 echo 480000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
 echo 0 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel
+echo 1 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/min_pwrlevel
+echo 0 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/default_pwrlevel
 #Devfreq-Drivers
 echo 805 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq
 #Walt-Toggles
