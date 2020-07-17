@@ -2481,6 +2481,9 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
         case FORMAT_APTX:
  		open.dec_fmt_id = ASM_MEDIA_FMT_APTX;
  		break;
+	case FORMAT_APTXHD:
+		open.dec_fmt_id = ASM_MEDIA_FMT_APTX_HD;
+		break;
 	default:
 		pr_err("%s: Invalid format 0x%x\n", __func__, format);
 		goto fail_cmd;

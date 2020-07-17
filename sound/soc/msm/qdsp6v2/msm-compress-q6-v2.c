@@ -705,6 +705,7 @@ static void populate_codec_list(struct msm_compr_audio *prtd)
 	prtd->compr_cap.codecs[11] = SND_AUDIOCODEC_APE;
         prtd->compr_cap.codecs[12] = SND_AUDIOCODEC_DTS;
  	prtd->compr_cap.codecs[13] = SND_AUDIOCODEC_APTX;
+	prtd->compr_cap.codecs[17] = SND_AUDIOCODEC_APTXHD;
 }
 
 static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
@@ -939,6 +940,8 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
  		/* no media format block needed */
  		break;
 
+	case FORMAT_APTXHD:
+		pr_debug("SND_AUDIOCODEC_APTXHD\n");
  	case FORMAT_APTX:
  		pr_debug("SND_AUDIOCODEC_APTX\n");
  		memset(&aptx_cfg, 0x0, sizeof(struct aptx_dec_bt_addr_cfg));
@@ -1493,6 +1496,12 @@ static int msm_compr_set_params(struct snd_compr_stream *cstream,
  		prtd->codec = FORMAT_APTX;
  		break;
  	}
+
+	case SND_AUDIOCODEC_APTXHD: {
+		pr_debug("%s: SND_AUDIOCODEC_APTXHD\n", __func__);
+		prtd->codec = FORMAT_APTXHD;
+		break;
+	}
 
 	default:
 		pr_err("codec not supported, id =%d\n", params->codec.id);
@@ -2301,6 +2310,8 @@ static int msm_compr_get_codec_caps(struct snd_compr_stream *cstream,
  		break;
  	case SND_AUDIOCODEC_APTX:
  		break;
+	case SND_AUDIOCODEC_APTXHD:
+		break;
 	default:
 		pr_err("%s: Unsupported audio codec %d\n",
 			__func__, codec->codec);
@@ -2715,6 +2726,7 @@ static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 	case FORMAT_MP3:
 	case FORMAT_MPEG4_AAC:
         case FORMAT_APTX:
+	case FORMAT_APTXHD:
 		pr_debug("%s: no runtime parameters for codec: %d\n", __func__,
 			 prtd->codec);
 		break;
@@ -2781,6 +2793,7 @@ static int msm_compr_dec_params_put(struct snd_kcontrol *kcontrol,
 	case FORMAT_APE:
         case FORMAT_DTS:
  	case FORMAT_APTX:
+	case FORMAT_APTXHD:
 		pr_debug("%s: no runtime parameters for codec: %d\n", __func__,
 			 prtd->codec);
 		break;

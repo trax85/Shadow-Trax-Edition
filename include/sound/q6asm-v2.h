@@ -53,6 +53,7 @@
 #define FORMAT_G711_MLAW_FS 0x001b
 #define FORMAT_DTS          0x001c
 #define FORMAT_APTX         0x001d
+#define FORMAT_APTXHD       0x0022
 
 #define ENCDEC_SBCBITRATE   0x0001
 #define ENCDEC_IMMEDIATE_DECODE 0x0002
