@@ -42,6 +42,7 @@ echo deadline > /sys/block/mmcblk1/queue/scheduler
 #Adreno-Idler-Driver
 echo N > /sys/module/adreno_idler/parameters/adreno_idler_active
 #GPU-Toggles
+echo msm-adreno-tz > /sys/class/kgsl/kgsl-3d0/devfreq/governor
 echo 3 > /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost
 echo 710000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 echo 710000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq

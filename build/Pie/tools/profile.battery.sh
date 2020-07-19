@@ -43,6 +43,7 @@ echo 90 > /sys/module/adreno_idler/parameters/adreno_idler_downdifferential
 echo 4 > /sys/module/adreno_idler/parameters/adreno_idler_idlewait
 echo 9000 > /sys/module/adreno_idler/parameters/adreno_idler_idleworkload
 #GPU-Toggles
+echo msm-adreno-tz > /sys/class/kgsl/kgsl-3d0/devfreq/governor
 echo 0 > /sys/class/kgsl/kgsl-3d0/devfreq/adrenoboost
 echo 550000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 echo 550000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq

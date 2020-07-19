@@ -20,10 +20,12 @@
     if [ $MemTotal -gt 2000000 ]; then
         echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
         echo "18432,23040,27648,32256,55296,80640" > /sys/module/lowmemorykiller/parameters/minfree
+	echo 0 > /sys/module/lowmemorykiller/parameters/lmk_fast_run
     else
         echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
         echo "16384,20992,24064,30720,46080,66560" > /sys/module/lowmemorykiller/parameters/minfree
-	    echo 10 > /proc/sys/vm/dirty_background_ratio
+	echo 10 > /proc/sys/vm/dirty_background_ratio
+	echo 0 > /sys/module/lowmemorykiller/parameters/lmk_fast_run
     fi
     echo /sys/block/zram0/comp_algorithm "lz4"
     if [ $MemTotal -gt 2000000 ]; then

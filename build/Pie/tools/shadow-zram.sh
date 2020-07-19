@@ -23,6 +23,7 @@
     else
         echo "16384,20992,24064,30720,46080,66560" > /sys/module/lowmemorykiller/parameters/minfree
 	echo 10 > /proc/sys/vm/dirty_background_ratio
+	echo 0 > /sys/module/lowmemorykiller/parameters/lmk_fast_run
     fi
     sleep 5
     echo 0 > /sys/module/lowmemorykiller/parameters/enable_adaptive_lmk
