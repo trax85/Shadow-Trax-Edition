@@ -62,6 +62,7 @@
 #include <linux/page-debug-flags.h>
 #include <linux/hugetlb.h>
 #include <linux/sched/rt.h>
+#include <linux/cpu_boost.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
@@ -2682,6 +2683,8 @@ rebalance:
 			goto restart;
 		}
 	}
+        /* Boost when memory is low so allocation latency doesn't get too bad */
+ 	do_input_boost_max();
 
 	/* Check if we should retry the allocation */
 	pages_reclaimed += did_some_progress;
@@ -5337,11 +5340,7 @@ void __init mem_init_print_info(const char *str)
 	codesize = _etext - _stext;
 	datasize = _edata - _sdata;
 	rosize = __end_rodata - __start_rodata;
-#ifdef CONFIG_UML
-	bss_size = _end - __bss_start;
-#else
 	bss_size = __bss_stop - __bss_start;
-#endif
 	init_data_size = __init_end - __init_begin;
 	init_code_size = _einittext - _sinittext;
 
@@ -6445,6 +6444,9 @@ static const struct trace_print_flags pageflag_names[] = {
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	{1UL << PG_compound_lock,	"compound_lock"	},
 #endif
+#ifdef CONFIG_KSM_CHECK_PAGE
+	{1UL << PG_ksm_scan0,           "PG_ksm_scan0"  },
+#endif
 	{1UL << PG_readahead,           "PG_readahead"  },
 };
 
@@ -6454,12 +6456,14 @@ static void dump_page_flags(unsigned long flags)
 	unsigned long mask;
 	int i;
 
+	BUILD_BUG_ON(ARRAY_SIZE(pageflag_names) != __NR_PAGEFLAGS);
+
 	printk(KERN_ALERT "page flags: %#lx(", flags);
 
 	/* remove zone id */
 	flags &= (1UL << NR_PAGEFLAGS) - 1;
 
-	for (i = 0; pageflag_names[i].name && flags; i++) {
+	for (i = 0; i < ARRAY_SIZE(pageflag_names) && flags; i++) {
 
 		mask = pageflag_names[i].mask;
 		if ((flags & mask) != mask)

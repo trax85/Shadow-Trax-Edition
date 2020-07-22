@@ -43,6 +43,7 @@
 #include <linux/sysctl.h>
 #include <linux/oom.h>
 #include <linux/prefetch.h>
+#include <linux/debugfs.h>
 
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -187,6 +188,39 @@ static unsigned long get_lru_size(struct lruvec *lruvec, enum lru_list lru)
 	return zone_page_state(lruvec_zone(lruvec), NR_LRU_BASE + lru);
 }
 
+struct dentry *debug_file;
+
+static int debug_shrinker_show(struct seq_file *s, void *unused)
+{
+	struct shrinker *shrinker;
+	struct shrink_control sc;
+
+	sc.gfp_mask = -1;
+	sc.nr_to_scan = 0;
+
+	down_read(&shrinker_rwsem);
+	list_for_each_entry(shrinker, &shrinker_list, list) {
+		int num_objs;
+
+		num_objs = shrinker->shrink(shrinker, &sc);
+		seq_printf(s, "%pf %d\n", shrinker->shrink, num_objs);
+	}
+	up_read(&shrinker_rwsem);
+	return 0;
+}
+
+static int debug_shrinker_open(struct inode *inode, struct file *file)
+{
+        return single_open(file, debug_shrinker_show, inode->i_private);
+}
+
+static const struct file_operations debug_shrinker_fops = {
+        .open = debug_shrinker_open,
+        .read = seq_read,
+        .llseek = seq_lseek,
+        .release = single_release,
+};
+
 /*
  * Add a shrinker callback to be called from the vm
  */
@@ -198,6 +232,15 @@ void register_shrinker(struct shrinker *shrinker)
 	up_write(&shrinker_rwsem);
 }
 EXPORT_SYMBOL(register_shrinker);
+
+static int __init add_shrinker_debug(void)
+{
+	debugfs_create_file("shrinker", 0644, NULL, NULL,
+			    &debug_shrinker_fops);
+	return 0;
+}
+
+late_initcall(add_shrinker_debug);
 
 /*
  * Remove one
@@ -250,12 +293,12 @@ unsigned long shrink_slab(struct shrink_control *shrinkctl,
 
 	if (!down_read_trylock(&shrinker_rwsem)) {
 		/*
-		 * If we would return 0, our callers would understand that we
-		 * have nothing else to shrink and give up trying. By returning
-		 * 1 we keep it going and assume we'll be able to shrink next
-		 * time.
-		 */
-		freed = 1;
+ 		 * If we would return 0, our callers would understand that we
+ 		 * have nothing else to shrink and give up trying. By returning
+ 		 * 1 we keep it going and assume we'll be able to shrink next
+ 		 * time.
+ 		 */
+ 		freed = 1;
 		goto out;
 	}
 
@@ -273,10 +316,10 @@ unsigned long shrink_slab(struct shrink_control *shrinkctl,
 			min_cache_size = 0;
 
 		if (shrinker->count_objects)
-			max_pass = shrinker->count_objects(shrinker, shrinkctl);
-		else
-			max_pass = do_shrinker_shrink(shrinker, shrinkctl, 0);
-		if (max_pass == 0)
+ 			max_pass = shrinker->count_objects(shrinker, shrinkctl);
+ 		else
+ 			max_pass = do_shrinker_shrink(shrinker, shrinkctl, 0);
+ 		if (max_pass == 0)
 			continue;
 
 		/*
@@ -293,7 +336,7 @@ unsigned long shrink_slab(struct shrink_control *shrinkctl,
 		total_scan += delta;
 		if (total_scan < 0) {
 			printk(KERN_ERR
-			"shrink_slab: %pF negative objects to delete nr=%ld\n",
+ 			"shrink_slab: %pF negative objects to delete nr=%ld\n",
 			       shrinker->shrink, total_scan);
 			total_scan = max_pass;
 		}
@@ -326,30 +369,30 @@ unsigned long shrink_slab(struct shrink_control *shrinkctl,
 					max_pass, delta, total_scan);
 
 		while (total_scan > min_cache_size) {
+
 			if (total_scan < batch_size)
 				batch_size = total_scan;
 
 			if (shrinker->scan_objects) {
-				unsigned long ret;
-				shrinkctl->nr_to_scan = batch_size;
-				ret = shrinker->scan_objects(shrinker, shrinkctl);
+ 				unsigned long ret;
+ 				shrinkctl->nr_to_scan = batch_size;
+ 				ret = shrinker->scan_objects(shrinker, shrinkctl);
 
-				if (ret == SHRINK_STOP)
-					break;
-				freed += ret;
-			} else {
-				int nr_before;
-				long ret;
+ 				if (ret == SHRINK_STOP)
+ 					break;
+ 				freed += ret;
+ 			} else {
+ 				int nr_before;
+ 				long ret;
 
-				nr_before = do_shrinker_shrink(shrinker, shrinkctl, 0);
-				ret = do_shrinker_shrink(shrinker, shrinkctl,
-								batch_size);
-				if (ret == -1)
-					break;
-				if (ret < nr_before)
-					freed += nr_before - ret;
-			}
-
+ 				nr_before = do_shrinker_shrink(shrinker, shrinkctl, 0);
+ 				ret = do_shrinker_shrink(shrinker, shrinkctl,
+ 								batch_size);
+ 				if (ret == -1)
+ 					break;
+ 				if (ret < nr_before)
+ 					freed += nr_before - ret;
+ 			}
 			count_vm_events(SLABS_SCANNED, batch_size);
 			total_scan -= batch_size;
 
@@ -496,6 +539,18 @@ static pageout_t pageout(struct page *page, struct address_space *mapping,
 		if (!PageWriteback(page)) {
 			/* synchronous write or broken a_ops? */
 			ClearPageReclaim(page);
+			if (PageError(page) && PageSwapCache(page)) {
+				ClearPageError(page);
+				/*
+				 * We lock the page here because it is required
+				 * to free the swp space later in
+				 * shrink_page_list. But the page may be
+				 * unclocked by functions like
+				 * handle_write_error.
+				 */
+				__set_page_locked(page);
+				return PAGE_ACTIVATE;
+			}
 		}
 		trace_mm_vmscan_writepage(page, trace_reclaim_flags(page));
 		inc_zone_page_state(page, NR_VMSCAN_WRITE);
@@ -2501,12 +2556,15 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
 		 */
 		if (global_reclaim(sc)) {
 			unsigned long lru_pages = 0;
+			nodes_clear(shrink->nodes_to_scan);
 			for_each_zone_zonelist(zone, z, zonelist,
 					gfp_zone(sc->gfp_mask)) {
 				if (!cpuset_zone_allowed_hardwall(zone, GFP_KERNEL))
 					continue;
 
 				lru_pages += zone_reclaimable_pages(zone);
+				node_set(zone_to_nid(zone),
+ 					 shrink->nodes_to_scan);
 			}
 
 			shrink_slab(shrink, sc->nr_scanned, lru_pages);
@@ -2996,6 +3054,8 @@ static bool kswapd_shrink_zone(struct zone *zone,
 		return true;
 
 	shrink_zone(zone, sc);
+	nodes_clear(shrink.nodes_to_scan);
+ 	node_set(zone_to_nid(zone), shrink.nodes_to_scan);
 
 	reclaim_state->reclaimed_slab = 0;
 	nr_slab = shrink_slab(&shrink, sc->nr_scanned, lru_pages);
@@ -3190,7 +3250,7 @@ static unsigned long balance_pgdat(pg_data_t *pgdat, int order,
 		 */
 		if (waitqueue_active(&pgdat->pfmemalloc_wait) &&
 				pfmemalloc_watermark_ok(pgdat))
-			wake_up(&pgdat->pfmemalloc_wait);
+			wake_up_all(&pgdat->pfmemalloc_wait);
 
 		/*
 		 * Fragmentation may mean that the system cannot be rebalanced
@@ -3690,9 +3750,9 @@ static int __zone_reclaim(struct zone *zone, gfp_t gfp_mask, unsigned int order)
 		 * by the same nr_pages that we used for reclaiming unmapped
 		 * pages.
 		 *
-		 * Note that shrink_slab will free memory on all zones and may
-		 * take a long time.
 		 */
+		nodes_clear(shrink.nodes_to_scan);
+ 		node_set(zone_to_nid(zone), shrink.nodes_to_scan);
 		for (;;) {
 			unsigned long lru_pages = zone_reclaimable_pages(zone);
 
