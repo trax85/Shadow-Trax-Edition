@@ -319,7 +319,7 @@ config KSM
 config KSM_CHECK_PAGE
 	bool "Check page before scanning"
 	depends on KSM
-	default n
+	default y
 	help
 	  If enabled, this will check and skip if page is already scanned in
 	  same KSM scan cycle.

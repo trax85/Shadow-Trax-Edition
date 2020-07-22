@@ -48,7 +48,7 @@ static void read_cache_pages_invalidate_page(struct address_space *mapping,
 		if (!trylock_page(page))
 			BUG();
 		page->mapping = mapping;
-		do_invalidatepage(page, 0);
+		do_invalidatepage(page, 0, PAGE_CACHE_SIZE);
 		page->mapping = NULL;
 		unlock_page(page);
 	}
@@ -277,9 +277,9 @@ static unsigned long get_init_ra_size(unsigned long size, unsigned long max)
 	unsigned long newsize = roundup_pow_of_two(size);
 
 	if (newsize <= (max >> 5))
- 		newsize = newsize << 2;
- 	else if (newsize <= (max >> 2))
- 		newsize = newsize << 1;
+		newsize = newsize << 2;
+	else if (newsize <= (max >> 2))
+		newsize = newsize << 1;
 	else
 		newsize = max;
 
@@ -297,7 +297,7 @@ static unsigned long get_next_ra_size(struct file_ra_state *ra,
 	unsigned long newsize;
 
 	if (cur < (max >> 4))
- 		newsize = cur << 2;
+		newsize = cur << 2;
 	else
 		newsize = cur << 1;
 
@@ -406,6 +406,7 @@ ondemand_readahead(struct address_space *mapping,
 		   unsigned long req_size)
 {
 	unsigned long max = max_sane_readahead(ra->ra_pages);
+	pgoff_t prev_offset;
 
 	/*
 	 * start of file
@@ -457,8 +458,11 @@ ondemand_readahead(struct address_space *mapping,
 
 	/*
 	 * sequential cache miss
+	 * trivial case: (offset - prev_offset) == 1
+	 * unaligned reads: (offset - prev_offset) == 0
 	 */
-	if (offset - (ra->prev_pos >> PAGE_CACHE_SHIFT) <= 1UL)
+	prev_offset = (unsigned long long)ra->prev_pos >> PAGE_CACHE_SHIFT;
+	if (offset - prev_offset <= 1UL)
 		goto initial_readahead;
 
 	/*

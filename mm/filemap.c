@@ -469,7 +469,7 @@ int add_to_page_cache_locked(struct page *page, struct address_space *mapping,
 	if (error)
 		goto out;
 
-	error = radix_tree_preload(gfp_mask & ~__GFP_HIGHMEM);
+	error = radix_tree_maybe_preload(gfp_mask & ~__GFP_HIGHMEM);
 	if (error == 0) {
 		page_cache_get(page);
 		page->mapping = mapping;
@@ -732,7 +732,8 @@ EXPORT_SYMBOL(page_cache_next_hole);
  * Is there a pagecache struct page at the given (mapping, offset) tuple?
  * If yes, increment its refcount and return it; if no, return NULL.
  */
-struct page *find_get_page(struct address_space *mapping, pgoff_t offset)
+struct page *find_get_page_flags(struct address_space *mapping, pgoff_t offset,
+				 int fgp_flags)
 {
 	void **pagep;
 	struct page *page;
@@ -769,6 +770,8 @@ repeat:
 		}
 	}
 out:
+	if (page && (fgp_flags & FGP_ACCESSED))
+		mark_page_accessed(page);
 	rcu_read_unlock();
 
 	return page;
