@@ -19,7 +19,7 @@ V5.6-
 * Clean session when failed to open instance.
 
 -Video 
-* Make Refreshrate Varible and export it to userspace.
+* Make Refreshrate Varible and export it to userspace (/sys/module/mdss_dsi/parameters/refresh_rate).
 * Add Frame Boost Disbled by Default.
 * Mdss Save state of vsync handler.
 * Silence mdss log spams and Fix Derps.
