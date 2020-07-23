@@ -51,7 +51,7 @@
 #define ADSP_MMAP_HEAP_ADDR 4
 #define AUDIO_ADSP_STREAM_ID	1
 #define STREAM_ID	((uint64_t)AUDIO_ADSP_STREAM_ID << 32)
-#define RPC_TIMEOUT	5000
+#define RPC_TIMEOUT	(5 * HZ)
 #define BALIGN		32
 #define NUM_CHANNELS    1 /*8 compute 2 cpz 1 modem*/
 
@@ -1617,7 +1617,7 @@ static int fastrpc_device_open(struct inode *inode, struct file *filp)
 		if (err)
 			goto bail;
 		VERIFY(err, wait_for_completion_timeout(&me->channel[cid].work,
-							 msecs_to_jiffies(RPC_TIMEOUT)));
+							 RPC_TIMEOUT));
 		if (err)
 			goto bail;
 		kref_init(&me->channel[cid].kref);

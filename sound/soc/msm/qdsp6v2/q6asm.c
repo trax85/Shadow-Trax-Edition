@@ -41,8 +41,9 @@
 #include <sound/q6core.h>
 #include <sound/q6audio-v2.h>
 #include <sound/audio_cal_utils.h>
-#include <sound/compress_params.h>
+#include <sound/msm-dts-eagle.h>
 #include <sound/adsp_err.h>
+#include <sound/compress_params.h>
 
 #define TRUE        0x01
 #define FALSE       0x00
@@ -63,13 +64,8 @@ struct asm_mmap {
 };
 
 static struct asm_mmap this_mmap;
-
-struct audio_session {
-	struct audio_client *ac;
-	spinlock_t session_lock;
-};
 /* session id: 0 reserved */
-static struct audio_session session[SESSION_MAX + 1];
+static struct audio_client *session[SESSION_MAX+1];
 
 struct asm_buffer_node {
 	struct list_head list;
@@ -144,11 +140,6 @@ static ssize_t audio_output_latency_dbgfs_read(struct file *file,
 		pr_err("%s: out_buffer is null\n", __func__);
 		return 0;
 	}
-	if (count < OUT_BUFFER_SIZE) {
-		pr_err("%s: read size %d exceeds buf size %zd\n", __func__,
-						OUT_BUFFER_SIZE, count);
-		return 0;
-	}
 	snprintf(out_buffer, OUT_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,",\
 		out_cold_tv.tv_sec, out_cold_tv.tv_usec, out_warm_tv.tv_sec,\
 		out_warm_tv.tv_usec, out_cont_tv.tv_sec, out_cont_tv.tv_usec);
@@ -200,11 +191,6 @@ static ssize_t audio_input_latency_dbgfs_read(struct file *file,
 {
 	if (in_buffer == NULL) {
 		pr_err("%s: in_buffer is null\n", __func__);
-		return 0;
-	}
-	if (count < IN_BUFFER_SIZE) {
-		pr_err("%s: read size %d exceeds buf size %zd\n", __func__,
-						IN_BUFFER_SIZE, count);
 		return 0;
 	}
 	snprintf(in_buffer, IN_BUFFER_SIZE, "%ld,%ld,",\
@@ -411,8 +397,8 @@ static int q6asm_session_alloc(struct audio_client *ac)
 {
 	int n;
 	for (n = 1; n <= SESSION_MAX; n++) {
-		if (!session[n].ac) {
-			session[n].ac = ac;
+		if (!session[n]) {
+			session[n] = ac;
 			return n;
 		}
 	}
@@ -420,41 +406,24 @@ static int q6asm_session_alloc(struct audio_client *ac)
 	return -ENOMEM;
 }
 
-static unsigned int q6asm_get_session_id_from_audio_client(
-			struct audio_client *ac)
+static bool q6asm_is_valid_audio_client(struct audio_client *ac)
 {
-	unsigned int n;
-
+	int n;
 	for (n = 1; n <= SESSION_MAX; n++) {
-		if (session[n].ac == ac)
-			return n;
+		if (session[n] == ac)
+			return 1;
 	}
 	return 0;
 }
 
-static bool q6asm_is_valid_audio_client(struct audio_client *ac)
-{
-	return q6asm_get_session_id_from_audio_client(ac) ? 1 : 0;
-}
-
 static void q6asm_session_free(struct audio_client *ac)
 {
-	int session_id;
-	unsigned long flags;
-
 	pr_debug("%s: sessionid[%d]\n", __func__, ac->session);
-	session_id = ac->session;
 	rtac_remove_popp_from_adm_devices(ac->session);
-	spin_lock_irqsave(&(session[session_id].session_lock), flags);
-	session[ac->session].ac = NULL;
+	session[ac->session] = 0;
 	ac->session = 0;
 	ac->perf_mode = LEGACY_PCM_MODE;
 	ac->fptr_cache_ops = NULL;
-	ac->cb = NULL;
-	ac->priv = NULL;
-
-	kfree(ac);
-	spin_unlock_irqrestore(&(session[session_id].session_lock), flags);
 	return;
 }
 
@@ -662,7 +631,7 @@ int send_asm_custom_topology(struct audio_client *ac)
 	}
 
 	result = wait_event_timeout(ac->mem_wait,
-			(atomic_read(&ac->mem_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->mem_state) <= 0), 5*HZ);
 	if (!result) {
 		pr_err("%s: Set topologies failed timeout\n", __func__);
 		pr_debug("%s: Set topologies failed after timedout payload = 0x%pK\n",
@@ -943,6 +912,8 @@ void q6asm_audio_client_free(struct audio_client *ac)
 	pr_debug("%s: APR De-Register\n", __func__);
 
 /*done:*/
+	kfree(ac);
+	ac = NULL;
 	mutex_unlock(&session_lock);
 
 	return;
@@ -999,7 +970,7 @@ struct audio_client *q6asm_audio_client_alloc(app_cb cb, void *priv)
 	int n;
 	int lcnt = 0;
 	int rc = 0;
-	static DEFINE_RATELIMIT_STATE(rl, 500, 1);
+	static DEFINE_RATELIMIT_STATE(rl, 5*HZ, 1);
 
 	ac = kzalloc(sizeof(struct audio_client), GFP_KERNEL);
 	if (!ac) {
@@ -1012,7 +983,6 @@ struct audio_client *q6asm_audio_client_alloc(app_cb cb, void *priv)
 	if (n <= 0) {
 		pr_err("%s: ASM Session alloc fail n=%d\n", __func__, n);
 		mutex_unlock(&session_lock);
-		kfree(ac);
 		goto fail_session;
 	}
 	ac->session = n;
@@ -1069,7 +1039,6 @@ struct audio_client *q6asm_audio_client_alloc(app_cb cb, void *priv)
 		spin_lock_init(&ac->port[lcnt].dsp_lock);
 	}
 	atomic_set(&ac->cmd_state, 0);
-	atomic_set(&ac->cmd_state_pp, 0);
 	atomic_set(&ac->nowait_cmd_cnt, 0);
 	atomic_set(&ac->mem_state, 0);
 
@@ -1091,6 +1060,7 @@ fail_apr2:
 fail_apr1:
 	q6asm_session_free(ac);
 fail_session:
+	kfree(ac);
 	return NULL;
 }
 
@@ -1105,11 +1075,11 @@ struct audio_client *q6asm_get_audio_client(int session_id)
 		goto err;
 	}
 
-	if (!(session[session_id].ac)) {
+	if (!session[session_id]) {
 		pr_err("%s: session not active: %d\n", __func__, session_id);
 		goto err;
 	}
-	return session[session_id].ac;
+	return session[session_id];
 err:
 	return NULL;
 }
@@ -1247,7 +1217,7 @@ int q6asm_audio_client_buf_alloc_contiguous(unsigned int dir,
 	ac->port[dir].buf = buf;
 
 	/* check for integer overflow */
-	if ((bufcnt > 0) && ((INT_MAX / bufcnt) < bufsz)) {
+	if ((bufcnt > 0) && ((UINT_MAX / bufcnt) < bufsz)) {
 		pr_err("%s: integer overflow\n", __func__);
 		mutex_unlock(&ac->cmd_lock);
 		goto fail;
@@ -1314,7 +1284,6 @@ static int32_t q6asm_srvc_callback(struct apr_client_data *data, void *priv)
 	uint32_t i = IN;
 	uint32_t *payload;
 	unsigned long dsp_flags;
-	unsigned long flags;
 	struct asm_buffer_node *buf_node = NULL;
 	struct list_head *ptr, *next;
 
@@ -1363,16 +1332,9 @@ static int32_t q6asm_srvc_callback(struct apr_client_data *data, void *priv)
 		return 0;
 	}
 	sid = (data->token >> 8) & 0x0F;
-	if ((sid > 0 && sid <= SESSION_MAX))
-		spin_lock_irqsave(&(session[sid].session_lock), flags);
-
 	ac = q6asm_get_audio_client(sid);
 	if (!ac) {
 		pr_debug("%s: session[%d] already freed\n", __func__, sid);
-		if ((sid > 0 &&
-			sid <= SESSION_MAX))
-			spin_unlock_irqrestore(
-				&(session[sid].session_lock), flags);
 		return 0;
 	}
 
@@ -1422,10 +1384,6 @@ static int32_t q6asm_srvc_callback(struct apr_client_data *data, void *priv)
 						__func__, payload[0]);
 			break;
 		}
-		if ((sid > 0 &&
-			sid <= SESSION_MAX))
-			spin_unlock_irqrestore(
-				&(session[sid].session_lock), flags);
 		return 0;
 	}
 
@@ -1461,10 +1419,6 @@ static int32_t q6asm_srvc_callback(struct apr_client_data *data, void *priv)
 	if (ac->cb)
 		ac->cb(data->opcode, data->token,
 			data->payload, ac->priv);
-	if ((sid > 0 && sid <= SESSION_MAX))
-		spin_unlock_irqrestore(
-			&(session[sid].session_lock), flags);
-
 	return 0;
 }
 
@@ -1552,8 +1506,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 	uint32_t *payload;
 	uint32_t wakeup_flag = 1;
 	int32_t  ret = 0;
-	unsigned long flags;
-	int session_id;
+
 
 	if (ac == NULL) {
 		pr_err("%s: ac NULL\n", __func__);
@@ -1563,21 +1516,15 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		pr_err("%s: data NULL\n", __func__);
 		return -EINVAL;
 	}
-
-	session_id = q6asm_get_session_id_from_audio_client(ac);
-	if (session_id <= 0) {
-		pr_err("%s: Session ID is invalid, session = %d\n", __func__,
-			session_id);
-		return -EINVAL;
-	}
-
-	spin_lock_irqsave(&(session[session_id].session_lock), flags);
-
 	if (!q6asm_is_valid_audio_client(ac)) {
 		pr_err("%s: audio client pointer is invalid, ac = %pK\n",
 				__func__, ac);
-		spin_unlock_irqrestore(
-			&(session[session_id].session_lock), flags);
+		return -EINVAL;
+	}
+
+	if (ac->session <= 0 || ac->session > 8) {
+		pr_err("%s: Session ID is invalid, session = %d\n", __func__,
+			ac->session);
 		return -EINVAL;
 	}
 
@@ -1592,6 +1539,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 	}
 
 	if (data->opcode == RESET_EVENTS) {
+		mutex_lock(&ac->cmd_lock);
 		atomic_set(&ac->reset, 1);
 		if (ac->apr == NULL)
 			ac->apr = ac->apr2;
@@ -1605,11 +1553,9 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		ac->apr = NULL;
 		atomic_set(&ac->time_flag, 0);
 		atomic_set(&ac->cmd_state, 0);
-		atomic_set(&ac->cmd_state_pp, 0);
 		wake_up(&ac->time_wait);
 		wake_up(&ac->cmd_wait);
-		spin_unlock_irqrestore(
-			&(session[session_id].session_lock), flags);
+		mutex_unlock(&ac->cmd_lock);
 		return 0;
 	}
 
@@ -1620,16 +1566,9 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		data->dest_port);
 	if ((data->opcode != ASM_DATA_EVENT_RENDERED_EOS) &&
 	    (data->opcode != ASM_DATA_EVENT_EOS) &&
-	    (data->opcode != ASM_SESSION_EVENT_RX_UNDERFLOW)) {
-		if (payload == NULL) {
-			pr_err("%s: payload is null\n", __func__);
-			spin_unlock_irqrestore(
-				&(session[session_id].session_lock), flags);
-			return -EINVAL;
-		}
+	    (data->opcode != ASM_SESSION_EVENT_RX_UNDERFLOW))
 		dev_vdbg(ac->dev, "%s: Payload = [0x%x] status[0x%x] opcode 0x%x\n",
 			__func__, payload[0], payload[1], data->opcode);
-	}
 	if (data->opcode == APR_BASIC_RSP_RESULT) {
 		token = data->token;
 		switch (payload[0]) {
@@ -1651,8 +1590,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		ret = q6asm_is_valid_session(data, priv);
 		if (ret != 0) {
 			pr_err("%s: session invalid %d\n", __func__, ret);
-			spin_unlock_irqrestore(
-				&(session[session_id].session_lock), flags);
 			return ret;
 		}
 		case ASM_SESSION_CMD_SET_MTMX_STRTR_PARAMS_V2:
@@ -1677,26 +1614,10 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 				pr_err("%s: cmd = 0x%x returned error = 0x%x\n",
 					__func__, payload[0], payload[1]);
 				if (wakeup_flag) {
-					if (payload[0] ==
-						ASM_STREAM_CMD_SET_PP_PARAMS_V2)
-						atomic_set(&ac->cmd_state_pp,
-								-payload[1]);
-					else
-						atomic_set(&ac->cmd_state,
-								-payload[1]);
+					atomic_set(&ac->cmd_state, -payload[1]);
 					wake_up(&ac->cmd_wait);
 				}
-				spin_unlock_irqrestore(
-					&(session[session_id].session_lock),
-					flags);
 				return 0;
-			}
-			if (payload[0] == ASM_STREAM_CMD_SET_PP_PARAMS_V2) {
-				if (atomic_read(&ac->cmd_state_pp) &&
-					wakeup_flag) {
-					atomic_set(&ac->cmd_state_pp, 0);
-					wake_up(&ac->cmd_wait);
-				}
 			}
 			if (atomic_read(&ac->cmd_state) && wakeup_flag) {
 				atomic_set(&ac->cmd_state, 0);
@@ -1716,9 +1637,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 					atomic_set(&ac->mem_state, -payload[1]);
 					wake_up(&ac->mem_wait);
 				}
-				spin_unlock_irqrestore(
-					&(session[session_id].session_lock),
-					flags);
 				return 0;
 			}
 			if (atomic_read(&ac->mem_state) && wakeup_flag) {
@@ -1755,9 +1673,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 							__func__, payload[0]);
 			break;
 		}
-
-		spin_unlock_irqrestore(
-			&(session[session_id].session_lock), flags);
 		return 0;
 	}
 
@@ -1771,9 +1686,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 			if (port->buf == NULL) {
 				pr_err("%s: Unexpected Write Done\n",
 								__func__);
-				spin_unlock_irqrestore(
-					&(session[session_id].session_lock),
-					flags);
 				return -EINVAL;
 			}
 			spin_lock_irqsave(&port->dsp_lock, dsp_flags);
@@ -1787,9 +1699,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 					__func__, payload[0], payload[1]);
 				spin_unlock_irqrestore(&port->dsp_lock,
 								dsp_flags);
-				spin_unlock_irqrestore(
-					&(session[session_id].session_lock),
-					flags);
 				return -EINVAL;
 			}
 			token = data->token;
@@ -1861,9 +1770,6 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 		if (ac->io_mode & SYNC_IO_MODE) {
 			if (port->buf == NULL) {
 				pr_err("%s: Unexpected Write Done\n", __func__);
-				spin_unlock_irqrestore(
-					&(session[session_id].session_lock),
-					flags);
 				return -EINVAL;
 			}
 			spin_lock_irqsave(&port->dsp_lock, dsp_flags);
@@ -1949,8 +1855,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 	if (ac->cb)
 		ac->cb(data->opcode, data->token,
 			data->payload, ac->priv);
-	spin_unlock_irqrestore(
-		&(session[session_id].session_lock), flags);
+
 	return 0;
 }
 
@@ -2092,16 +1997,11 @@ int q6asm_is_dsp_buf_avail(int dir, struct audio_client *ac)
 static void __q6asm_add_hdr(struct audio_client *ac, struct apr_hdr *hdr,
 			uint32_t pkt_size, uint32_t cmd_flg, uint32_t stream_id)
 {
-	unsigned long flags;
-
 	dev_vdbg(ac->dev, "%s: pkt_size=%d cmd_flg=%d session=%d stream_id=%d\n",
 			__func__, pkt_size, cmd_flg, ac->session, stream_id);
 	mutex_lock(&ac->cmd_lock);
-	spin_lock_irqsave(&(session[ac->session].session_lock), flags);
 	if (ac->apr == NULL) {
 		pr_err("%s: AC APR handle NULL", __func__);
-		spin_unlock_irqrestore(
-			&(session[ac->session].session_lock), flags);
 		mutex_unlock(&ac->cmd_lock);
 		return;
 	}
@@ -2119,8 +2019,6 @@ static void __q6asm_add_hdr(struct audio_client *ac, struct apr_hdr *hdr,
 		hdr->token = ac->session;
 	}
 	hdr->pkt_size  = pkt_size;
-	spin_unlock_irqrestore(
-		&(session[ac->session].session_lock), flags);
 	mutex_unlock(&ac->cmd_lock);
 	return;
 }
@@ -2273,14 +2171,6 @@ static int __q6asm_open_read(struct audio_client *ac,
 		open.mode_flags |= BUFFER_META_ENABLE;
 		open.enc_cfg_id = ASM_MEDIA_FMT_AAC_V2;
 		break;
-	case FORMAT_G711_ALAW_FS:
-		open.mode_flags |= BUFFER_META_ENABLE;
-		open.enc_cfg_id = ASM_MEDIA_FMT_G711_ALAW_FS;
-		break;
-	case FORMAT_G711_MLAW_FS:
-		open.mode_flags |= BUFFER_META_ENABLE;
-		open.enc_cfg_id = ASM_MEDIA_FMT_G711_MLAW_FS;
-		break;
 	case FORMAT_V13K:
 		open.mode_flags |= BUFFER_META_ENABLE;
 		open.enc_cfg_id = ASM_MEDIA_FMT_V13K_FS;
@@ -2309,7 +2199,7 @@ static int __q6asm_open_read(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for open read\n",
 				__func__);
@@ -2411,13 +2301,13 @@ int q6asm_open_write_compressed(struct audio_client *ac, uint32_t format,
 			rc = -EINVAL;
 			goto fail_cmd;
 		}
-	case FORMAT_DTS:
-		open.fmt_id = ASM_MEDIA_FMT_DTS;
-		break;
-	default:
-		pr_err("%s: Invalid format[%d]\n", __func__, format);
-		rc = -EINVAL;
-		goto fail_cmd;
+         case FORMAT_DTS:
+ 		open.fmt_id = ASM_MEDIA_FMT_DTS;
+ 		break;
+ 	default:
+ 		pr_err("%s: Invalid format[%d]\n", __func__, format);
+ 		rc = -EINVAL;
+ 		goto fail_cmd;
 	}
 	/*Below flag indicates the DSP that Compressed audio input
 	stream is not IEC 61937 or IEC 60958 packetizied*/
@@ -2441,7 +2331,7 @@ int q6asm_open_write_compressed(struct audio_client *ac, uint32_t format,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-		(atomic_read(&ac->cmd_state) == 0), msecs_to_jiffies(1000));
+		(atomic_read(&ac->cmd_state) == 0), 1*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for OPEN_WRITE_COMPR rc[%d]\n",
 			__func__, rc);
@@ -2458,7 +2348,6 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 			      bool is_gapless_mode, bool use_v3_format)
 {
 	int rc = 0x00;
-
 	struct asm_stream_cmd_open_write_v3 open;
 
 	if (ac == NULL) {
@@ -2505,6 +2394,10 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 	open.postprocopo_id = q6asm_get_asm_topology();
 	if (ac->perf_mode != LEGACY_PCM_MODE)
 		open.postprocopo_id = ASM_STREAM_POSTPROCOPO_ID_NONE;
+        /* For DTS EAGLE only, force 24 bit */
+	if ((open.postprocopo_id == ASM_STREAM_POSTPROC_TOPO_ID_DTS_HPX) ||
+	     (open.postprocopo_id == ASM_STREAM_POSTPROC_TOPO_ID_HPX_PLUS))
+		open.bits_per_sample = 24;
 
 	pr_debug("%s: perf_mode %d asm_topology 0x%x bps %d\n", __func__,
 		 ac->perf_mode, open.postprocopo_id, open.bits_per_sample);
@@ -2585,8 +2478,11 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 	case FORMAT_APE:
 		open.dec_fmt_id = ASM_MEDIA_FMT_APE;
 		break;
-	case FORMAT_APTX:
-		open.dec_fmt_id = ASM_MEDIA_FMT_APTX;
+        case FORMAT_APTX:
+ 		open.dec_fmt_id = ASM_MEDIA_FMT_APTX;
+ 		break;
+	case FORMAT_APTXHD:
+		open.dec_fmt_id = ASM_MEDIA_FMT_APTX_HD;
 		break;
 	default:
 		pr_err("%s: Invalid format 0x%x\n", __func__, format);
@@ -2599,7 +2495,7 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for open write\n", __func__);
 		goto fail_cmd;
@@ -2708,6 +2604,10 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 			      topology : open.postprocopo_id;
 	ac->topology = open.postprocopo_id;
 
+        /* For DTS EAGLE only, force 24 bit */
+	if ((open.postprocopo_id == ASM_STREAM_POSTPROC_TOPO_ID_DTS_HPX) ||
+	     (open.postprocopo_id == ASM_STREAM_POSTPROC_TOPO_ID_HPX_MASTER))
+		open.bits_per_sample = 24;
 
 	switch (wr_format) {
 	case FORMAT_LINEAR_PCM:
@@ -2735,6 +2635,14 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 	case FORMAT_AMR_WB_PLUS:
 		open.dec_fmt_id = ASM_MEDIA_FMT_AMR_WB_PLUS_V2;
 		break;
+        case FORMAT_G711_ALAW_FS:
+ 		open.mode_flags |= BUFFER_META_ENABLE;
+ 		open.enc_cfg_id = ASM_MEDIA_FMT_G711_ALAW_FS;
+ 		break;
+ 	case FORMAT_G711_MLAW_FS:
+ 		open.mode_flags |= BUFFER_META_ENABLE;
+ 		open.enc_cfg_id = ASM_MEDIA_FMT_G711_MLAW_FS;
+ 		break;
 	case FORMAT_V13K:
 		open.dec_fmt_id = ASM_MEDIA_FMT_V13K_FS;
 		break;
@@ -2770,12 +2678,12 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 	case FORMAT_MPEG4_AAC:
 		open.enc_cfg_id = ASM_MEDIA_FMT_AAC_V2;
 		break;
-	case FORMAT_G711_ALAW_FS:
-		open.enc_cfg_id = ASM_MEDIA_FMT_G711_ALAW_FS;
-		break;
-	case FORMAT_G711_MLAW_FS:
-		open.enc_cfg_id = ASM_MEDIA_FMT_G711_MLAW_FS;
-		break;
+        case FORMAT_G711_ALAW_FS:
+ 		open.enc_cfg_id = ASM_MEDIA_FMT_G711_ALAW_FS;
+ 		break;
+ 	case FORMAT_G711_MLAW_FS:
+ 		open.enc_cfg_id = ASM_MEDIA_FMT_G711_MLAW_FS;
+ 		break;
 	case FORMAT_V13K:
 		open.enc_cfg_id = ASM_MEDIA_FMT_V13K_FS;
 		break;
@@ -2809,7 +2717,7 @@ static int __q6asm_open_read_write(struct audio_client *ac, uint32_t rd_format,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for open read-write\n",
 				__func__);
@@ -2881,7 +2789,7 @@ int q6asm_open_loopback_v2(struct audio_client *ac, uint16_t bits_per_sample)
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for open_loopback\n",
 				__func__);
@@ -2908,21 +2816,16 @@ int q6asm_set_shared_circ_buff(struct audio_client *ac,
 	int bytes_to_alloc, rc;
 	size_t len;
 
-	mutex_lock(&ac->cmd_lock);
-
-	if (ac->port[dir].buf) {
-		pr_err("%s: Buffer already allocated\n", __func__);
-		rc = -EINVAL;
-		mutex_unlock(&ac->cmd_lock);
-		goto done;
-	}
-
 	buf_circ = kzalloc(sizeof(struct audio_buffer), GFP_KERNEL);
 
 	if (!buf_circ) {
 		rc = -ENOMEM;
 		goto done;
 	}
+
+	mutex_lock(&ac->cmd_lock);
+
+	ac->port[dir].buf = buf_circ;
 
 	bytes_to_alloc = bufsz * bufcnt;
 	bytes_to_alloc = PAGE_ALIGN(bytes_to_alloc);
@@ -2935,12 +2838,11 @@ int q6asm_set_shared_circ_buff(struct audio_client *ac,
 	if (rc) {
 		pr_err("%s: Audio ION alloc is failed, rc = %d\n", __func__,
 				rc);
-		kfree(buf_circ);
 		mutex_unlock(&ac->cmd_lock);
+		kfree(buf_circ);
 		goto done;
 	}
 
-	ac->port[dir].buf = buf_circ;
 	buf_circ->used = dir ^ 1;
 	buf_circ->size = bytes_to_alloc;
 	buf_circ->actual_size = bytes_to_alloc;
@@ -3098,6 +3000,12 @@ int q6asm_open_shared_io(struct audio_client *ac,
 		goto done;
 	}
 
+	if (ac->port[dir].buf) {
+		pr_err("%s: Buffer already allocated\n", __func__);
+		rc = -EINVAL;
+		goto done;
+	}
+
 	rc = q6asm_set_shared_circ_buff(ac, open, bufsz, bufcnt, dir);
 
 	if (rc)
@@ -3145,7 +3053,7 @@ int q6asm_open_shared_io(struct audio_client *ac,
 
 	pr_debug("%s: sent open apr pkt\n", __func__);
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: Timeout. Waited for open write apr pkt rc[%d]\n",
 		       __func__, rc);
@@ -3304,7 +3212,7 @@ int q6asm_run(struct audio_client *ac, uint32_t flags,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for run success",
 				__func__);
@@ -3402,7 +3310,7 @@ int q6asm_enc_cfg_blk_aac(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n",
 			__func__);
@@ -3419,55 +3327,55 @@ fail_cmd:
 }
 
 int q6asm_enc_cfg_blk_g711(struct audio_client *ac,
-			uint32_t frames_per_buf,
-			uint32_t sample_rate)
-{
-	struct asm_g711_enc_cfg_v2 enc_cfg;
-	int rc = 0;
+ 			uint32_t frames_per_buf,
+ 			uint32_t sample_rate)
+ {
+ 	struct asm_g711_enc_cfg_v2 enc_cfg;
+ 	int rc = 0;
 
-	pr_debug("%s: session[%d]frames[%d]SR[%d]\n",
-		 __func__, ac->session, frames_per_buf,
-		sample_rate);
+ 	pr_debug("%s: session[%d]frames[%d]SR[%d]\n",
+ 		 __func__, ac->session, frames_per_buf,
+ 		sample_rate);
 
-	q6asm_add_hdr(ac, &enc_cfg.hdr, sizeof(enc_cfg), TRUE);
-	atomic_set(&ac->cmd_state, -1);
+ 	q6asm_add_hdr(ac, &enc_cfg.hdr, sizeof(enc_cfg), TRUE);
+ 	atomic_set(&ac->cmd_state, -1);
 
-	enc_cfg.hdr.opcode = ASM_STREAM_CMD_SET_ENCDEC_PARAM;
-	enc_cfg.encdec.param_id = ASM_PARAM_ID_ENCDEC_ENC_CFG_BLK_V2;
-	enc_cfg.encdec.param_size = sizeof(struct asm_g711_enc_cfg_v2) -
-				sizeof(struct asm_stream_cmd_set_encdec_param);
-	enc_cfg.encblk.frames_per_buf = frames_per_buf;
-	enc_cfg.encblk.enc_cfg_blk_size  = enc_cfg.encdec.param_size -
-				sizeof(struct asm_enc_cfg_blk_param_v2);
-	enc_cfg.sample_rate = sample_rate;
+ 	enc_cfg.hdr.opcode = ASM_STREAM_CMD_SET_ENCDEC_PARAM;
+ 	enc_cfg.encdec.param_id = ASM_PARAM_ID_ENCDEC_ENC_CFG_BLK_V2;
+ 	enc_cfg.encdec.param_size = sizeof(struct asm_g711_enc_cfg_v2) -
+ 				sizeof(struct asm_stream_cmd_set_encdec_param);
+ 	enc_cfg.encblk.frames_per_buf = frames_per_buf;
+ 	enc_cfg.encblk.enc_cfg_blk_size  = enc_cfg.encdec.param_size -
+ 				sizeof(struct asm_enc_cfg_blk_param_v2);
+ 	enc_cfg.sample_rate = sample_rate;
 
-	rc = apr_send_pkt(ac->apr, (uint32_t *) &enc_cfg);
-	if (rc < 0) {
-		pr_err("%s: Comamnd %d failed %d\n",
-			__func__, ASM_STREAM_CMD_SET_ENCDEC_PARAM, rc);
-		rc = -EINVAL;
-		goto fail_cmd;
-	}
-	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
-	if (!rc) {
-		pr_err("%s: timeout. waited for FORMAT_UPDATE\n",
-			__func__);
-		rc = -ETIMEDOUT;
-		goto fail_cmd;
-	}
-	if (atomic_read(&ac->cmd_state) > 0) {
-		pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
-		rc = adsp_err_get_lnx_err_code(
-				atomic_read(&ac->cmd_state));
-		goto fail_cmd;
-	}
-	return 0;
-fail_cmd:
-	return rc;
-}
+ 	rc = apr_send_pkt(ac->apr, (uint32_t *) &enc_cfg);
+ 	if (rc < 0) {
+ 		pr_err("%s: Comamnd %d failed %d\n",
+ 			__func__, ASM_STREAM_CMD_SET_ENCDEC_PARAM, rc);
+ 		rc = -EINVAL;
+ 		goto fail_cmd;
+ 	}
+ 	rc = wait_event_timeout(ac->cmd_wait,
+ 			(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
+ 	if (!rc) {
+ 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n",
+ 			__func__);
+ 		rc = -ETIMEDOUT;
+ 		goto fail_cmd;
+ 	}
+ 	if (atomic_read(&ac->cmd_state) > 0) {
+ 		pr_err("%s: DSP returned error[%s]\n",
+ 				__func__, adsp_err_get_err_str(
+ 				atomic_read(&ac->cmd_state)));
+ 		rc = adsp_err_get_lnx_err_code(
+ 				atomic_read(&ac->cmd_state));
+ 		goto fail_cmd;
+ 	}
+ 	return 0;
+ fail_cmd:
+ 	return rc;
+ }
 
 int q6asm_set_encdec_chan_map(struct audio_client *ac,
 			uint32_t num_channels)
@@ -3501,7 +3409,7 @@ int q6asm_set_encdec_chan_map(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				 (atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+				 (atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n", __func__,
 			   chan_map.hdr.opcode);
@@ -3595,7 +3503,7 @@ int q6asm_enc_cfg_blk_pcm_v3(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n",
 		       __func__, enc_cfg.hdr.opcode);
@@ -3675,7 +3583,7 @@ int q6asm_enc_cfg_blk_pcm_v2(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n",
 			__func__, enc_cfg.hdr.opcode);
@@ -3783,7 +3691,7 @@ int q6asm_enc_cfg_blk_pcm_native(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n",
 			__func__, enc_cfg.hdr.opcode);
@@ -3888,7 +3796,7 @@ int q6asm_enable_sbrps(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x] ", __func__, sbrps.hdr.opcode);
 		goto fail_cmd;
@@ -3932,7 +3840,7 @@ int q6asm_cfg_dual_mono_aac(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n", __func__,
 						dual_mono.hdr.opcode);
@@ -3973,7 +3881,7 @@ int q6asm_cfg_aac_sel_mix_coef(struct audio_client *ac, uint32_t mix_coeff)
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-		(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+		(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n",
 			__func__, aac_mix_coeff.hdr.opcode);
@@ -4023,7 +3931,7 @@ int q6asm_enc_cfg_blk_qcelp(struct audio_client *ac, uint32_t frames_per_buf,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for setencdec v13k resp\n",
 			__func__);
@@ -4072,7 +3980,7 @@ int q6asm_enc_cfg_blk_evrc(struct audio_client *ac, uint32_t frames_per_buf,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for encdec evrc\n", __func__);
 		goto fail_cmd;
@@ -4116,7 +4024,7 @@ int q6asm_enc_cfg_blk_amrnb(struct audio_client *ac, uint32_t frames_per_buf,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for set encdec amrnb\n", __func__);
 		goto fail_cmd;
@@ -4160,7 +4068,7 @@ int q6asm_enc_cfg_blk_amrwb(struct audio_client *ac, uint32_t frames_per_buf,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n", __func__);
 		goto fail_cmd;
@@ -4231,7 +4139,7 @@ static int __q6asm_media_format_block_pcm(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for format update\n", __func__);
 		goto fail_cmd;
@@ -4308,7 +4216,7 @@ static int __q6asm_media_format_block_pcm_v3(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for format update\n", __func__);
 		rc = -ETIMEDOUT;
@@ -4438,7 +4346,7 @@ static int __q6asm_media_format_block_multi_ch_pcm(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for format update\n", __func__);
 		goto fail_cmd;
@@ -4503,7 +4411,7 @@ static int __q6asm_media_format_block_multi_ch_pcm_v3(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for format update\n", __func__);
 		rc = -ETIMEDOUT;
@@ -4613,7 +4521,7 @@ static int __q6asm_media_format_block_multi_aac(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n", __func__);
 		goto fail_cmd;
@@ -4681,7 +4589,7 @@ int q6asm_media_format_block_wma(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n", __func__);
 		goto fail_cmd;
@@ -4736,7 +4644,7 @@ int q6asm_media_format_block_wmapro(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n", __func__);
 		goto fail_cmd;
@@ -4779,7 +4687,7 @@ int q6asm_media_format_block_amrwbplus(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+				(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for FORMAT_UPDATE\n", __func__);
 		goto fail_cmd;
@@ -4827,7 +4735,7 @@ int q6asm_stream_media_format_block_flac(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) == 0), msecs_to_jiffies(5000));
+				(atomic_read(&ac->cmd_state) == 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
 		rc = -ETIMEDOUT;
@@ -4874,7 +4782,7 @@ int q6asm_media_format_block_alac(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) == 0), msecs_to_jiffies(5000));
+				(atomic_read(&ac->cmd_state) == 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
 		rc = -ETIMEDOUT;
@@ -4910,7 +4818,7 @@ int q6asm_stream_media_format_block_vorbis(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) == 0), msecs_to_jiffies(5000));
+				(atomic_read(&ac->cmd_state) == 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
 		rc = -ETIMEDOUT;
@@ -4955,7 +4863,7 @@ int q6asm_media_format_block_ape(struct audio_client *ac,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) == 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) == 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
 		rc = -ETIMEDOUT;
@@ -4967,55 +4875,56 @@ fail_cmd:
 }
 
 int q6asm_stream_media_format_block_aptx_dec(struct audio_client *ac,
-						uint32_t srate, int stream_id)
-{
-	struct asm_aptx_dec_fmt_blk_v2 aptx_fmt;
-	int rc = 0;
+ 						uint32_t srate, int stream_id)
+ {
+ 	struct asm_aptx_dec_fmt_blk_v2 aptx_fmt;
+ 	int rc = 0;
 
-	if (!ac->session) {
-		pr_err("%s: ac session invalid\n", __func__);
-		rc = -EINVAL;
-		goto fail_cmd;
-	}
-	pr_debug("%s :session[%d] rate[%d] stream_id[%d]\n",
-		__func__, ac->session, srate, stream_id);
+ 	if (!ac->session) {
+ 		pr_err("%s: ac session invalid\n", __func__);
+ 		rc = -EINVAL;
+ 		goto fail_cmd;
+ 	}
+ 	pr_debug("%s :session[%d] rate[%d] stream_id[%d]\n",
+ 		__func__, ac->session, srate, stream_id);
 
-	q6asm_stream_add_hdr(ac, &aptx_fmt.hdr, sizeof(aptx_fmt), TRUE,
-				stream_id);
-	atomic_set(&ac->cmd_state, -1);
+ 	q6asm_stream_add_hdr(ac, &aptx_fmt.hdr, sizeof(aptx_fmt), TRUE,
+ 				stream_id);
+ 	atomic_set(&ac->cmd_state, -1);
 
-	aptx_fmt.hdr.opcode = ASM_DATA_CMD_MEDIA_FMT_UPDATE_V2;
-	aptx_fmt.fmtblk.fmt_blk_size = sizeof(aptx_fmt) - sizeof(aptx_fmt.hdr) -
-						sizeof(aptx_fmt.fmtblk);
+ 	aptx_fmt.hdr.opcode = ASM_DATA_CMD_MEDIA_FMT_UPDATE_V2;
+ 	aptx_fmt.fmtblk.fmt_blk_size = sizeof(aptx_fmt) - sizeof(aptx_fmt.hdr) -
+ 						sizeof(aptx_fmt.fmtblk);
 
-	aptx_fmt.sample_rate = srate;
+ 	aptx_fmt.sample_rate = srate;
 
-	rc = apr_send_pkt(ac->apr, (uint32_t *) &aptx_fmt);
-	if (rc < 0) {
-		pr_err("%s :Comamnd media format update failed %d\n",
-				__func__, rc);
-		goto fail_cmd;
-	}
-	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
-	if (!rc) {
-		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
-		rc = -ETIMEDOUT;
-		goto fail_cmd;
-	}
+ 	rc = apr_send_pkt(ac->apr, (uint32_t *) &aptx_fmt);
+ 	if (rc < 0) {
+ 		pr_err("%s :Comamnd media format update failed %d\n",
+ 				__func__, rc);
+ 		goto fail_cmd;
+ 	}
+ 	rc = wait_event_timeout(ac->cmd_wait,
+ 				(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
+ 	if (!rc) {
+ 		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
+ 		rc = -ETIMEDOUT;
+ 		goto fail_cmd;
+ 	}
 
-	if (atomic_read(&ac->cmd_state) > 0) {
-		pr_err("%s: DSP returned error[%s]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)));
-		rc = adsp_err_get_lnx_err_code(
-				atomic_read(&ac->cmd_state));
-		goto fail_cmd;
-	}
-	rc = 0;
-fail_cmd:
-	return rc;
-}
+ 	if (atomic_read(&ac->cmd_state) > 0) {
+ 		pr_err("%s: DSP returned error[%s]\n",
+ 				__func__, adsp_err_get_err_str(
+ 				atomic_read(&ac->cmd_state)));
+ 		rc = adsp_err_get_lnx_err_code(
+ 				atomic_read(&ac->cmd_state));
+ 		goto fail_cmd;
+ 	}
+ 	rc = 0;
+ fail_cmd:
+ 	return rc;
+ }
+
 
 static int __q6asm_ds1_set_endp_params(struct audio_client *ac, int param_id,
 				int param_value, int stream_id)
@@ -5050,7 +4959,7 @@ static int __q6asm_ds1_set_endp_params(struct audio_client *ac, int param_id,
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-		(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+		(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout opcode[0x%x]\n", __func__,
 			ddp_cfg.hdr.opcode);
@@ -5153,7 +5062,7 @@ int q6asm_memory_map(struct audio_client *ac, phys_addr_t buf_add, int dir,
 
 	rc = wait_event_timeout(ac->mem_wait,
 			(atomic_read(&ac->mem_state) == 0 &&
-			 ac->port[dir].tmp_hdl), msecs_to_jiffies(5000));
+			 ac->port[dir].tmp_hdl), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for memory_map\n", __func__);
 		rc = -EINVAL;
@@ -5228,7 +5137,7 @@ int q6asm_memory_unmap(struct audio_client *ac, phys_addr_t buf_add, int dir)
 	}
 
 	rc = wait_event_timeout(ac->mem_wait,
-			(atomic_read(&ac->mem_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->mem_state) <= 0), 5 * HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for memory_unmap of handle 0x%x\n",
 			__func__, mem_unmap.mem_map_handle);
@@ -5370,7 +5279,7 @@ static int q6asm_memory_map_regions(struct audio_client *ac, int dir,
 
 	rc = wait_event_timeout(ac->mem_wait,
 			(atomic_read(&ac->mem_state) <= 0)
-			 , msecs_to_jiffies(5000));
+			 , 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for memory_map\n", __func__);
 		rc = -EINVAL;
@@ -5458,7 +5367,7 @@ static int q6asm_memory_unmap_regions(struct audio_client *ac, int dir)
 	}
 
 	rc = wait_event_timeout(ac->mem_wait,
-			(atomic_read(&ac->mem_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->mem_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for memory_unmap of handle 0x%x\n",
 			__func__, mem_unmap.mem_map_handle);
@@ -5509,7 +5418,7 @@ int q6asm_set_lrgain(struct audio_client *ac, int left_gain, int right_gain)
 
 	sz = sizeof(struct asm_volume_ctrl_lr_chan_gain);
 	q6asm_add_hdr_async(ac, &lrgain.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	lrgain.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	lrgain.param.data_payload_addr_lsw = 0;
 	lrgain.param.data_payload_addr_msw = 0;
@@ -5532,16 +5441,16 @@ int q6asm_set_lrgain(struct audio_client *ac, int left_gain, int right_gain)
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 				lrgain.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] , set-params paramid[0x%x]\n",
-					__func__, atomic_read(&ac->cmd_state_pp),
+					__func__, atomic_read(&ac->cmd_state),
 					lrgain.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
@@ -5598,7 +5507,7 @@ int q6asm_set_multich_gain(struct audio_client *ac, uint32_t channels,
 	memset(&multich_gain, 0, sizeof(multich_gain));
 	sz = sizeof(struct asm_volume_ctrl_multichannel_gain);
 	q6asm_add_hdr_async(ac, &multich_gain.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	multich_gain.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	multich_gain.param.data_payload_addr_lsw = 0;
 	multich_gain.param.data_payload_addr_msw = 0;
@@ -5636,16 +5545,16 @@ int q6asm_set_multich_gain(struct audio_client *ac, uint32_t channels,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 				multich_gain.data.param_id);
 		rc = -EINVAL;
 		goto done;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] , set-params paramid[0x%x]\n",
-					__func__, atomic_read(&ac->cmd_state_pp),
+					__func__, atomic_read(&ac->cmd_state),
 					multich_gain.data.param_id);
 		rc = -EINVAL;
 		goto done;
@@ -5674,7 +5583,7 @@ int q6asm_set_mute(struct audio_client *ac, int muteflag)
 
 	sz = sizeof(struct asm_volume_ctrl_mute_config);
 	q6asm_add_hdr_async(ac, &mute.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	mute.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	mute.param.data_payload_addr_lsw = 0;
 	mute.param.data_payload_addr_msw = 0;
@@ -5696,22 +5605,249 @@ int q6asm_set_mute(struct audio_client *ac, int muteflag)
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 				mute.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] set-params paramid[0x%x]\n",
-				__func__, atomic_read(&ac->cmd_state_pp),
+				__func__, atomic_read(&ac->cmd_state),
 				mute.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
 	rc = 0;
 fail_cmd:
+	return rc;
+}
+
+int q6asm_dts_eagle_set(struct audio_client *ac, int param_id, uint32_t size,
+			void *data, struct param_outband *po, int m_id)
+{
+	int rc = 0, *ob_params = NULL;
+	uint32_t sz = sizeof(struct asm_dts_eagle_param) + (po ? 0 : size);
+	struct asm_dts_eagle_param *ad;
+
+	if (!ac || ac->apr == NULL || (size == 0) || !data) {
+		pr_err("DTS_EAGLE_ASM - %s: APR handle NULL, invalid size %u or pointer %pK.\n",
+			__func__, size, data);
+		return -EINVAL;
+	}
+
+	ad = kzalloc(sz, GFP_KERNEL);
+	if (!ad) {
+		pr_err("DTS_EAGLE_ASM - %s: error allocating mem of size %u\n",
+			__func__, sz);
+		return -ENOMEM;
+	}
+	pr_debug("DTS_EAGLE_ASM - %s: ac %pK param_id 0x%x size %u data %pK m_id 0x%x\n",
+		__func__, ac, param_id, size, data, m_id);
+	q6asm_add_hdr_async(ac, &ad->hdr, sz, 1);
+	ad->hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
+	ad->param.data_payload_addr_lsw = 0;
+	ad->param.data_payload_addr_msw = 0;
+
+	ad->param.mem_map_handle = 0;
+	ad->param.data_payload_size = size +
+					sizeof(struct asm_stream_param_data_v2);
+	ad->data.module_id = m_id;
+	ad->data.param_id = param_id;
+	ad->data.param_size = size;
+	ad->data.reserved = 0;
+	atomic_set(&ac->cmd_state, -1);
+
+	if (po) {
+		struct list_head *ptr, *next;
+		struct asm_buffer_node *node;
+		pr_debug("DTS_EAGLE_ASM - %s: using out of band memory (virtual %pK, physical %pK)\n",
+			__func__, po->kvaddr, &po->paddr);
+		ad->param.data_payload_addr_lsw = lower_32_bits(po->paddr);
+		ad->param.data_payload_addr_msw =
+				msm_audio_populate_upper_32_bits(po->paddr);
+		list_for_each_safe(ptr, next, &ac->port[IN].mem_map_handle) {
+			node = list_entry(ptr, struct asm_buffer_node, list);
+			if (node->buf_phys_addr == po->paddr) {
+				ad->param.mem_map_handle = node->mmap_hdl;
+				break;
+			}
+		}
+		if (ad->param.mem_map_handle == 0) {
+			pr_err("DTS_EAGLE_ASM - %s: mem map handle not found\n",
+				__func__);
+			rc = -EINVAL;
+			goto fail_cmd;
+		}
+		/* check for integer overflow */
+		if (size > (UINT_MAX - APR_CMD_OB_HDR_SZ))
+			rc = -EINVAL;
+		if ((rc < 0) || (size + APR_CMD_OB_HDR_SZ > po->size)) {
+			pr_err("DTS_EAGLE_ASM - %s: ion alloc of size %zu too small for size requested %u\n",
+				__func__, po->size, size + APR_CMD_OB_HDR_SZ);
+			rc = -EINVAL;
+			goto fail_cmd;
+		}
+		ob_params = (int *)po->kvaddr;
+		*ob_params++ = m_id;
+		*ob_params++ = param_id;
+		*ob_params++ = size;
+		memcpy(ob_params, data, size);
+	} else {
+		pr_debug("DTS_EAGLE_ASM - %s: using in band\n", __func__);
+		memcpy(((char *)ad) + sizeof(struct asm_dts_eagle_param),
+			data, size);
+	}
+	rc = apr_send_pkt(ac->apr, (uint32_t *)ad);
+	if (rc < 0) {
+		pr_err("DTS_EAGLE_ASM - %s: set-params send failed paramid[0x%x]\n",
+			__func__, ad->data.param_id);
+		rc = -EINVAL;
+		goto fail_cmd;
+	}
+
+	rc = wait_event_timeout(ac->cmd_wait,
+			(atomic_read(&ac->cmd_state) >= 0), 1*HZ);
+	if (!rc) {
+		pr_err("DTS_EAGLE_ASM - %s: timeout, set-params paramid[0x%x]\n",
+			__func__, ad->data.param_id);
+		rc = -ETIMEDOUT;
+		goto fail_cmd;
+	}
+
+	if (atomic_read(&ac->cmd_state) > 0) {
+		pr_err("%s: DSP returned error[%s]\n",
+				__func__, adsp_err_get_err_str(
+				atomic_read(&ac->cmd_state)));
+		rc = adsp_err_get_lnx_err_code(
+				atomic_read(&ac->cmd_state));
+		goto fail_cmd;
+	}
+	rc = 0;
+fail_cmd:
+	kfree(ad);
+	return rc;
+}
+
+int q6asm_dts_eagle_get(struct audio_client *ac, int param_id, uint32_t size,
+			void *data, struct param_outband *po, int m_id)
+{
+	struct asm_dts_eagle_param_get *ad;
+	int rc = 0, *ob_params = NULL;
+	uint32_t sz = sizeof(struct asm_dts_eagle_param) + APR_CMD_GET_HDR_SZ +
+		 (po ? 0 : size);
+
+	if (!ac || ac->apr == NULL || (size == 0) || !data) {
+		pr_err("DTS_EAGLE_ASM - %s: APR handle NULL, invalid size %u or pointer %pK\n",
+			__func__, size, data);
+		return -EINVAL;
+	}
+	ad = kzalloc(sz, GFP_KERNEL);
+	if (!ad) {
+		pr_err("DTS_EAGLE_ASM - %s: error allocating memory of size %u\n",
+			__func__, sz);
+		return -ENOMEM;
+	}
+	pr_debug("DTS_EAGLE_ASM - %s: ac %pK param_id 0x%x size %u data %pK m_id 0x%x\n",
+		__func__, ac, param_id, size, data, m_id);
+	q6asm_add_hdr(ac, &ad->hdr, sz, TRUE);
+	ad->hdr.opcode = ASM_STREAM_CMD_GET_PP_PARAMS_V2;
+	ad->param.data_payload_addr_lsw = 0;
+	ad->param.data_payload_addr_msw = 0;
+	ad->param.mem_map_handle = 0;
+	ad->param.module_id = m_id;
+	ad->param.param_id = param_id;
+	ad->param.param_max_size = size + APR_CMD_GET_HDR_SZ;
+	ad->param.reserved = 0;
+	atomic_set(&ac->cmd_state, -1);
+
+	generic_get_data = kzalloc(size + sizeof(struct generic_get_data_),
+				   GFP_KERNEL);
+	if (!generic_get_data) {
+		pr_err("DTS_EAGLE_ASM - %s: error allocating mem of size %u\n",
+			__func__, size);
+		rc = -ENOMEM;
+		goto fail_cmd;
+	}
+
+	if (po) {
+		struct list_head *ptr, *next;
+		struct asm_buffer_node *node;
+		pr_debug("DTS_EAGLE_ASM - %s: using out of band memory (virtual %pK, physical %pK)\n",
+			 __func__, po->kvaddr, &po->paddr);
+		ad->param.data_payload_addr_lsw = lower_32_bits(po->paddr);
+		ad->param.data_payload_addr_msw =
+				msm_audio_populate_upper_32_bits(po->paddr);
+		list_for_each_safe(ptr, next, &ac->port[IN].mem_map_handle) {
+			node = list_entry(ptr, struct asm_buffer_node, list);
+			if (node->buf_phys_addr == po->paddr) {
+				ad->param.mem_map_handle = node->mmap_hdl;
+				break;
+			}
+		}
+		if (ad->param.mem_map_handle == 0) {
+			pr_err("DTS_EAGLE_ASM - %s: mem map handle not found\n",
+				__func__);
+			rc = -EINVAL;
+			goto fail_cmd;
+		}
+		/* check for integer overflow */
+		if (size > (UINT_MAX - APR_CMD_OB_HDR_SZ))
+			rc = -EINVAL;
+		if ((rc < 0) || (size + APR_CMD_OB_HDR_SZ > po->size)) {
+			pr_err("DTS_EAGLE_ASM - %s: ion alloc of size %zu too small for size requested %u\n",
+				__func__, po->size, size + APR_CMD_OB_HDR_SZ);
+			rc = -EINVAL;
+			goto fail_cmd;
+		}
+		ob_params = (int *)po->kvaddr;
+		*ob_params++ = m_id;
+		*ob_params++ = param_id;
+		*ob_params++ = size;
+		generic_get_data->is_inband = 0;
+	} else {
+		pr_debug("DTS_EAGLE_ASM - %s: using in band\n", __func__);
+		generic_get_data->is_inband = 1;
+	}
+
+	rc = apr_send_pkt(ac->apr, (uint32_t *)ad);
+	if (rc < 0) {
+		pr_err("DTS_EAGLE_ASM - %s: Commmand 0x%x failed\n", __func__,
+			ad->hdr.opcode);
+		goto fail_cmd;
+	}
+
+	rc = wait_event_timeout(ac->cmd_wait,
+			(atomic_read(&ac->cmd_state) >= 0), 1*HZ);
+	if (!rc) {
+		pr_err("DTS_EAGLE_ASM - %s: timeout in get\n",
+			__func__);
+		rc = -ETIMEDOUT;
+		goto fail_cmd;
+	}
+
+	if (atomic_read(&ac->cmd_state) > 0) {
+		pr_err("%s: DSP returned error[%s]\n",
+				__func__, adsp_err_get_err_str(
+				atomic_read(&ac->cmd_state)));
+		rc = adsp_err_get_lnx_err_code(
+				atomic_read(&ac->cmd_state));
+		goto fail_cmd;
+	}
+
+	if (generic_get_data->valid) {
+		rc = 0;
+		memcpy(data, po ? ob_params : generic_get_data->ints, size);
+	} else {
+		rc = -EINVAL;
+		pr_err("DTS_EAGLE_ASM - %s: EAGLE get params problem getting data - check callback error value\n",
+			__func__);
+	}
+fail_cmd:
+	kfree(ad);
+	kfree(generic_get_data);
+	generic_get_data = NULL;
 	return rc;
 }
 
@@ -5745,7 +5881,7 @@ static int __q6asm_set_volume(struct audio_client *ac, int volume, int instance)
 
 	sz = sizeof(struct asm_volume_ctrl_master_gain);
 	q6asm_add_hdr_async(ac, &vol.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	vol.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	vol.param.data_payload_addr_lsw = 0;
 	vol.param.data_payload_addr_msw = 0;
@@ -5767,16 +5903,16 @@ static int __q6asm_set_volume(struct audio_client *ac, int volume, int instance)
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 				vol.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] set-params paramid[0x%x]\n",
-				__func__, atomic_read(&ac->cmd_state_pp),
+				__func__, atomic_read(&ac->cmd_state),
 				vol.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
@@ -5798,66 +5934,66 @@ int q6asm_set_volume_v2(struct audio_client *ac, int volume, int instance)
 }
 
 int q6asm_set_aptx_dec_bt_addr(struct audio_client *ac,
-				struct aptx_dec_bt_addr_cfg *cfg)
-{
-	struct aptx_dec_bt_dev_addr paylod;
-	int sz = 0;
-	int rc = 0;
+ 				struct aptx_dec_bt_addr_cfg *cfg)
+ {
+ 	struct aptx_dec_bt_dev_addr paylod;
+ 	int sz = 0;
+ 	int rc = 0;
 
-	pr_debug("%s: BT addr nap %d, uap %d, lap %d\n", __func__, cfg->nap,
-			cfg->uap, cfg->lap);
+ 	pr_debug("%s: BT addr nap %d, uap %d, lap %d\n", __func__, cfg->nap,
+ 			cfg->uap, cfg->lap);
 
-	if (ac == NULL) {
-		pr_err("%s: AC handle NULL\n", __func__);
-		rc = -EINVAL;
-		goto fail_cmd;
-	}
-	if (ac->apr == NULL) {
-		pr_err("%s: AC APR handle NULL\n", __func__);
-		rc = -EINVAL;
-		goto fail_cmd;
-	}
+ 	if (ac == NULL) {
+ 		pr_err("%s: AC handle NULL\n", __func__);
+ 		rc = -EINVAL;
+ 		goto fail_cmd;
+ 	}
+ 	if (ac->apr == NULL) {
+ 		pr_err("%s: AC APR handle NULL\n", __func__);
+ 		rc = -EINVAL;
+ 		goto fail_cmd;
+ 	}
 
-	sz = sizeof(struct aptx_dec_bt_dev_addr);
-	q6asm_add_hdr_async(ac, &paylod.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state, -1);
-	paylod.hdr.opcode = ASM_STREAM_CMD_SET_ENCDEC_PARAM;
-	paylod.encdec.param_id = APTX_DECODER_BT_ADDRESS;
-	paylod.encdec.param_size = sz - sizeof(paylod.hdr)
-					- sizeof(paylod.encdec);
-	paylod.bt_addr_cfg.lap = cfg->lap;
-	paylod.bt_addr_cfg.uap = cfg->uap;
-	paylod.bt_addr_cfg.nap = cfg->nap;
+ 	sz = sizeof(struct aptx_dec_bt_dev_addr);
+ 	q6asm_add_hdr_async(ac, &paylod.hdr, sz, TRUE);
+ 	atomic_set(&ac->cmd_state, -1);
+ 	paylod.hdr.opcode = ASM_STREAM_CMD_SET_ENCDEC_PARAM;
+ 	paylod.encdec.param_id = APTX_DECODER_BT_ADDRESS;
+ 	paylod.encdec.param_size = sz - sizeof(paylod.hdr)
+ 					- sizeof(paylod.encdec);
+ 	paylod.bt_addr_cfg.lap = cfg->lap;
+ 	paylod.bt_addr_cfg.uap = cfg->uap;
+ 	paylod.bt_addr_cfg.nap = cfg->nap;
 
-	rc = apr_send_pkt(ac->apr, (uint32_t *) &paylod);
-	if (rc < 0) {
-		pr_err("%s: set-params send failed paramid[0x%x] rc %d\n",
-				__func__, paylod.encdec.param_id, rc);
-		rc = -EINVAL;
-		goto fail_cmd;
-	}
+ 	rc = apr_send_pkt(ac->apr, (uint32_t *) &paylod);
+ 	if (rc < 0) {
+ 		pr_err("%s: set-params send failed paramid[0x%x] rc %d\n",
+ 				__func__, paylod.encdec.param_id, rc);
+ 		rc = -EINVAL;
+ 		goto fail_cmd;
+ 	}
 
-	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
-	if (!rc) {
-		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
-			paylod.encdec.param_id);
-		rc = -ETIMEDOUT;
-		goto fail_cmd;
-	}
-	if (atomic_read(&ac->cmd_state) > 0) {
-		pr_err("%s: DSP returned error[%s] set-params paramid[0x%x]\n",
-				__func__, adsp_err_get_err_str(
-				atomic_read(&ac->cmd_state)),
-				paylod.encdec.param_id);
-		rc = adsp_err_get_lnx_err_code(
-			atomic_read(&ac->cmd_state));
-		goto fail_cmd;
-	}
-	pr_debug("%s: set BT addr is success\n", __func__);
-	rc = 0;
-fail_cmd:
-	return rc;
+ 	rc = wait_event_timeout(ac->cmd_wait,
+ 			(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
+ 	if (!rc) {
+ 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
+ 			paylod.encdec.param_id);
+ 		rc = -ETIMEDOUT;
+ 		goto fail_cmd;
+ 	}
+ 	if (atomic_read(&ac->cmd_state) > 0) {
+ 		pr_err("%s: DSP returned error[%s] set-params paramid[0x%x]\n",
+ 				__func__, adsp_err_get_err_str(
+ 				atomic_read(&ac->cmd_state)),
+ 				paylod.encdec.param_id);
+ 		rc = adsp_err_get_lnx_err_code(
+ 			atomic_read(&ac->cmd_state));
+ 		goto fail_cmd;
+ 	}
+ 	pr_debug("%s: set BT addr is success\n", __func__);
+ 	rc = 0;
+ fail_cmd:
+ 	return rc;
 }
 
 int q6asm_set_softpause(struct audio_client *ac,
@@ -5880,7 +6016,7 @@ int q6asm_set_softpause(struct audio_client *ac,
 
 	sz = sizeof(struct asm_soft_pause_params);
 	q6asm_add_hdr_async(ac, &softpause.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	softpause.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 
 	softpause.param.data_payload_addr_lsw = 0;
@@ -5907,16 +6043,16 @@ int q6asm_set_softpause(struct audio_client *ac,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 						softpause.data.param_id);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] set-params paramid[0x%x]\n",
-				__func__, atomic_read(&ac->cmd_state_pp),
+				__func__, atomic_read(&ac->cmd_state),
 				softpause.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
@@ -5958,7 +6094,7 @@ static int __q6asm_set_softvolume(struct audio_client *ac,
 
 	sz = sizeof(struct asm_soft_step_volume_params);
 	q6asm_add_hdr_async(ac, &softvol.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	softvol.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	softvol.param.data_payload_addr_lsw = 0;
 	softvol.param.data_payload_addr_msw = 0;
@@ -5983,16 +6119,16 @@ static int __q6asm_set_softvolume(struct audio_client *ac,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 						softvol.data.param_id);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] set-params paramid[0x%x]\n",
-				__func__, atomic_read(&ac->cmd_state_pp),
+				__func__, atomic_read(&ac->cmd_state),
 				softvol.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
@@ -6043,7 +6179,7 @@ int q6asm_equalizer(struct audio_client *ac, void *eq_p)
 	sz = sizeof(struct asm_eq_params);
 	eq_params = (struct msm_audio_eq_stream_config *) eq_p;
 	q6asm_add_hdr(ac, &eq.hdr, sz, TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 
 	eq.hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	eq.param.data_payload_addr_lsw = 0;
@@ -6088,16 +6224,16 @@ int q6asm_equalizer(struct audio_client *ac, void *eq_p)
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
 						eq.data.param_id);
 		rc = -ETIMEDOUT;
 		goto fail_cmd;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] set-params paramid[0x%x]\n",
-				__func__, atomic_read(&ac->cmd_state_pp),
+				__func__, atomic_read(&ac->cmd_state),
 				eq.data.param_id);
 		rc = -EINVAL;
 		goto fail_cmd;
@@ -6595,7 +6731,7 @@ int q6asm_get_session_time(struct audio_client *ac, uint64_t *tstamp)
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->time_wait,
-			(atomic_read(&ac->time_flag) == 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->time_flag) == 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout in getting session time from DSP\n",
 				__func__);
@@ -6641,7 +6777,7 @@ int q6asm_get_session_time_legacy(struct audio_client *ac, uint64_t *tstamp)
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->time_wait,
-			(atomic_read(&ac->time_flag) == 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->time_flag) == 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout in getting session time from DSP\n",
 				__func__);
@@ -6687,7 +6823,7 @@ int q6asm_send_audio_effects_params(struct audio_client *ac, char *params,
 	q6asm_add_hdr_async(ac, &hdr, (sizeof(struct apr_hdr) +
 				sizeof(struct asm_stream_cmd_set_pp_params_v2) +
 				params_length), TRUE);
-	atomic_set(&ac->cmd_state_pp, 1);
+	atomic_set(&ac->cmd_state, 1);
 	hdr.opcode = ASM_STREAM_CMD_SET_PP_PARAMS_V2;
 	payload_params.data_payload_addr_lsw = 0;
 	payload_params.data_payload_addr_msw = 0;
@@ -6706,15 +6842,15 @@ int q6asm_send_audio_effects_params(struct audio_client *ac, char *params,
 		goto fail_send_param;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state_pp) <= 0), msecs_to_jiffies(1000));
+				(atomic_read(&ac->cmd_state) <= 0), 1*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, audio effects set-params\n", __func__);
 		rc = -ETIMEDOUT;
 		goto fail_send_param;
 	}
-	if (atomic_read(&ac->cmd_state_pp) < 0) {
+	if (atomic_read(&ac->cmd_state) < 0) {
 		pr_err("%s: DSP returned error[%d] set-params\n",
-				__func__, atomic_read(&ac->cmd_state_pp));
+				__func__, atomic_read(&ac->cmd_state));
 		rc = -EINVAL;
 		goto fail_send_param;
 	}
@@ -6776,7 +6912,7 @@ int q6asm_send_mtmx_strtr_window(struct audio_client *ac,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout, Render window start paramid[0x%x]\n",
 			__func__, matrix.data.param_id);
@@ -6860,7 +6996,7 @@ static int __q6asm_cmd(struct audio_client *ac, int cmd, uint32_t stream_id)
 				__func__, hdr.opcode, rc);
 		goto fail_cmd;
 	}
-	rc = wait_event_timeout(ac->cmd_wait, (atomic_read(state) <= 0), msecs_to_jiffies(5000));
+	rc = wait_event_timeout(ac->cmd_wait, (atomic_read(state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for response opcode[0x%x]\n",
 				__func__, hdr.opcode);
@@ -7110,7 +7246,7 @@ int q6asm_reg_tx_overflow(struct audio_client *ac, uint16_t enable)
 		goto fail_cmd;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+				(atomic_read(&ac->cmd_state) <= 0), 5*HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for tx overflow\n", __func__);
 		goto fail_cmd;
@@ -7189,7 +7325,7 @@ int q6asm_get_path_delay(struct audio_client *ac)
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(5000));
+			(atomic_read(&ac->cmd_state) <= 0), 5 * HZ);
 	if (!rc) {
 		pr_err("%s: timeout. waited for response opcode[0x%x]\n",
 				__func__, hdr.opcode);
@@ -7214,7 +7350,7 @@ int q6asm_get_apr_service_id(int session_id)
 		return -EINVAL;
 	}
 
-	return ((struct apr_svc *)(session[session_id].ac)->apr)->id;
+	return ((struct apr_svc *)session[session_id]->apr)->id;
 }
 
 int q6asm_get_asm_topology(void)
@@ -7432,10 +7568,7 @@ static int __init q6asm_init(void)
 	int lcnt, ret;
 	pr_debug("%s:\n", __func__);
 
-	memset(session, 0, sizeof(struct audio_session) *
-		(SESSION_MAX + 1));
-	for (lcnt = 0; lcnt <= SESSION_MAX; lcnt++)
-		spin_lock_init(&(session[lcnt].session_lock));
+	memset(session, 0, sizeof(session));
 	set_custom_topology = 1;
 
 	/*setup common client used for cal mem map */
