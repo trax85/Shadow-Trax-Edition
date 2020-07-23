@@ -48,7 +48,7 @@ fi
 #elif [ $qc == 1 ]; then
 #git apply -R qc.patch > /dev/null 2>&1
 #fi
-make shadow_pie_defconfig
+make shadow_trax_defconfig
 export KBUILD_BUILD_USER="trax85"
 make -j4
 time=$(date +"%d-%m-%y-%T")
