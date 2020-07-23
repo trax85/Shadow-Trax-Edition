@@ -35,8 +35,8 @@ DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
 export ARCH=arm64
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-android-8.x/bin/aarch64-linux-android-"
-export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.5/bin/aarch64-linux-gnu-"
-#export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.3/bin/aarch64-linux-gnu-"
+#export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.5/bin/aarch64-linux-gnu-"
+export CROSS_COMPILE="/home/nesara/aarch64-linux-android/bin/aarch64-linux-android-"
 #export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
 if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
