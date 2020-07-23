@@ -46,7 +46,7 @@ fi
 #elif [ $qc == 1 ]; then
 #git apply -R qc.patch > /dev/null 2>&1
 #fi
-make shadow_pie_defconfig
+make shadow_trax_defconfig
 #export KBUILD_BUILD_HOST="xda"
 #export KBUILD_BUILD_USER="energyspear17"
 make -j4
