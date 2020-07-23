@@ -14,15 +14,15 @@ echo 1 > /sys/devices/system/cpu/cpu5/online
 echo schedutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
 echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-echo 960 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
-echo 1000 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
+echo 965 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
+echo 995 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/io_wait_boost
 echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/exp_util
 #Core-A72 
 echo schedutil > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
 echo 998400 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
-echo 3000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
+echo 3200 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
 echo 1000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/io_wait_boost
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/exp_util

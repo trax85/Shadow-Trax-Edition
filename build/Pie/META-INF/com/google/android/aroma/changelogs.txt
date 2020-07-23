@@ -91,6 +91,17 @@ V5.7-
 * Move post_ttbr_update_workaround to C code. 
 * Reduce log spam.
 
+-FileSystem
+* Add sealing API.
+* BACKPORT fs limit filesystem stacking depth.
+* Mbcache2 reimplement mbcache.
+* Make fync as default.
+* Implement readpages() to optimize sequential read.
+* Disable tracing.
+* Properly fix use of uninitialized variables.
+* Nuke a lot of warnings and errors being thrown in dmesg logs.
+* Other optimization and stuff
+
 -Kernel
 * Compiled with Linaro Linaro GCC 7.5.
 * Add API to mark IRQs and kthreads as performance critical.
