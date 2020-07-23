@@ -124,8 +124,6 @@
 		coresight-child-list = <&funnel_in0>;
 		coresight-child-ports = <4>;
 
-                qcom,deep-nap-timeout = <60>; //msecs
-
 		/* Enable context aware freq. scaling */
 		qcom,enable-ca-jump;
 
