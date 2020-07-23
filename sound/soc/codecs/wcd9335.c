@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
  * Copyright (C) 2016 XiaoMi, Inc.
- * Copyright (C) 2017 ScreaMySkrillEX@xda,psndna88@xda
+ * Copyright (C) 2017, Tristan Marsell. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,7 +17,6 @@
 #include <linux/firmware.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
-#include <linux/jack_state.h>
 #include <linux/device.h>
 #include <linux/printk.h>
 #include <linux/ratelimit.h>
@@ -48,39 +47,23 @@
 #include "wcdcal-hwdep.h"
 #include "wcd_cpe_core.h"
 
-#include <linux/proc_fs.h>
-#include <../drivers/base/regmap/internal.h>
-#include <linux/switch.h>
-
 #define TASHA_MAX_MICBIAS 4
 #define DAPM_MICBIAS1_STANDALONE "MIC BIAS1 Standalone"
 #define DAPM_MICBIAS2_STANDALONE "MIC BIAS2 Standalone"
 #define DAPM_MICBIAS3_STANDALONE "MIC BIAS3 Standalone"
 #define DAPM_MICBIAS4_STANDALONE "MIC BIAS4 Standalone"
 
-#ifdef CONFIG_SOUND_CONTROL
-struct sound_control {
- 	struct snd_soc_codec *snd_control_codec;
- 	int default_headphones_value;
- 	int default_speaker_value;
-	int default_mic_value;
-	int default_earpiece_value;
-} soundcontrol;
-#endif
-
 #define TASHA_RX_PORT_START_NUMBER  16
 
 #define WCD9335_RATES_MASK (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
 			    SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
 			    SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 |\
-			    SNDRV_PCM_RATE_384000)
+ 			    SNDRV_PCM_RATE_384000)
 /* Fractional Rates */
-#define WCD9335_FRAC_RATES_MASK (SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_88200 |\
-								 SNDRV_PCM_RATE_176400 | SNDRV_PCM_RATE_352800)
+#define WCD9335_FRAC_RATES_MASK (SNDRV_PCM_RATE_44100)
 
 #define WCD9335_MIX_RATES_MASK (SNDRV_PCM_RATE_48000 |\
-				SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 |\
-				SNDRV_PCM_RATE_384000)
+				SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000)
 
 #define TASHA_FORMATS_S16_S24_LE (SNDRV_PCM_FMTBIT_S16_LE | \
 				  SNDRV_PCM_FMTBIT_S24_LE | \
@@ -118,7 +101,7 @@ struct sound_control {
 	(TASHA_CPE_SS_ERR_STATUS_WDOG_BITE | \
 	 TASHA_CPE_SS_ERR_STATUS_MEM_ACCESS)
 
-#define SLIM_BW_CLK_GEAR_10 24600000
+#define SLIM_BW_CLK_GEAR_9 24600000
 #define SLIM_BW_UNVOTE 0
 
 #define CPE_FLL_CLK_75MHZ 75000000
@@ -154,15 +137,13 @@ struct sound_control {
 #define WCD9335_DEC_PWR_LVL_HP 0x04
 #define WCD9335_DEC_PWR_LVL_DF 0x00
 
-#define CALCULATE_VOUT_D(req_mv) (((req_mv - 650) * 10) / 25)
+#define CALCULATE_VOUT_D(req_mv) (((req_mv - 105) * 10) / 25)
 
-static int tasha_cpe_debug_mode = 0;
+static int tasha_cpe_debug_mode;
 module_param(tasha_cpe_debug_mode, int,
 	     S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(tasha_cpe_debug_mode, "tasha boot cpe in debug mode");
 
-int g_DebugMode = 1;
-struct switch_dev *g_audiowizard_force_preset_sdev = NULL;
 #define DAPM_LDO_H_STANDALONE "LDO_H"
 #define TASHA_DIG_CORE_COLLAPSE_TIMER_MS  (5 * 1000)
 
@@ -178,14 +159,21 @@ enum {
 };
 
 enum tasha_sido_voltage {
-	SIDO_VOLTAGE_SVS_MV = 950,
-	SIDO_VOLTAGE_NOMINAL_MV = 1100,
+	SIDO_VOLTAGE_SVS_MV = 1050,
+	SIDO_VOLTAGE_NOMINAL_MV = 1250,
 };
 
-int sound_control_spk_priv = 0;
-int sound_control_spk_gain = 0;
+static int pdesireaudio_uhqa_mode = 1;
+module_param(pdesireaudio_uhqa_mode, int,
+ 		S_IRUGO | S_IWUSR | S_IWGRP);
+MODULE_PARM_DESC(pdesireaudio_uhqa_mode, "enable/disable PDesireAudio UHQA Mode");
 
-static int dig_core_collapse_enable = 1;
+static int pdesireaudio_class_ab_mode = 1;
+module_param(pdesireaudio_class_ab_mode, int,
+ 		S_IRUGO | S_IWUSR | S_IWGRP);
+MODULE_PARM_DESC(pdesireaudio_class_ab_mode, "enable/disable PDesireAudio Class AB Mode");
+
+static int dig_core_collapse_enable = 0;
 module_param(dig_core_collapse_enable, int,
 		S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(dig_core_collapse_enable, "enable/disable power gating");
@@ -221,7 +209,7 @@ static struct afe_param_slimbus_slave_port_cfg tasha_slimbus_slave_port_cfg = {
 	.slimbus_dev_id = AFE_SLIMBUS_DEVICE_1,
 	.slave_dev_pgd_la = 0,
 	.slave_dev_intfdev_la = 0,
-	.bit_width = 16,
+	.bit_width = 24,
 	.data_format = 0,
 	.num_channels = 1
 };
@@ -447,16 +435,13 @@ static struct interp_sample_rate int_prim_sample_rate_val[] = {
 	{192000, 0x6},	/* 192K */
 	{384000, 0x7},	/* 384K */
 	{44100, 0x8}, /* 44.1K */
-	{176400, 0x9},	/* 176.4K */
-	{352800, 0x10},	/* 352.8K */
 };
 
 static struct interp_sample_rate int_mix_sample_rate_val[] = {
 	{48000, 0x4},	/* 48K */
 	{96000, 0x5},	/* 96K */
 	{192000, 0x6},	/* 192K */
-	{384000, 0x7},	/* 384K */
-
+        {384000, 0x7},	/* 384K */
 };
 
 static const struct wcd9xxx_ch tasha_rx_chs[TASHA_RX_MAX] = {
@@ -825,17 +810,21 @@ static int tasha_codec_vote_max_bw(struct snd_soc_codec *codec,
 				   bool vote);
 
 static const struct tasha_reg_mask_val tasha_spkr_default[] = {
-	{WCD9335_CDC_COMPANDER7_CTL7, 0x18, 0x18},
-	{WCD9335_CDC_COMPANDER8_CTL7, 0x18, 0x18},
-	{WCD9335_CDC_BOOST0_BOOST_CTL, 0xc6, 0xc6},
-	{WCD9335_CDC_BOOST1_BOOST_CTL, 0xc6, 0xc6},
+	{WCD9335_CDC_COMPANDER7_CTL3, 0x80, 0x80},
+	{WCD9335_CDC_COMPANDER8_CTL3, 0x80, 0x80},
+	{WCD9335_CDC_COMPANDER7_CTL7, 0x01, 0x01},
+	{WCD9335_CDC_COMPANDER8_CTL7, 0x01, 0x01},
+	{WCD9335_CDC_BOOST0_BOOST_CTL, 0x7C, 0x50},
+	{WCD9335_CDC_BOOST1_BOOST_CTL, 0x7C, 0x50},
 };
 
 static const struct tasha_reg_mask_val tasha_spkr_mode1[] = {
-	{WCD9335_CDC_COMPANDER7_CTL7, 0x18, 0x18},
-	{WCD9335_CDC_COMPANDER8_CTL7, 0x18, 0x18},
-	{WCD9335_CDC_BOOST0_BOOST_CTL, 0xc6, 0xc6},
-	{WCD9335_CDC_BOOST1_BOOST_CTL, 0xc6, 0xc6},
+	{WCD9335_CDC_COMPANDER7_CTL3, 0x80, 0x00},
+	{WCD9335_CDC_COMPANDER8_CTL3, 0x80, 0x00},
+	{WCD9335_CDC_COMPANDER7_CTL7, 0x01, 0x00},
+	{WCD9335_CDC_COMPANDER8_CTL7, 0x01, 0x00},
+	{WCD9335_CDC_BOOST0_BOOST_CTL, 0x7C, 0x44},
+	{WCD9335_CDC_BOOST1_BOOST_CTL, 0x7C, 0x44},
 };
 
 /**
@@ -919,10 +908,9 @@ void tasha_spk_ext_pa_cb(int (*spk_ext_pa)(struct snd_soc_codec *codec,
 {
 	struct tasha_priv *tasha = snd_soc_codec_get_drvdata(codec);
 
-	pr_debug("%s: Enter\n", __func__);
+	printk("%s: Enter\n", __func__);
 	tasha->spk_ext_pa_cb = spk_ext_pa;
 }
-EXPORT_SYMBOL(tasha_spk_ext_pa_cb);
 #endif
 
 static void tasha_cdc_sido_ccl_enable(struct tasha_priv *tasha, bool ccl_flag)
@@ -1481,11 +1469,8 @@ static int tasha_mbhc_request_micbias(struct snd_soc_codec *codec,
 	 * If micbias is requested, make sure that there
 	 * is vote to enable mclk
 	 */
-#if defined(CONFIG_WCD9335_CODEC_MCLK_USE_MSM_GPIO)
-#else
 	if (req == MICB_ENABLE)
 		tasha_cdc_mclk_enable(codec, true, false);
-#endif
 
 	ret = tasha_micbias_control(codec, micb_num, req, false);
 
@@ -1493,12 +1478,8 @@ static int tasha_mbhc_request_micbias(struct snd_soc_codec *codec,
 	 * Release vote for mclk while requesting for
 	 * micbias disable
 	 */
-#if defined(CONFIG_WCD9335_CODEC_MCLK_USE_MSM_GPIO)
-
-#else
 	if (req == MICB_DISABLE)
 		tasha_cdc_mclk_enable(codec, false, false);
-#endif
 
 	return ret;
 }
@@ -1792,7 +1773,7 @@ static void tasha_wcd_mbhc_calc_impedance(struct wcd_mbhc *mbhc, uint32_t *zl,
 		{4, 0, 4, 0x08, 0x14, 0x18}, /* < 32ohm */
 		{2, 0, 3, 0x18, 0x7C, 0x90}, /* 32ohm < Z < 400ohm */
 		{1, 4, 5, 0x18, 0x7C, 0x90}, /* 400ohm < Z < 1200ohm */
-		{2, 6, 7, 0x18, 0x7C, 0x90}, /* >1200ohm */
+		{1, 6, 7, 0x18, 0x7C, 0x90}, /* >1200ohm */
 	};
 	struct tasha_mbhc_zdet_param *zdet_param_ptr = NULL;
 	s16 d1_a[][4] = {
@@ -2286,7 +2267,7 @@ static int slim_tx_mixer_put(struct snd_kcontrol *kcontrol,
 	u32 dai_id = widget->shift;
 	u32 port_id = mixer->shift;
 	u32 enable = ucontrol->value.integer.value[0];
-	u32 vtable;
+	u32 vtable = 0;
 
 
 	dev_dbg(codec->dev, "%s: wname %s cname %s value %u shift %d item %ld\n",
@@ -2913,7 +2894,6 @@ static int tasha_codec_enable_slimrx(struct snd_soc_dapm_widget *w,
 		}
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		tasha_codec_vote_max_bw(codec, true);
 		ret = wcd9xxx_disconnect_port(core, &dai->wcd9xxx_ch_list,
 					      dai->grph);
 		dev_dbg(codec->dev, "%s: Disconnect RX port, ret = %d\n",
@@ -2927,7 +2907,6 @@ static int tasha_codec_enable_slimrx(struct snd_soc_dapm_widget *w,
 				__func__);
 		ret = wcd9xxx_close_slim_sch_rx(core, &dai->wcd9xxx_ch_list,
 						dai->grph);
-		tasha_codec_vote_max_bw(codec, false);
 		break;
 	}
 	return ret;
@@ -3371,21 +3350,6 @@ static int tasha_get_compander(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static int tasha_set_compander_dummy(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
-{
-	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
-	struct tasha_priv *tasha = snd_soc_codec_get_drvdata(codec);
-	int comp = ((struct soc_multi_mixer_control *)
-		    kcontrol->private_value)->shift;
-	int value = ucontrol->value.integer.value[0];
-
-	pr_debug("%s: Compander %d faked-enable current %d, new %d\n",
-		 __func__, comp + 1, tasha->comp_enabled[comp], value);
-
-	return 0;
-}
-
 static int tasha_set_compander(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
@@ -3408,7 +3372,7 @@ static int tasha_set_compander(struct snd_kcontrol *kcontrol,
 		break;
 	case COMPANDER_2:
 		snd_soc_update_bits(codec, WCD9335_HPH_R_EN, 0x20,
-				(value ? 0x00:0x20)); 
+				(value ? 0x00:0x20));
 		break;
 	case COMPANDER_3:
 		break;
@@ -3419,8 +3383,8 @@ static int tasha_set_compander(struct snd_kcontrol *kcontrol,
 				(value ? 0x00:0x20));
 		break;
 	case COMPANDER_6:
-/*		snd_soc_update_bits(codec, WCD9335_SE_LO_LO4_GAIN, 0x20,
-				(value ? 0x00:0x20)); */
+		snd_soc_update_bits(codec, WCD9335_SE_LO_LO4_GAIN, 0x20,
+				(value ? 0x00:0x20));
 		break;
 	case COMPANDER_7:
 		break;
@@ -3503,7 +3467,7 @@ static void tasha_realign_anc_coeff(struct snd_soc_codec *codec,
 		snd_soc_write(codec, reg1, 0x01);
 		snd_soc_write(codec, reg2, tmpval1);
 	} else if (val1 == 0xFF && val2 == 0x0F) {
-		dev_dbg(codec->dev, "%s: ANC0 co-eff index already aligned\n",
+		dev_dbg(codec->dev, "%s: ANC1 co-eff index already aligned\n",
 			__func__);
 		snd_soc_write(codec, reg1, 0x00);
 		snd_soc_write(codec, reg2, tmpval1);
@@ -3711,7 +3675,11 @@ static void tasha_codec_hph_post_pa_config(struct tasha_priv *tasha,
 			scale_val = 0x3;
 			break;
 		case CLS_H_LOHIFI:
-			scale_val = 0x1;
+			// Force HIFI 
+ 			if (!pdesireaudio_uhqa_mode)
+ 				scale_val = 0x1;
+ 			else
+ 				scale_val = 0x3;
 			break;
 		}
 		break;
@@ -3901,7 +3869,7 @@ static int tasha_codec_enable_lineout_pa(struct snd_soc_dapm_widget *w,
 	struct tasha_priv *tasha = snd_soc_codec_get_drvdata(codec);
 #endif
 
-	u16 lineout_vol_reg, lineout_mix_vol_reg;
+	u16 lineout_vol_reg = 0, lineout_mix_vol_reg =0;
 	int ret = 0;
 
 	dev_dbg(codec->dev, "%s %s %d\n", __func__, w->name, event);
@@ -4132,10 +4100,16 @@ static void tasha_codec_hph_mode_config(struct snd_soc_codec *codec,
 
 	switch (mode) {
 	case CLS_H_LP:
-		tasha_codec_hph_lp_config(codec, event);
+		if (!pdesireaudio_uhqa_mode)
+ 			tasha_codec_hph_lp_config(codec, event);
+ 		else 
+ 			tasha_codec_hph_hifi_config(codec, event);
 		break;
 	case CLS_H_LOHIFI:
-		tasha_codec_hph_lohifi_config(codec, event);
+		if (!pdesireaudio_uhqa_mode)
+ 			tasha_codec_hph_lohifi_config(codec, event);
+ 		else
+ 			tasha_codec_hph_hifi_config(codec, event);
 		break;
 	case CLS_H_HIFI:
 		tasha_codec_hph_hifi_config(codec, event);
@@ -4174,11 +4148,20 @@ static int tasha_codec_hphr_dac_event(struct snd_soc_dapm_widget *w,
 					__func__, hph_mode);
 			return -EINVAL;
 		}
-		wcd_clsh_fsm(codec, &tasha->clsh_d,
-				 WCD_CLSH_EVENT_PRE_DAC,
-				 WCD_CLSH_STATE_HPHR,
-				 ((hph_mode == CLS_H_LOHIFI) ?
-				   CLS_H_HIFI : hph_mode));
+		if (!pdesireaudio_class_ab_mode) {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_PRE_DAC,
+ 					 WCD_CLSH_STATE_HPHR,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_H_HIFI : hph_mode));
+ 		} else {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_PRE_DAC,
+ 					 WCD_CLSH_STATE_HPHR,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_AB : hph_mode));
+ 		}
+
 
 		tasha_codec_hph_mode_config(codec, event, hph_mode);
 
@@ -4211,11 +4194,19 @@ static int tasha_codec_hphr_dac_event(struct snd_soc_dapm_widget *w,
 		     WCD_CLSH_STATE_HPHL))
 			tasha_codec_hph_mode_config(codec, event, hph_mode);
 
-		wcd_clsh_fsm(codec, &tasha->clsh_d,
-				 WCD_CLSH_EVENT_POST_PA,
-				 WCD_CLSH_STATE_HPHR,
-				 ((hph_mode == CLS_H_LOHIFI) ?
-				   CLS_H_HIFI : hph_mode));
+		if (!pdesireaudio_class_ab_mode) {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_POST_PA,
+ 					 WCD_CLSH_STATE_HPHR,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_H_HIFI : hph_mode));
+ 		} else {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_POST_PA,
+ 					 WCD_CLSH_STATE_HPHR,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_AB : hph_mode));
+ 		}
 		break;
 	};
 
@@ -4253,12 +4244,20 @@ static int tasha_codec_hphl_dac_event(struct snd_soc_dapm_widget *w,
 					__func__, hph_mode);
 			return -EINVAL;
 		}
+		if (!pdesireaudio_class_ab_mode) {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_PRE_DAC,
+ 					 WCD_CLSH_STATE_HPHL,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_H_HIFI : hph_mode));
+ 		} else {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_PRE_DAC,
+ 					 WCD_CLSH_STATE_HPHL,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_AB : hph_mode));
+ 		}
 
-		wcd_clsh_fsm(codec, &tasha->clsh_d,
-				 WCD_CLSH_EVENT_PRE_DAC,
-				 WCD_CLSH_STATE_HPHL,
-				 ((hph_mode == CLS_H_LOHIFI) ?
-				   CLS_H_HIFI : hph_mode));
 
 		tasha_codec_hph_mode_config(codec, event, hph_mode);
 
@@ -4290,11 +4289,19 @@ static int tasha_codec_hphl_dac_event(struct snd_soc_dapm_widget *w,
 		if (!(wcd_clsh_get_clsh_state(&tasha->clsh_d) &
 		     WCD_CLSH_STATE_HPHR))
 			tasha_codec_hph_mode_config(codec, event, hph_mode);
-		wcd_clsh_fsm(codec, &tasha->clsh_d,
-				 WCD_CLSH_EVENT_POST_PA,
-				 WCD_CLSH_STATE_HPHL,
-				 ((hph_mode == CLS_H_LOHIFI) ?
-				   CLS_H_HIFI : hph_mode));
+		if (!pdesireaudio_class_ab_mode) {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+ 					 WCD_CLSH_EVENT_POST_PA,
+ 					 WCD_CLSH_STATE_HPHL,
+ 					 ((hph_mode == CLS_H_LOHIFI) ?
+ 					   CLS_H_HIFI : hph_mode));
+ 		} else {
+ 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+			     WCD_CLSH_EVENT_POST_PA,
+			     WCD_CLSH_STATE_HPHL,
+			      ((hph_mode == CLS_H_LOHIFI) ?
+ 				   CLS_AB : hph_mode));
+ 		}
 		break;
 	};
 
@@ -4387,8 +4394,8 @@ static int tasha_codec_spk_boost_event(struct snd_soc_dapm_widget *w,
 				int event)
 {
 	struct snd_soc_codec *codec = w->codec;
-	u16 boost_path_ctl, boost_path_cfg1;
-	u16 reg, reg_mix;
+	u16 boost_path_ctl = 0, boost_path_cfg1 = 0;
+	u16 reg = 0, reg_mix = 0;
 
 	dev_dbg(codec->dev, "%s %s %d\n", __func__, w->name, event);
 
@@ -4423,7 +4430,7 @@ static int tasha_codec_spk_boost_event(struct snd_soc_dapm_widget *w,
 
 static u16 tasha_interp_get_primary_reg(u16 reg, u16 *ind)
 {
-	u16 prim_int_reg;
+	u16 prim_int_reg = 0;
 
 	switch (reg) {
 	case WCD9335_CDC_RX0_RX_PATH_CTL:
@@ -4555,11 +4562,11 @@ static int tasha_codec_enable_spline_src(struct snd_soc_codec *codec,
 					 int src_num,
 					 int event)
 {
-	u16 rx_path_cfg_reg;
-	u16 rx_path_ctl_reg;
-	u16 src_clk_reg;
-	u16 src_paired_reg;
-	int *src_users, count, spl_src;
+	u16 rx_path_cfg_reg = 0;
+	u16 rx_path_ctl_reg = 0;
+	u16 src_clk_reg = 0;
+	u16 src_paired_reg = 0;
+	int *src_users, count, spl_src = 0;
 	struct tasha_priv *tasha;
 
 	tasha = snd_soc_codec_get_drvdata(codec);
@@ -4758,6 +4765,50 @@ static int tasha_codec_enable_swr(struct snd_soc_dapm_widget *w,
 	return 0;
 }
 
+
+ static int tasha_codec_update_hph_gain(struct snd_soc_dapm_widget *w,
+ 					u16 gain_update_reg, int gain)
+ {
+ 	struct snd_soc_codec *codec = w->codec;
+ 	u16 intp_reg, vol_reg;
+ 	int val = 0, vol_val = 0;
+
+ 	switch (gain_update_reg) {
+ 	case WCD9335_CDC_RX1_RX_VOL_CTL:
+ 		intp_reg = WCD9335_CDC_RX2_RX_PATH_CTL;
+ 		vol_reg = WCD9335_CDC_RX2_RX_VOL_CTL;
+ 		break;
+ 	case WCD9335_CDC_RX2_RX_VOL_CTL:
+ 		intp_reg = WCD9335_CDC_RX1_RX_PATH_CTL;
+ 		vol_reg = WCD9335_CDC_RX1_RX_VOL_CTL;
+ 		break;
+ 	case WCD9335_CDC_RX1_RX_VOL_MIX_CTL:
+ 		intp_reg = WCD9335_CDC_RX2_RX_PATH_CTL;
+ 		vol_reg = WCD9335_CDC_RX2_RX_VOL_MIX_CTL;
+ 		break;
+ 	case WCD9335_CDC_RX2_RX_VOL_MIX_CTL:
+ 		intp_reg = WCD9335_CDC_RX1_RX_PATH_CTL;
+ 		vol_reg = WCD9335_CDC_RX1_RX_VOL_MIX_CTL;
+ 		break;
+ 	default:
+ 		pr_debug("%s: not HPH gain reg = %x\n", __func__,
+ 			 gain_update_reg);
+ 		return 0;
+ 	}
+ 	/* Check left interpolator clk is ON for right and vice versa */
+ 	val = (snd_soc_read(codec, intp_reg) >> 5) & 0x1;
+ 	if (val) {
+ 		/* Read left gain value for right and vice versa */
+ 		vol_val = snd_soc_read(codec, vol_reg);
+ 		/* Update with max gain of left and right */
+ 		if (vol_val > gain) {
+ 			usleep_range(5000, 5500);
+ 			snd_soc_write(codec, gain_update_reg, vol_val);
+ 		}
+ 	}
+ 	return 0;
+ }
+
 static int tasha_codec_enable_mix_path(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
@@ -4826,6 +4877,7 @@ static int tasha_codec_enable_mix_path(struct snd_soc_dapm_widget *w,
 		val = snd_soc_read(codec, gain_reg);
 		val += offset_val;
 		snd_soc_write(codec, gain_reg, val);
+                tasha_codec_update_hph_gain(w, gain_reg, val);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		if ((tasha->spkr_gain_offset == RX_GAIN_OFFSET_M1P5_DB) &&
@@ -4931,6 +4983,7 @@ static int tasha_codec_enable_interpolator(struct snd_soc_dapm_widget *w,
 		val = snd_soc_read(codec, gain_reg);
 		val += offset_val;
 		snd_soc_write(codec, gain_reg, val);
+                tasha_codec_update_hph_gain(w, gain_reg, val);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		tasha_config_compander(codec, w->shift, event);
@@ -5350,10 +5403,10 @@ static int tasha_codec_enable_dec(struct snd_soc_dapm_widget *w,
 			      snd_soc_read(codec, tx_gain_ctl_reg));
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
-/*		snd_soc_write(codec, WCD9335_MBHC_ZDET_RAMP_CTL, 0x83);
+		snd_soc_write(codec, WCD9335_MBHC_ZDET_RAMP_CTL, 0x83);
 		snd_soc_write(codec, WCD9335_MBHC_ZDET_RAMP_CTL, 0xA3);
 		snd_soc_write(codec, WCD9335_MBHC_ZDET_RAMP_CTL, 0x83);
-		snd_soc_write(codec, WCD9335_MBHC_ZDET_RAMP_CTL, 0x03); */
+		snd_soc_write(codec, WCD9335_MBHC_ZDET_RAMP_CTL, 0x03);
 		snd_soc_update_bits(codec, tx_vol_ctl_reg, 0x10, 0x10);
 		snd_soc_update_bits(codec, dec_cfg_reg, 0x08, 0x00);
 		cancel_delayed_work_sync(&tasha->tx_hpf_work[decimator].dwork);
@@ -5622,7 +5675,7 @@ static int tasha_codec_force_enable_micbias(struct snd_soc_dapm_widget *w,
 					    struct snd_kcontrol *kcontrol,
 					    int event)
 {
-	int ret;
+	int ret = 0;
 	struct snd_soc_codec *codec = w->codec;
 	struct tasha_priv *tasha = snd_soc_codec_get_drvdata(codec);
 
@@ -7712,7 +7765,7 @@ static int tasha_codec_vbat_enable_event(struct snd_soc_dapm_widget *w,
 	int ret = 0;
 	struct snd_soc_codec *codec = w->codec;
 	struct tasha_priv *tasha = snd_soc_codec_get_drvdata(codec);
-	u16 vbat_path_ctl, vbat_cfg, vbat_path_cfg;
+	u16 vbat_path_ctl, vbat_cfg, vbat_path_cfg = 0;
 
 	vbat_path_ctl = WCD9335_CDC_VBAT_VBAT_PATH_CTL;
 	vbat_cfg = WCD9335_CDC_VBAT_VBAT_CFG;
@@ -7774,9 +7827,9 @@ static const struct snd_kcontrol_new tasha_snd_controls[] = {
 	SOC_SINGLE_SX_TLV("RX0 Digital Volume", WCD9335_CDC_RX0_RX_VOL_CTL,
 		0, -84, 40, digital_gain), /* -84dB min - 40dB max */
 	SOC_SINGLE_SX_TLV("RX1 Digital Volume", WCD9335_CDC_RX1_RX_VOL_CTL,
-		-9, -84, 40, digital_gain),
+		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("RX2 Digital Volume", WCD9335_CDC_RX2_RX_VOL_CTL,
-		-9, -84, 40, digital_gain),
+		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("RX3 Digital Volume", WCD9335_CDC_RX3_RX_VOL_CTL,
 		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("RX4 Digital Volume", WCD9335_CDC_RX4_RX_VOL_CTL,
@@ -7784,7 +7837,7 @@ static const struct snd_kcontrol_new tasha_snd_controls[] = {
 	SOC_SINGLE_SX_TLV("RX5 Digital Volume", WCD9335_CDC_RX5_RX_VOL_CTL,
 		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("RX6 Digital Volume", WCD9335_CDC_RX6_RX_VOL_CTL,
-		-5, -84, 40, digital_gain),
+		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("RX7 Digital Volume", WCD9335_CDC_RX7_RX_VOL_CTL,
 		0, -84, 40, digital_gain),
 	SOC_SINGLE_SX_TLV("RX8 Digital Volume", WCD9335_CDC_RX8_RX_VOL_CTL,
@@ -7795,10 +7848,10 @@ static const struct snd_kcontrol_new tasha_snd_controls[] = {
 			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
 	SOC_SINGLE_SX_TLV("RX1 Mix Digital Volume",
 			  WCD9335_CDC_RX1_RX_VOL_MIX_CTL,
-			  -9, -84, 40, digital_gain), /* -84dB min - 40dB max */
+			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
 	SOC_SINGLE_SX_TLV("RX2 Mix Digital Volume",
 			  WCD9335_CDC_RX2_RX_VOL_MIX_CTL,
-			  -9, -84, 40, digital_gain), /* -84dB min - 40dB max */
+			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
 	SOC_SINGLE_SX_TLV("RX3 Mix Digital Volume",
 			  WCD9335_CDC_RX3_RX_VOL_MIX_CTL,
 			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
@@ -7810,7 +7863,7 @@ static const struct snd_kcontrol_new tasha_snd_controls[] = {
 			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
 	SOC_SINGLE_SX_TLV("RX6 Mix Digital Volume",
 			  WCD9335_CDC_RX6_RX_VOL_MIX_CTL,
-			  -5, -84, 40, digital_gain), /* -84dB min - 40dB max */
+			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
 	SOC_SINGLE_SX_TLV("RX7 Mix Digital Volume",
 			  WCD9335_CDC_RX7_RX_VOL_MIX_CTL,
 			  0, -84, 40, digital_gain), /* -84dB min - 40dB max */
@@ -7949,7 +8002,7 @@ static const struct snd_kcontrol_new tasha_snd_controls[] = {
 	SOC_SINGLE_EXT("COMP5 Switch", SND_SOC_NOPM, COMPANDER_5, 1, 0,
 		       tasha_get_compander, tasha_set_compander),
 	SOC_SINGLE_EXT("COMP6 Switch", SND_SOC_NOPM, COMPANDER_6, 1, 0,
-		       tasha_get_compander, tasha_set_compander_dummy),
+		       tasha_get_compander, tasha_set_compander),
 	SOC_SINGLE_EXT("COMP7 Switch", SND_SOC_NOPM, COMPANDER_7, 1, 0,
 		       tasha_get_compander, tasha_set_compander),
 	SOC_SINGLE_EXT("COMP8 Switch", SND_SOC_NOPM, COMPANDER_8, 1, 0,
@@ -8064,7 +8117,7 @@ static int tasha_int_dem_inp_mux_put(struct snd_kcontrol *kcontrol,
 	struct snd_soc_codec *codec = widget->codec;
 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
 	unsigned int val;
-	unsigned short look_ahead_dly_reg;
+	unsigned short look_ahead_dly_reg = 0;
 
 	val = ucontrol->value.enumerated.item[0];
 	if (val > e->max - 1)
@@ -8426,9 +8479,7 @@ static const struct snd_kcontrol_new tasha_analog_gain_controls[] = {
 			3, 16, 1, line_gain),
 	SOC_SINGLE_TLV("LINEOUT3 Volume", WCD9335_SE_LO_LO3_GAIN, 0, 20, 1,
 			line_gain),
-	SOC_SINGLE_TLV("LINEOUT4 Volume", WCD9335_DUMMY_REG, 0, 20, 1,
-			line_gain),
-	SOC_SINGLE_TLV("LINEOUT4 Volume AGNi", WCD9335_SE_LO_LO4_GAIN, 20, 20, 1,
+	SOC_SINGLE_TLV("LINEOUT4 Volume", WCD9335_SE_LO_LO4_GAIN, 0, 20, 1,
 			line_gain),
 
 	SOC_SINGLE_TLV("ADC1 Volume", WCD9335_ANA_AMIC1, 0, 20, 0,
@@ -10501,9 +10552,9 @@ static int tasha_set_decimator_rate(struct snd_soc_dai *dai,
 	struct wcd9xxx_ch *ch;
 	struct tasha_priv *tasha = snd_soc_codec_get_drvdata(codec);
 	u32 tx_port;
-	u8 shift, shift_val, tx_mux_sel;
+	u8 shift = 0, shift_val = 0, tx_mux_sel = 0 ;
 	int decimator = -1;
-	u16 tx_port_reg, tx_fs_reg;
+	u16 tx_port_reg = 0, tx_fs_reg = 0;
 
 	list_for_each_entry(ch, &tasha->dai[dai->id].wcd9xxx_ch_list, list) {
 		tx_port = ch->port;
@@ -10766,8 +10817,9 @@ static int tasha_hw_params(struct snd_pcm_substream *substream,
 		case SNDRV_PCM_FORMAT_S24_3LE:
 			tasha->dai[dai->id].bit_width = 24;
 			break;
-		case SNDRV_PCM_FORMAT_S32_LE:
-			tasha->dai[dai->id].bit_width = 32;
+                case SNDRV_PCM_FORMAT_S32_LE:
+ 			tasha->dai[dai->id].bit_width = 32;
+ 			break;
 		}
 		tasha->dai[dai->id].rate = params_rate(params);
 		break;
@@ -10869,8 +10921,8 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.playback = {
 			.stream_name = "AIF1 Playback",
 			.rates = WCD9335_RATES_MASK | WCD9335_FRAC_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_S32_LE,
-			.rate_max = 384000,
+			.formats = TASHA_FORMATS_S16_S24_LE,
+			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
 			.channels_max = 2,
@@ -10883,7 +10935,7 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.capture = {
 			.stream_name = "AIF1 Capture",
 			.rates = WCD9335_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_LE,
+			.formats = TASHA_FORMATS,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -10897,9 +10949,9 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.playback = {
 			.stream_name = "AIF2 Playback",
 			.rates = WCD9335_RATES_MASK | WCD9335_FRAC_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_S32_LE,
+			.formats = TASHA_FORMATS_S16_S24_LE,
 			.rate_min = 8000,
-			.rate_max = 384000,
+			.rate_max = 192000,
 			.channels_min = 1,
 			.channels_max = 2,
 		},
@@ -10911,7 +10963,7 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.capture = {
 			.stream_name = "AIF2 Capture",
 			.rates = WCD9335_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_LE,
+			.formats = TASHA_FORMATS,
 			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
@@ -10925,9 +10977,9 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.playback = {
 			.stream_name = "AIF3 Playback",
 			.rates = WCD9335_RATES_MASK | WCD9335_FRAC_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_S32_LE,
+			.formats = TASHA_FORMATS_S16_S24_LE,
 			.rate_min = 8000,
-			.rate_max = 384000,
+			.rate_max = 192000,
 			.channels_min = 1,
 			.channels_max = 2,
 		},
@@ -10939,8 +10991,8 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.capture = {
 			.stream_name = "AIF3 Capture",
 			.rates = WCD9335_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_LE,
-			.rate_max = 192000,
+			.formats = TASHA_FORMATS,
+			.rate_max = 48000,
 			.rate_min = 8000,
 			.channels_min = 1,
 			.channels_max = 2,
@@ -10953,9 +11005,9 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.playback = {
 			.stream_name = "AIF4 Playback",
 			.rates = WCD9335_RATES_MASK | WCD9335_FRAC_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_S32_LE,
+			.formats = TASHA_FORMATS_S16_S24_LE,
 			.rate_min = 8000,
-			.rate_max = 384000,
+			.rate_max = 192000,
 			.channels_min = 1,
 			.channels_max = 2,
 		},
@@ -10967,9 +11019,9 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.playback = {
 			.stream_name = "AIF Mix Playback",
 			.rates = WCD9335_RATES_MASK | WCD9335_FRAC_RATES_MASK,
-			.formats = TASHA_FORMATS_S16_S24_S32_LE,
+			.formats = TASHA_FORMATS_S16_S24_LE,
 			.rate_min = 8000,
-			.rate_max = 384000,
+			.rate_max = 192000,
 			.channels_min = 1,
 			.channels_max = 8,
 		},
@@ -10995,9 +11047,9 @@ static struct snd_soc_dai_driver tasha_dai[] = {
 		.id = AIF4_VIFEED,
 		.capture = {
 			.stream_name = "VIfeed",
-			.rates = WCD9335_RATES_MASK,
+			.rates = SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_48000,
 			.formats = TASHA_FORMATS_S16_S24_S32_LE,
-			.rate_max = 192000,
+			.rate_max = 48000,
 			.rate_min = 8000,
 			.channels_min = 1,
 			.channels_max = 4,
@@ -11202,7 +11254,7 @@ static ssize_t tasha_codec_version_read(struct snd_info_entry *entry,
 	struct tasha_priv *tasha;
 	struct wcd9xxx *wcd9xxx;
 	char buffer[TASHA_VERSION_ENTRY_SIZE];
-	int len;
+	int len = 0;
 
 	tasha = (struct tasha_priv *) entry->private_data;
 	if (!tasha) {
@@ -11427,7 +11479,7 @@ static const struct tasha_reg_mask_val tasha_codec_reg_init_common_val[] = {
 	{WCD9335_CDC_CLSH_K2_MSB, 0x0F, 0x00},
 	{WCD9335_CDC_CLSH_K2_LSB, 0xFF, 0x60},
 	{WCD9335_CPE_SS_DMIC_CFG, 0x80, 0x00},
-	{WCD9335_CDC_BOOST0_BOOST_CTL, 0xc6, 0xc6},
+	{WCD9335_CDC_BOOST0_BOOST_CTL, 0x70, 0x50},
 	{WCD9335_CDC_BOOST1_BOOST_CTL, 0x70, 0x50},
 	{WCD9335_CDC_RX7_RX_PATH_CFG1, 0x08, 0x08},
 	{WCD9335_CDC_RX8_RX_PATH_CFG1, 0x08, 0x08},
@@ -11442,10 +11494,10 @@ static const struct tasha_reg_mask_val tasha_codec_reg_init_common_val[] = {
 	{WCD9335_CDC_TX10_SPKR_PROT_PATH_CFG0, 0x01, 0x01},
 	{WCD9335_CDC_TX11_SPKR_PROT_PATH_CFG0, 0x01, 0x01},
 	{WCD9335_CDC_TX12_SPKR_PROT_PATH_CFG0, 0x01, 0x01},
-	{WCD9335_CDC_RX7_RX_PATH_SEC1, 0x09, 0x09},
-	{WCD9335_CDC_RX8_RX_PATH_SEC1, 0x09, 0x09},
-	{WCD9335_CDC_COMPANDER7_CTL7, 0x18, 0x18},
-	{WCD9335_CDC_COMPANDER8_CTL7, 0x18, 0x18},
+	{WCD9335_CDC_COMPANDER7_CTL3, 0x80, 0x80},
+	{WCD9335_CDC_COMPANDER8_CTL3, 0x80, 0x80},
+	{WCD9335_CDC_COMPANDER7_CTL7, 0x01, 0x01},
+	{WCD9335_CDC_COMPANDER8_CTL7, 0x01, 0x01},
 	{WCD9335_CDC_RX0_RX_PATH_CFG0, 0x01, 0x01},
 	{WCD9335_CDC_RX1_RX_PATH_CFG0, 0x01, 0x01},
 	{WCD9335_CDC_RX2_RX_PATH_CFG0, 0x01, 0x01},
@@ -11527,7 +11579,6 @@ static const struct tasha_reg_mask_val tasha_codec_reg_init_1_x_val[] = {
 	{WCD9335_DIFF_LO_CORE_OUT_PROG, 0xFC, 0xD8},
 	{WCD9335_CDC_RX5_RX_PATH_SEC3, 0xBD, 0xBD},
 	{WCD9335_CDC_RX6_RX_PATH_SEC3, 0xBD, 0xBD},
-	{WCD9335_DUMMY_REG, 0x20, 0x20},
 };
 
 static void tasha_update_reg_reset_values(struct snd_soc_codec *codec)
@@ -12164,7 +12215,7 @@ static int tasha_codec_vote_max_bw(struct snd_soc_codec *codec,
 		return 0;
 
 	if (vote)
-		bw_ops = SLIM_BW_CLK_GEAR_10;
+		bw_ops = SLIM_BW_CLK_GEAR_9;
 	else
 		bw_ops = SLIM_BW_UNVOTE;
 
@@ -12322,8 +12373,6 @@ static int tasha_post_reset_cb(struct wcd9xxx *wcd9xxx)
 
 	/* Class-H Init*/
 	wcd_clsh_init(&tasha->clsh_d);
-	/* Default HPH Mode to Class-H HiFi */
-	tasha->hph_mode = CLS_H_HIFI;
 
 	for (i = 0; i < TASHA_MAX_MICBIAS; i++)
 		tasha->micb_ref[i] = 0;
@@ -12331,8 +12380,6 @@ static int tasha_post_reset_cb(struct wcd9xxx *wcd9xxx)
 	tasha_update_reg_defaults(tasha);
 
 	tasha->codec = codec;
-	for (i = 0; i < COMPANDER_MAX; i++)
-		tasha->comp_enabled[i] = 0;
 
 	dev_dbg(codec->dev, "%s: MCLK Rate = %x\n",
 		__func__, control->mclk_rate);
@@ -12407,84 +12454,6 @@ static struct regulator *tasha_codec_find_ondemand_regulator(
 }
 
 #ifdef CONFIG_SOUND_CONTROL
-void update_headphones_volume_boost(unsigned int vol_boost)
-{
-	int default_val = soundcontrol.default_headphones_value;
-	int boosted_val = default_val + vol_boost;
-
-	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX1_RX_VOL_CTL, boosted_val);
- 	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX1_RX_VOL_MIX_CTL, boosted_val);
- 	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX2_RX_VOL_CTL, boosted_val);
- 	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX2_RX_VOL_MIX_CTL, boosted_val);
-
- 		pr_info("Sound Control: Boosted Headphones Left RX1 value %d\n",
- 		snd_soc_read(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX1_RX_VOL_CTL));
-
- 		pr_info("Sound Control: Boosted Headphones Right RX2 value %d\n",
-		snd_soc_read(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX2_RX_VOL_CTL));
-
-}
-
-void update_speaker_gain(int vol_boost)
-{
-	int default_val = soundcontrol.default_speaker_value;
-	int boosted_val = default_val + vol_boost;
-
-	pr_info("Sound Control: Speaker default value %d\n", default_val);
-
-	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX6_RX_VOL_CTL, boosted_val);
- 	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX6_RX_VOL_MIX_CTL, boosted_val);
-
- 	pr_info("Sound Control: Boosted Speaker RX6 value %d\n",
- 		snd_soc_read(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX6_RX_VOL_CTL));
-}
-
-void update_mic_gain(int vol_boost)
-{
-	int default_val = soundcontrol.default_mic_value;
-	int boosted_val = default_val + vol_boost;
-
-	pr_info("Sound Control: Mic default value %d\n", default_val);
-
-	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_TX6_TX_VOL_CTL, boosted_val);
-// 	snd_soc_write(soundcontrol.snd_control_codec,
-// 		WCD9335_CDC_TX7_TX_VOL_CTL, boosted_val);
-
- 	pr_info("Sound Control: Boosted Primary Mic TX6 value %d\n",
- 		snd_soc_read(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_TX6_TX_VOL_CTL));
-// 	pr_info("Sound Control: Boosted Secondary Mic TX7 value %d\n",
-// 		snd_soc_read(soundcontrol.snd_control_codec,
-// 		WCD9335_CDC_TX7_TX_VOL_CTL));
-}
-
-void update_earpiece_gain(int vol_boost)
-{
-	int default_val = soundcontrol.default_earpiece_value;
-	int boosted_val = default_val + vol_boost;
-
-	pr_info("Sound Control: Earpiece default value %d\n", default_val);
-
-	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX0_RX_VOL_CTL, boosted_val);
-	snd_soc_write(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX0_RX_VOL_MIX_CTL, boosted_val);
-
- 	pr_info("Sound Control: Boosted Earpiece RX0 value %d\n",
- 		snd_soc_read(soundcontrol.snd_control_codec,
- 		WCD9335_CDC_RX0_RX_VOL_CTL));
-}
-
 struct snd_soc_codec *sound_control_codec_ptr;
 
 static ssize_t headphone_gain_show(struct kobject *kobj,
@@ -12504,30 +12473,16 @@ static ssize_t headphone_gain_store(struct kobject *kobj,
 
 	sscanf(buf, "%d %d", &input_l, &input_r);
 
-	if (input_l < -10)
-		input_l = -10;
+	if (input_l < -84 || input_l > 20)
+		input_l = 0;
 
-    if (input_l > 20)
-		input_l = 20;
+	if (input_r < -84 || input_r > 20)
+		input_r = 0;
 
-	if (input_r < -10)
-		input_r = -10;
-
-	if (input_r > 20)
-		input_r = 20;
-
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX1_RX_VOL_CTL, input_l);
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX2_RX_VOL_CTL, input_r);
 	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX1_RX_VOL_MIX_CTL, input_l);
 	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX2_RX_VOL_MIX_CTL, input_r);
-
-	pr_info("Sound Control: Boosted Headphones Left RX1 value %d\n",
- 		snd_soc_read(sound_control_codec_ptr,
- 		WCD9335_CDC_RX1_RX_VOL_CTL));
-
- 	pr_info("Sound Control: Boosted Headphones Right RX2 value %d\n",
-		snd_soc_read(sound_control_codec_ptr,
- 		WCD9335_CDC_RX2_RX_VOL_CTL));
+	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX1_RX_VOL_CTL, input_l);
+	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX2_RX_VOL_CTL, input_r);
 
 	return count;
 }
@@ -12541,7 +12496,7 @@ static ssize_t mic_gain_show(struct kobject *kobj,
 		struct kobj_attribute *attr, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n",
-		snd_soc_read(sound_control_codec_ptr, WCD9335_CDC_TX6_TX_VOL_CTL));
+		snd_soc_read(sound_control_codec_ptr, WCD9335_CDC_RX0_RX_VOL_CTL));
 }
 
 static ssize_t mic_gain_store(struct kobject *kobj,
@@ -12551,21 +12506,10 @@ static ssize_t mic_gain_store(struct kobject *kobj,
 
 	sscanf(buf, "%d", &input);
 
-	if (input < -10)
-		input = -10;
+	if (input < -10 || input > 20)
+		input = 0;
 
-	if (input > 20)
-		input = 20;
-
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_TX6_TX_VOL_CTL, input);
-//	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_TX7_TX_VOL_CTL, input);
-
- 	pr_info("Sound Control: Boosted Primary Mic TX6 value %d\n",
- 		snd_soc_read(sound_control_codec_ptr,
- 		WCD9335_CDC_TX6_TX_VOL_CTL));
-// 	pr_info("Sound Control: Boosted Secondary Mic TX7 value %d\n",
-// 		snd_soc_read(sound_control_codec_ptr,
-// 		WCD9335_CDC_TX7_TX_VOL_CTL));
+	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX0_RX_VOL_CTL, input);
 
 	return count;
 }
@@ -12574,40 +12518,6 @@ static struct kobj_attribute mic_gain_attribute =
 	__ATTR(mic_gain, 0664,
 		mic_gain_show,
 		mic_gain_store);
-
-static ssize_t ext_mic_gain_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, "%d\n",
-		snd_soc_read(sound_control_codec_ptr, WCD9335_CDC_TX0_TX_VOL_CTL));
-}
-
-static ssize_t ext_mic_gain_store(struct kobject *kobj,
-		struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int input;
-
-	sscanf(buf, "%d", &input);
-
-	if (input < -10)
-		input = -10;
-
-	if (input > 20)
-		input = 20;
-
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_TX0_TX_VOL_CTL, input);
-
-	pr_info("Sound Control: Boosted External Wired Mic TX0 value %d\n",
- 		snd_soc_read(sound_control_codec_ptr,
- 		WCD9335_CDC_TX0_TX_VOL_CTL));
-
-	return count;
-}
-
-static struct kobj_attribute ext_mic_gain_attribute =
-	__ATTR(ext_mic_gain, 0664,
-		ext_mic_gain_show,
-		ext_mic_gain_store);
 
 static ssize_t speaker_gain_show(struct kobject *kobj,
 		struct kobj_attribute *attr, char *buf)
@@ -12623,19 +12533,11 @@ static ssize_t speaker_gain_store(struct kobject *kobj,
 
 	sscanf(buf, "%d", &input);
 
-	if (input < -10 && input != -84)
-		input = -10;
+	if (input < -10 || input > 20)
+		input = 0;
 
-	if (input > 20)
-		input = 20;
-
-	sound_control_spk_gain = input;
 	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX6_RX_VOL_CTL, input);
 	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX6_RX_VOL_MIX_CTL, input);
-
-	pr_info("Sound Control: Boosted Speaker RX6 value %d\n",
- 		snd_soc_read(sound_control_codec_ptr,
- 		WCD9335_CDC_RX6_RX_VOL_CTL));
 
 	return count;
 }
@@ -12645,94 +12547,10 @@ static struct kobj_attribute speaker_gain_attribute =
 		speaker_gain_show,
 		speaker_gain_store);
 
-static ssize_t speaker_privacy_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, "%d\n", sound_control_spk_priv);
-}
-
-void spk_priv_enable(void)
-{
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX6_RX_VOL_CTL, -84);
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX6_RX_VOL_MIX_CTL, -84);
-	pr_info("Sound Control: speaker private mode in effect, speaker muted");
-}
-
-void spk_priv_disable(void)
-{
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX6_RX_VOL_CTL, sound_control_spk_gain);
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX6_RX_VOL_MIX_CTL, sound_control_spk_gain);
-	pr_info("Sound Control: speaker private mode disabled");
-}
-
-static ssize_t speaker_privacy_store(struct kobject *kobj,
-		struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int input;
-
-	sscanf(buf, "%d", &input);
-
-	if (input < 0 || input > 1)
-		input = 0;
-
-	sound_control_spk_priv = input;
-
-	if ((jack_detect()) && (sound_control_spk_priv)) {
-		spk_priv_enable();
-	} else {
-		spk_priv_disable();
-	}
-
-	return count;
-}
-
-static struct kobj_attribute speaker_privacy_attribute =
-	__ATTR(speaker_privacy, 0664,
-		speaker_privacy_show,
-		speaker_privacy_store);
-
-static ssize_t earpiece_gain_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
-{
-	return snprintf(buf, PAGE_SIZE, "%d\n",
-		snd_soc_read(sound_control_codec_ptr, WCD9335_CDC_RX0_RX_VOL_CTL));
-}
-
-static ssize_t earpiece_gain_store(struct kobject *kobj,
-		struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int input;
-
-	sscanf(buf, "%d", &input);
-
-	if (input < -10)
-		input = -10;
-
-	if (input > 20)
-		input = 20;
-
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX0_RX_VOL_CTL, input);
-	snd_soc_write(sound_control_codec_ptr, WCD9335_CDC_RX0_RX_VOL_MIX_CTL, input);
-
- 	pr_info("Sound Control: Boosted Earpiece RX0 value %d\n",
- 		snd_soc_read(sound_control_codec_ptr,
- 		WCD9335_CDC_RX0_RX_VOL_CTL));
-
-	return count;
-}
-
-static struct kobj_attribute earpiece_gain_attribute =
-	__ATTR(earpiece_gain, 0664,
-		earpiece_gain_show,
-		earpiece_gain_store);
-
 static struct attribute *sound_control_attrs[] = {
 		&headphone_gain_attribute.attr,
 		&mic_gain_attribute.attr,
-		&ext_mic_gain_attribute.attr,
 		&speaker_gain_attribute.attr,
-		&speaker_privacy_attribute.attr,
-		&earpiece_gain_attribute.attr,
 		NULL,
 };
 
@@ -12755,10 +12573,8 @@ static int tasha_codec_probe(struct snd_soc_codec *codec)
 	struct regulator *supply;
 
 #ifdef CONFIG_SOUND_CONTROL
-	soundcontrol.snd_control_codec = codec;
 	sound_control_codec_ptr = codec;
 #endif
-
 	control = dev_get_drvdata(codec->dev->parent);
 	codec->control_data = control->regmap;
 
@@ -12937,31 +12753,7 @@ static int tasha_codec_probe(struct snd_soc_codec *codec)
 	snd_soc_dapm_disable_pin(dapm, "ANC EAR");
 	mutex_unlock(&codec->mutex);
 	snd_soc_dapm_sync(dapm);
-#ifdef CONFIG_SOUND_CONTROL
- 	soundcontrol.default_headphones_value = snd_soc_read(codec,
- 		WCD9335_CDC_RX1_RX_VOL_CTL);
- 	soundcontrol.default_speaker_value = snd_soc_read(codec,
- 		WCD9335_CDC_RX6_RX_VOL_CTL);
- 	soundcontrol.default_mic_value = snd_soc_read(codec,
- 		WCD9335_CDC_TX6_TX_VOL_CTL);
- 	soundcontrol.default_earpiece_value = snd_soc_read(codec,
- 		WCD9335_CDC_RX0_RX_VOL_CTL);
-#endif
 
-	/* ASUS_BSP Paul +++ */
-        if (!g_audiowizard_force_preset_sdev) {
-		g_audiowizard_force_preset_sdev = kzalloc(sizeof(struct switch_dev), GFP_KERNEL);
-		if (!g_audiowizard_force_preset_sdev) {
-			pr_err("%s: failed to allocate switch_dev\n", __func__);
-			ret = -ENOMEM;
-		}
-		g_audiowizard_force_preset_sdev->name = "audiowizard_force_preset";
-		g_audiowizard_force_preset_sdev->state = 0;
-		ret = switch_dev_register(g_audiowizard_force_preset_sdev);
-		if (ret < 0)
-			pr_err("%s: failed to register switch audiowizard_force_preset\n", __func__);
-	}
-	/* ASUS_BSP Paul --- */
 	return ret;
 
 err_pdata:
@@ -13543,3 +13335,4 @@ module_platform_driver(tasha_codec_driver);
 
 MODULE_DESCRIPTION("Tasha Codec driver");
 MODULE_LICENSE("GPL v2");
+
