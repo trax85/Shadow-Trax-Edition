@@ -248,7 +248,7 @@ void register_inmem_page(struct inode *inode, struct page *page)
 	inc_page_count(F2FS_I_SB(inode), F2FS_INMEM_PAGES);
 	mutex_unlock(&fi->inmem_lock);
 
-	trace_f2fs_register_inmem_page(page, INMEM);
+	//trace_f2fs_register_inmem_page(page, INMEM);
 }
 
 static int __revoke_inmem_pages(struct inode *inode,
@@ -261,8 +261,8 @@ static int __revoke_inmem_pages(struct inode *inode,
 	list_for_each_entry_safe(cur, tmp, head, list) {
 		struct page *page = cur->page;
 
-		if (drop)
-			trace_f2fs_commit_inmem_page(page, INMEM_DROP);
+		//if (drop)
+		//	trace_f2fs_commit_inmem_page(page, INMEM_DROP);
 
 		lock_page(page);
 
@@ -270,7 +270,7 @@ static int __revoke_inmem_pages(struct inode *inode,
 			struct dnode_of_data dn;
 			struct node_info ni;
 
-			trace_f2fs_commit_inmem_page(page, INMEM_REVOKE);
+			//trace_f2fs_commit_inmem_page(page, INMEM_REVOKE);
 
 			set_new_dnode(&dn, inode, NULL, NULL, 0);
 			if (get_dnode_of_data(&dn, page->index, LOOKUP_NODE)) {
@@ -330,7 +330,7 @@ static int __commit_inmem_pages(struct inode *inode,
 
 		lock_page(page);
 		if (page->mapping == inode->i_mapping) {
-			trace_f2fs_commit_inmem_page(page, INMEM);
+			//trace_f2fs_commit_inmem_page(page, INMEM);
 
 			set_page_dirty(page);
 			f2fs_wait_on_page_writeback(page, DATA, true);
@@ -489,9 +489,9 @@ static int submit_flush_wait(struct f2fs_sb_info *sbi)
 
 	if (sbi->s_ndevs && !ret) {
 		for (i = 1; i < sbi->s_ndevs; i++) {
-			trace_f2fs_issue_flush(FDEV(i).bdev,
+			/*trace_f2fs_issue_flush(FDEV(i).bdev,
 					test_opt(sbi, NOBARRIER),
-					test_opt(sbi, FLUSH_MERGE));
+					test_opt(sbi, FLUSH_MERGE));*/
 			ret = __submit_flush_wait(FDEV(i).bdev);
 			if (ret)
 				break;
@@ -911,7 +911,7 @@ static int __f2fs_issue_discard_async(struct f2fs_sb_info *sbi,
 	block_t lblkstart = blkstart;
 	int err;
 
-	trace_f2fs_issue_discard(bdev, blkstart, blklen);
+	//trace_f2fs_issue_discard(bdev, blkstart, blklen);
 
 	if (sbi->s_ndevs) {
 		int devi = f2fs_target_device_index(sbi, blkstart);
@@ -966,7 +966,7 @@ static int __f2fs_issue_discard_zone(struct f2fs_sb_info *sbi,
 				blkstart, blklen);
 			return -EIO;
 		}
-		trace_f2fs_issue_reset_zone(bdev, blkstart);
+		//trace_f2fs_issue_reset_zone(bdev, blkstart);
 		return blkdev_reset_zones(bdev, sector,
 					  nr_sects, GFP_NOFS);
 	default:
