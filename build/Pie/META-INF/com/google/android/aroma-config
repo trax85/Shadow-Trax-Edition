@@ -205,7 +205,8 @@ checkbox(
   "USB Fastcharge","\nIncrease charge current while charging via USB",0,
   "Backlight Dimmer","\nThis lowers Max-Min brightness of display",0,
   "Audio Mod Capability","\nDisable audio codec power gating",0,
-  "New Jack Detection","\nEnable this if you have headset jack issues",0
+  "New Jack Detection","\nEnable this if you have headset jack issues",0,
+  "Less Aggresive LMK","\nEnable this if you have background apps crashing",0
 );
 
 menubox(

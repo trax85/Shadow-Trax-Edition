@@ -203,6 +203,10 @@ elif [ $VOLT == 2 ]; then
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 1050 1120 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 fi
+ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
+if [ $ALMK == 1 ]; then
+echo "write /sys/module/lowmemorykiller/parameters/minfree 16969,22624,28280,33936,39592,50904" >> $CONFIGFILE
+fi
 echo "# MISC" >> $CONFIGFILE
 echo "setprop video.accelerate.hw 1" >> $CONFIGFILE
 echo "setprop debug.composition.type c2d" >> $CONFIGFILE
