@@ -178,7 +178,6 @@ fi
 	echo "user root" >> $CONFIGFILE
 	echo "oneshot" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
-	echo "service spectrum /system/bin/sh /init.spectrum.sh" >> $CONFIGFILE
 	echo "class late_start" >> $CONFIGFILE
 	echo "user root" >> $CONFIGFILE
 	echo "disabled" >> $CONFIGFILE
@@ -341,6 +340,7 @@ echo "# RUN USERTWEAKS SERVICE" >> $CONFIGFILE
 echo "start usertweaks" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
+if [ $ROM -eq 2 ] || [ $ROM -eq 1 ]; then
 echo "# INITIALIZE AND RUN SPECTRUM TWEAKS" >> $CONFIGFILE
 echo "setprop spectrum.support 1" >> $CONFIGFILE
 echo "setprop persist.spectrum.kernel \"Shadow TraxEdition HMP\""  >> $CONFIGFILE
@@ -358,3 +358,4 @@ echo "" >> $CONFIGFILE
 echo "on property:persist.spectrum.profile=3" >> $CONFIGFILE
 echo "start spectrum" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
+fi

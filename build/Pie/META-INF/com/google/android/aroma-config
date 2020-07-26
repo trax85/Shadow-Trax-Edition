@@ -172,9 +172,9 @@ selectbox(
 
 selectbox(
   "\n\n<@center>Apply UV to CPU and GPU ?\nWarning ! </@>","<@center><b>\n\n\n\n\nThis will change your stock voltages.\nSelect NO if you are unsure about this.\n</b></@>","","uv.prop",
-  "Heavy UV ","",0,
-  "Light UV ","",0, 
-  "No UV ","",1
+  "Heavy UV ","\nHigher UV for CPU and GPU",0,
+  "Light UV ","\nMild uv for GPU and CPU",0, 
+  "No UV ","\nNo UV stock Voltages",1
 );
 
 selectbox(

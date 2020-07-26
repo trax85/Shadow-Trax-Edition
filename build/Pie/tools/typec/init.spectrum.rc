@@ -14,7 +14,6 @@ on property:sys.boot_completed=1
 
 # Balance (default profile)
 on property:persist.spectrum.profile=0
-    #Cpu Governor And Frequencies Scaling Settings
     #Setting Permissions
     chmod 0666 /sys/block/mmcblk0/queue/scheduler
     chmod 0666 /sys/block/mmcblk1/queue/scheduler
@@ -34,6 +33,7 @@ on property:persist.spectrum.profile=0
     write /sys/devices/system/cpu/cpu3/online 1
     write /sys/devices/system/cpu/cpu4/online 1
     write /sys/devices/system/cpu/cpu5/online 1
+    #Cpu Governor And Frequencies Scaling Settings
 	#A53
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
@@ -85,17 +85,16 @@ on property:persist.spectrum.profile=0
 	write /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 266666667
 	write /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel 4
 	#Devfreq-Drivers 
-	write /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq 0
+	write /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq0
 	#Msm-Thermals
 	write /sys/module/msm_thermal/parameters/temp_threshold 45
 	write /sys/module/msm_thermal/parameters/core_limit_temp_degC 60
 	#Vmpressure
-	write /proc/sys/vm/vfs_cache_pressure 100
+	write /proc/sys/vm/vfs_cache_pressure 100 
 
 # Performance
 on property:persist.spectrum.profile=1
     #Setting Permissions
-   #Setting Permissions
     chmod 0666 /sys/block/mmcblk0/queue/scheduler
     chmod 0666 /sys/block/mmcblk1/queue/scheduler
     chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
@@ -114,15 +113,16 @@ on property:persist.spectrum.profile=1
     write /sys/devices/system/cpu/cpu3/online 1
     write /sys/devices/system/cpu/cpu4/online 1
     write /sys/devices/system/cpu/cpu5/online 1
+    #Cpu Governor And Frequencies Scaling Settings
 	#A53
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
-	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1401600
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1632000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay "25000"
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 90
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1401600
-	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 960000:50 1017600:60 1190400:70 	1305600:80 1401600:90"
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 960000:50 1017600:60 1190400:70 1305600:80 1401600:90 1632000:95"
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
@@ -173,8 +173,6 @@ on property:persist.spectrum.profile=1
 
 # Battery
 on property:persist.spectrum.profile=2
-	#Cpu Governor And Frequencies Scaling Settings
-	#Setting Permissions
     #Setting Permissions
     chmod 0666 /sys/block/mmcblk0/queue/scheduler
     chmod 0666 /sys/block/mmcblk1/queue/scheduler
@@ -185,13 +183,14 @@ on property:persist.spectrum.profile=2
     chmod 0664 /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
     chmod 0664 /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
     chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-    chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+    chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor 
     write /sys/devices/system/cpu/cpu0/online 1
     write /sys/devices/system/cpu/cpu1/online 1
     write /sys/devices/system/cpu/cpu2/online 1
     write /sys/devices/system/cpu/cpu3/online 1
     write /sys/devices/system/cpu/cpu4/online 1
     write /sys/devices/system/cpu/cpu5/online 1
+	#Cpu Governor And Frequencies Scaling Settings
 	#A53
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "cultivation"
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
@@ -259,7 +258,6 @@ on property:persist.spectrum.profile=2
 
 # Gaming
 on property:persist.spectrum.profile=3
-    #Cpu Governor And Frequencies Scaling Settings
     #Setting Permissions
     chmod 0666 /sys/block/mmcblk0/queue/scheduler
     chmod 0666 /sys/block/mmcblk1/queue/scheduler
@@ -279,17 +277,18 @@ on property:persist.spectrum.profile=3
     write /sys/devices/system/cpu/cpu3/online 1
     write /sys/devices/system/cpu/cpu4/online 1
     write /sys/devices/system/cpu/cpu5/online 1
+	#Cpu Governor And Frequencies Scaling Settings
 	#A53
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "interactive"
 	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 691200
-	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1401600
+	write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1799040
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 75
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 25000
-	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1401600
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1799040
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 20000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
-	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "80 960000:30 1017600:40 1190400:50 	1305600:60 1401600:75"
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "80 960000:30 1017600:40 1190400:50 1305600:60 1401600:75 1799040:80"
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
 	#A72

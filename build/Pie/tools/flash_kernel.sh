@@ -60,21 +60,21 @@ if [ $ROM == 3 ]; then
 	# ADD SPECTRUM SUPPORT
 	#OC-Profile
 	if [ $OC == 1 ]; then
-		cp /tmp/typea/init.spectrum.sh /system/system/vendor/etc/init/hw/
+		cp /tmp/typea/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	fi
 	if [ $OC == 2 ]; then
-		cp /tmp/typeb/init.spectrum.sh /system/system/vendor/etc/init/hw/
+		cp /tmp/typeb/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	fi
 	if [ $OC == 3 ]; then
-		cp /tmp/typec/init.spectrum.sh /system/system/vendor/etc/init/hw/
+		cp /tmp/typec/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	fi
 	if [ $OC == 4 ]; then
-		cp /tmp/typed/init.spectrum.sh /system/system/vendor/etc/init/hw/
+		cp /tmp/typed/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	fi
 	if [ $OC == 5 ]; then
-		cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
+		cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
 	fi
-	cp /tmp/a10/init.spectrum.rc /system/system/vendor/etc/init/hw/
+	cp /tmp/a10/init.spectrum.sh /system/system/vendor/etc/init/hw/
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.sh
 	chmod 755 /system/system/vendor/etc/init/hw/init.spectrum.rc
 	#
