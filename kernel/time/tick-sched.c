@@ -108,6 +108,7 @@ static void tick_do_update_jiffies64(ktime_t now)
  		return;
 	}
 	write_sequnlock(&jiffies_lock);
+	update_wall_time();
 }
 
 /*
