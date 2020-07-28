@@ -626,6 +626,8 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-const-variable,)
 KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
 # Disable cpp
 KBUILD_CFLAGS   += $(call cc-disable-warning,cpp,)
+# Disable address-of-packed-member
+KBUILD_CFLAGS   += $(call cc-disable-warning,address-of-packed-member,)
 # Needed to unbreak GCC 7.x and above
 KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
 
