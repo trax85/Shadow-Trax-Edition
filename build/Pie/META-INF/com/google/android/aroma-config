@@ -195,7 +195,7 @@ selectbox(
   "\n\nWant New Thermal Engine ?","<@center><b>\n\n\n\n\nReplaces thermals with shadow customized thermals for better compatiblity with shadow.\n</b></@>","","thermal.prop",
   "Old thermal","\nPotential charging speed fix",0,
   "New thermal","\nRecommended thermal config for shadow",0,
-  "Default thermals","\NDoes not replace/edit thermals",1
+  "Default thermals","\nDoes not replace/edit thermals",1
 );
 
 checkbox(
