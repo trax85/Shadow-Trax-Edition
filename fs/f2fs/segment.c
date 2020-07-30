@@ -539,8 +539,8 @@ static int __submit_flush_wait(struct f2fs_sb_info *sbi,
 	ret = submit_bio_wait(WRITE_FLUSH, bio);
 	bio_put(bio);
 
-	trace_f2fs_issue_flush(bdev, test_opt(sbi, NOBARRIER),
-				test_opt(sbi, FLUSH_MERGE), ret);
+	//trace_f2fs_issue_flush(bdev, test_opt(sbi, NOBARRIER),
+	//			test_opt(sbi, FLUSH_MERGE), ret);
 	return ret;
 }
 
@@ -1182,7 +1182,7 @@ static int __queue_discard_cmd(struct f2fs_sb_info *sbi,
 {
 	block_t lblkstart = blkstart;
 
-	trace_f2fs_queue_discard(bdev, blkstart, blklen);
+	//trace_f2fs_queue_discard(bdev, blkstart, blklen);
 
 	if (sbi->s_ndevs) {
 		int devi = f2fs_target_device_index(sbi, blkstart);
