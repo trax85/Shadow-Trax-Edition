@@ -206,14 +206,6 @@ enum binder_stat_types {
 	BINDER_STAT_COUNT
 };
 
-/*
- * Convert rlimit style value [1,40] to nice value [-20, 19].
- */
-static inline long rlimit_to_nice(long prio)
-{
-	return (MAX_NICE - prio + 1);
-}
-
 struct binder_stats {
 	atomic_t br[_IOC_NR(BR_FAILED_REPLY) + 1];
 	atomic_t bc[_IOC_NR(BC_REPLY_SG) + 1];
