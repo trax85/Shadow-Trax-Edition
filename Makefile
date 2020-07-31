@@ -242,21 +242,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 # CCACHE
 CCACHE := $(shell which ccache)
 
-O3_OPTS := -falign-functions=32 -fgcse-las \
-	   -fivopts -fgcse-sm \
-	   -fipa-pta -fomit-frame-pointer \
-	   -frename-registers -ftracer \
-	   -ftree-loop-im -ftree-loop-ivcanon \
-	   -funsafe-loop-optimizations  \
-	   -funswitch-loops -fpredictive-commoning \
-	   -fgcse-after-reload -ftree-loop-vectorize \
-	   -ftree-loop-distribution -ftree-loop-distribute-patterns \
-	   -fpeel-loops -fsplit-loops  \
-	   -ftree-slp-vectorize -ftree-partial-pre \
-	   -fsplit-paths -fipa-cp-clone \
-	   -ffast-math -fweb \
-	   -fvect-cost-model -fvect-cost-model=dynamic 
-	   
+O3_OPTS := -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-loop-vectorize -ftree-loop-distribution -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fpeel-loops -ffast-math
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
@@ -1115,7 +1101,9 @@ MRPROPER_FILES += .config .config.old .version .old_version $(version_h) \
 		  Module.symvers tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS \
 		  signing_key.priv signing_key.x509 x509.genkey		\
 		  extra_certificates signing_key.x509.keyid		\
-		  signing_key.x509.signer
+		  signing_key.x509.signer	\
+		  arch/arm64/crypto/sha256-core.S	\
+		  arch/arm64/crypto/sha512-core.S
 
 # clean - Delete most, but leave enough to build external modules
 #
