@@ -34,11 +34,17 @@ Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
 export ARCH=arm64
-export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu/bin/aarch64-linux-gnu-"
+# GCC 10
+#export CROSS_COMPILE="/home/nesara/arm64-gcc-10.1/bin/aarch64-elf-"
+# GCC 9.x
+export CROSS_COMPILE="/home/nesara/aarch64-elf-gcc-9.2/bin/aarch64-elf-"
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu/bin/aarch64-linux-gnu-"
+# GCC 8.3
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-android-8.x/bin/aarch64-linux-android-"
+# GCC lINARO 7.X 
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.5/bin/aarch64-linux-gnu-"
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-android/bin/aarch64-linux-android-"
+# GCC 6.5.1
 #export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
 if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
