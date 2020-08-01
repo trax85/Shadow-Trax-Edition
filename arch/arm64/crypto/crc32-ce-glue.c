@@ -73,21 +73,21 @@ static int crc32_pmull_init(struct shash_desc *desc)
 }
 
 static int crc32_update(struct shash_desc *desc, const u8 *data,
- 			unsigned int length)
+			unsigned int length)
 {
- 	u32 *crc = shash_desc_ctx(desc);
+	u32 *crc = shash_desc_ctx(desc);
 
- 	*crc = crc32_armv8_le(*crc, data, length);
- 	return 0;
+	*crc = crc32_armv8_le(*crc, data, length);
+	return 0;
 }
 
 static int crc32c_update(struct shash_desc *desc, const u8 *data,
 			 unsigned int length)
 {
- 	u32 *crc = shash_desc_ctx(desc);
+	u32 *crc = shash_desc_ctx(desc);
 
- 	*crc = crc32c_armv8_le(*crc, data, length);
- 	return 0;
+	*crc = crc32c_armv8_le(*crc, data, length);
+	return 0;
 }
 
 static int crc32_pmull_update(struct shash_desc *desc, const u8 *data,
@@ -206,20 +206,19 @@ static struct shash_alg crc32_pmull_algs[] = { {
 static int __init crc32_pmull_mod_init(void)
 {
 	if (IS_ENABLED(CONFIG_KERNEL_MODE_NEON) && (elf_hwcap & HWCAP_PMULL)) {
- 		crc32_pmull_algs[0].update = crc32_pmull_update;
- 		crc32_pmull_algs[1].update = crc32c_pmull_update;
+		crc32_pmull_algs[0].update = crc32_pmull_update;
+		crc32_pmull_algs[1].update = crc32c_pmull_update;
 
- 		if (elf_hwcap & HWCAP_CRC32) {
- 			fallback_crc32 = crc32_armv8_le;
- 			fallback_crc32c = crc32c_armv8_le;
- 		} else {
- 			fallback_crc32 = crc32_le;
- 			fallback_crc32c = __crc32c_le;
- 		}
- 	} else if (!(elf_hwcap & HWCAP_CRC32)) {
- 		return -ENODEV;
+		if (elf_hwcap & HWCAP_CRC32) {
+			fallback_crc32 = crc32_armv8_le;
+			fallback_crc32c = crc32c_armv8_le;
+		} else {
+			fallback_crc32 = crc32_le;
+			fallback_crc32c = __crc32c_le;
+		}
+	} else if (!(elf_hwcap & HWCAP_CRC32)) {
+		return -ENODEV;
 	}
-
 	return crypto_register_shashes(crc32_pmull_algs,
 				       ARRAY_SIZE(crc32_pmull_algs));
 }
@@ -231,7 +230,7 @@ static void __exit crc32_pmull_mod_exit(void)
 }
 
 static const struct cpu_feature crc32_cpu_feature[] = {
- 	{ cpu_feature(CRC32) }, { cpu_feature(PMULL) }, { }
+	{ cpu_feature(CRC32) }, { cpu_feature(PMULL) }, { }
 };
 MODULE_DEVICE_TABLE(cpu, crc32_cpu_feature);
 
@@ -240,4 +239,3 @@ module_exit(crc32_pmull_mod_exit);
 
 MODULE_AUTHOR("Ard Biesheuvel <ard.biesheuvel@linaro.org>");
 MODULE_LICENSE("GPL v2");
-
