@@ -208,15 +208,16 @@ config CRYPTO_GCM
 	  Authentication Code (GMAC). Required for IPSec.
 
 config CRYPTO_CHACHA20POLY1305
- 	tristate "ChaCha20-Poly1305 AEAD support"
- 	select CRYPTO_CHACHA20
- 	select CRYPTO_POLY1305
- 	select CRYPTO_AEAD
- 	help
- 	  ChaCha20-Poly1305 AEAD support, RFC7539.
+	tristate "ChaCha20-Poly1305 AEAD support"
+	select CRYPTO_CHACHA20
+	select CRYPTO_POLY1305
+	select CRYPTO_AEAD
+	help
+	  ChaCha20-Poly1305 AEAD support, RFC7539.
 
- 	  Support for the AEAD wrapper using the ChaCha20 stream cipher combined
- 	  with the Poly1305 authenticator. It is defined in RFC7539 for use in
+	  Support for the AEAD wrapper using the ChaCha20 stream cipher combined
+	  with the Poly1305 authenticator. It is defined in RFC7539 for use in
+	  IETF protocols.
 
 config CRYPTO_SEQIV
 	tristate "Sequence Number IV Generator"
@@ -398,13 +399,13 @@ config CRYPTO_GHASH
 	  GHASH is message digest algorithm for GCM (Galois/Counter Mode).
 
 config CRYPTO_POLY1305
- 	tristate "Poly1305 authenticator algorithm"
- 	help
- 	  Poly1305 authenticator algorithm, RFC7539.
+	tristate "Poly1305 authenticator algorithm"
+	help
+	  Poly1305 authenticator algorithm, RFC7539.
 
- 	  Poly1305 is an authenticator algorithm designed by Daniel J. Bernstein.
- 	  It is used for the ChaCha20-Poly1305 AEAD, specified in RFC7539 for use
- 	  in IETF protocols. This is the portable C implementation of Poly1305.
+	  Poly1305 is an authenticator algorithm designed by Daniel J. Bernstein.
+	  It is used for the ChaCha20-Poly1305 AEAD, specified in RFC7539 for use
+	  in IETF protocols. This is the portable C implementation of Poly1305.
 
 config CRYPTO_MD4
 	tristate "MD4 digest algorithm"
@@ -1136,18 +1137,17 @@ config CRYPTO_SALSA20_X86_64
 	  Bernstein <djb@cr.yp.to>. See <http://cr.yp.to/snuffle.html>
 
 config CRYPTO_CHACHA20
- 	tristate "ChaCha20 cipher algorithm"
- 	select CRYPTO_BLKCIPHER
- 	help
- 	  ChaCha20 cipher algorithm, RFC7539.
+	tristate "ChaCha20 cipher algorithm"
+	select CRYPTO_BLKCIPHER
+	help
+	  ChaCha20 cipher algorithm, RFC7539.
 
- 	  ChaCha20 is a 256-bit high-speed stream cipher designed by Daniel J.
- 	  Bernstein and further specified in RFC7539 for use in IETF protocols.
- 	  This is the portable C implementation of ChaCha20.
+	  ChaCha20 is a 256-bit high-speed stream cipher designed by Daniel J.
+	  Bernstein and further specified in RFC7539 for use in IETF protocols.
+	  This is the portable C implementation of ChaCha20.
 
- 	  See also:
- 	  <http://cr.yp.to/chacha/chacha-20080128.pdf>
-
+	  See also:
+	  <http://cr.yp.to/chacha/chacha-20080128.pdf>
 
 config CRYPTO_SEED
 	tristate "SEED cipher algorithm"
@@ -1266,18 +1266,18 @@ config CRYPTO_SERPENT_AVX2_X86_64
 	  <http://www.cl.cam.ac.uk/~rja14/serpent.html>
 
 config CRYPTO_SPECK
- 	tristate "Speck cipher algorithm"
- 	select CRYPTO_ALGAPI
- 	help
- 	  Speck is a lightweight block cipher that is tuned for optimal
- 	  performance in software (rather than hardware).
+	tristate "Speck cipher algorithm"
+	select CRYPTO_ALGAPI
+	help
+	  Speck is a lightweight block cipher that is tuned for optimal
+	  performance in software (rather than hardware).
 
- 	  Speck may not be as secure as AES, and should only be used on systems
- 	  where AES is not fast enough.
+	  Speck may not be as secure as AES, and should only be used on systems
+	  where AES is not fast enough.
 
- 	  See also: <https://eprint.iacr.org/2013/404.pdf>
+	  See also: <https://eprint.iacr.org/2013/404.pdf>
 
- 	  If unsure, say N.
+	  If unsure, say N.
 
 config CRYPTO_TEA
 	tristate "TEA, XTEA and XETA cipher algorithms"
@@ -1462,9 +1462,17 @@ config CRYPTO_842
 	help
 	  This is the 842 algorithm.
 
+config CRYPTO_842
+	tristate "842 compression algorithm"
+	depends on CRYPTO_DEV_NX_COMPRESS
+	# 842 uses lzo if the hardware becomes unavailable
+	select LZO_COMPRESS
+	select LZO_DECOMPRESS
+	help
+	  This is the 842 algorithm.
+
 config CRYPTO_LZ4
 	tristate "LZ4 compression algorithm"
-	default y
 	select CRYPTO_ALGAPI
 	select LZ4_COMPRESS
 	select LZ4_DECOMPRESS
@@ -1473,7 +1481,6 @@ config CRYPTO_LZ4
 
 config CRYPTO_LZ4HC
 	tristate "LZ4HC compression algorithm"
-	default y
 	select CRYPTO_ALGAPI
 	select LZ4HC_COMPRESS
 	select LZ4_DECOMPRESS

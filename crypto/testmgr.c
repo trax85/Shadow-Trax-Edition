@@ -1943,6 +1943,21 @@ static const struct alg_test_desc alg_test_descs[] = {
 			}
 		}
 	}, {
+		.alg = "chacha20",
+		.test = alg_test_skcipher,
+		.suite = {
+			.cipher = {
+				.enc = {
+					.vecs = chacha20_enc_tv_template,
+					.count = CHACHA20_ENC_TEST_VECTORS
+				},
+				.dec = {
+					.vecs = chacha20_enc_tv_template,
+					.count = CHACHA20_ENC_TEST_VECTORS
+				},
+			}
+		}
+	}, {
 		.alg = "cmac(aes)",
 		.test = alg_test_hash,
 		.suite = {
@@ -2406,36 +2421,36 @@ static const struct alg_test_desc alg_test_descs[] = {
 				}
 			}
 		}
-        }, {
- 		.alg = "ecb(speck128)",
- 		.test = alg_test_skcipher,
- 		.suite = {
- 			.cipher = {
- 				.enc = {
- 					.vecs = speck128_enc_tv_template,
- 					.count = ARRAY_SIZE(speck128_enc_tv_template)
- 				},
- 				.dec = {
- 					.vecs = speck128_dec_tv_template,
- 					.count = ARRAY_SIZE(speck128_dec_tv_template)
- 				}
- 			}
- 		}
- 	}, {
- 		.alg = "ecb(speck64)",
- 		.test = alg_test_skcipher,
- 		.suite = {
- 			.cipher = {
- 				.enc = {
- 					.vecs = speck64_enc_tv_template,
- 					.count = ARRAY_SIZE(speck64_enc_tv_template)
- 				},
- 				.dec = {
- 					.vecs = speck64_dec_tv_template,
- 					.count = ARRAY_SIZE(speck64_dec_tv_template)
- 				}
- 			}
- 		}
+	}, {
+		.alg = "ecb(speck128)",
+		.test = alg_test_skcipher,
+		.suite = {
+			.cipher = {
+				.enc = {
+					.vecs = speck128_enc_tv_template,
+					.count = ARRAY_SIZE(speck128_enc_tv_template)
+				},
+				.dec = {
+					.vecs = speck128_dec_tv_template,
+					.count = ARRAY_SIZE(speck128_dec_tv_template)
+				}
+			}
+		}
+	}, {
+		.alg = "ecb(speck64)",
+		.test = alg_test_skcipher,
+		.suite = {
+			.cipher = {
+				.enc = {
+					.vecs = speck64_enc_tv_template,
+					.count = ARRAY_SIZE(speck64_enc_tv_template)
+				},
+				.dec = {
+					.vecs = speck64_dec_tv_template,
+					.count = ARRAY_SIZE(speck64_dec_tv_template)
+				}
+			}
+		}
 	}, {
 		.alg = "ecb(tea)",
 		.test = alg_test_skcipher,
@@ -2773,6 +2788,15 @@ static const struct alg_test_desc alg_test_descs[] = {
 			}
 		}
 	}, {
+		.alg = "poly1305",
+		.test = alg_test_hash,
+		.suite = {
+			.hash = {
+				.vecs = poly1305_tv_template,
+				.count = POLY1305_TEST_VECTORS
+			}
+		}
+	}, {
 		.alg = "rfc3686(ctr(aes))",
 		.test = alg_test_skcipher,
 		.fips_allowed = 1,
@@ -2831,6 +2855,36 @@ static const struct alg_test_desc alg_test_descs[] = {
 				.dec = {
 					.vecs = aes_gcm_rfc4543_dec_tv_template,
 					.count = AES_GCM_4543_DEC_TEST_VECTORS
+				},
+			}
+		}
+	}, {
+		.alg = "rfc7539(chacha20,poly1305)",
+		.test = alg_test_aead,
+		.suite = {
+			.aead = {
+				.enc = {
+					.vecs = rfc7539_enc_tv_template,
+					.count = RFC7539_ENC_TEST_VECTORS
+				},
+				.dec = {
+					.vecs = rfc7539_dec_tv_template,
+					.count = RFC7539_DEC_TEST_VECTORS
+				},
+			}
+		}
+	}, {
+		.alg = "rfc7539esp(chacha20,poly1305)",
+		.test = alg_test_aead,
+		.suite = {
+			.aead = {
+				.enc = {
+					.vecs = rfc7539esp_enc_tv_template,
+					.count = RFC7539ESP_ENC_TEST_VECTORS
+				},
+				.dec = {
+					.vecs = rfc7539esp_dec_tv_template,
+					.count = RFC7539ESP_DEC_TEST_VECTORS
 				},
 			}
 		}
@@ -3064,36 +3118,6 @@ static const struct alg_test_desc alg_test_descs[] = {
 				}
 			}
 		}
-        }, {
- 		.alg = "xts(speck128)",
- 		.test = alg_test_skcipher,
- 		.suite = {
- 			.cipher = {
- 				.enc = {
- 					.vecs = speck128_xts_enc_tv_template,
- 					.count = ARRAY_SIZE(speck128_xts_enc_tv_template)
- 				},
- 				.dec = {
- 					.vecs = speck128_xts_dec_tv_template,
- 					.count = ARRAY_SIZE(speck128_xts_dec_tv_template)
- 				}
- 			}
- 		}
-        }, {
- 		.alg = "xts(speck64)",
- 		.test = alg_test_skcipher,
- 		.suite = {
- 			.cipher = {
- 				.enc = {
- 					.vecs = speck64_xts_enc_tv_template,
- 					.count = ARRAY_SIZE(speck64_xts_enc_tv_template)
- 				},
- 				.dec = {
- 					.vecs = speck64_xts_dec_tv_template,
- 					.count = ARRAY_SIZE(speck64_xts_dec_tv_template)
- 				}
- 			}
- 		}
 	}, {
 		.alg = "xts(speck128)",
 		.test = alg_test_skcipher,

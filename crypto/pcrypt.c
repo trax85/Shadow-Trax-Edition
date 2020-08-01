@@ -346,10 +346,10 @@ out_free_inst:
 
 static void pcrypt_free(struct crypto_instance *inst)
 {
- 	struct pcrypt_instance_ctx *ctx = crypto_instance_ctx(inst);
+	struct pcrypt_instance_ctx *ctx = crypto_instance_ctx(inst);
 
- 	crypto_drop_spawn(&ctx->spawn);
- 	kfree(inst);
+	crypto_drop_spawn(&ctx->spawn);
+	kfree(inst);
 }
 
 static struct crypto_instance *pcrypt_alloc_aead(struct rtattr **tb,
