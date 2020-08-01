@@ -601,7 +601,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2 $(O3_OPTS)
+KBUILD_CFLAGS	+= -O3 $(O3_OPTS)
 
 ifdef CONFIG_LTO
 LTO_CFLAGS    := -flto -flto=jobserver -fno-fat-lto-objects \
