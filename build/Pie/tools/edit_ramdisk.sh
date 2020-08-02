@@ -63,15 +63,15 @@ elif [ $VIBS == 3 ]; then
 fi
 
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
-
+ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 echo "# USER TWEAKS" >> $CONFIGFILE
 if [ $ROM -eq 2 ] || [ $ROM -eq 1 ]; then
-if [ $ZRAM -eq 1 ]; then
+ if [ $ZRAM -eq 1 ]; then
     echo "service usertweaks /system/bin/sh /system/etc/shadow.sh" >> $CONFIGFILE
-else
+ else
     echo "service usertweaks /system/bin/sh /system/etc/shadow-zram.sh" >> $CONFIGFILE
-fi
+ fi
 	echo "class main" >> $CONFIGFILE
 	echo "group root" >> $CONFIGFILE
 	echo "user root" >> $CONFIGFILE
@@ -83,15 +83,23 @@ fi
 	echo "disabled" >> $CONFIGFILE
 	echo "oneshot" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
+ if [ $ALMK -eq 1 ]; then
+    echo "service override /system/bin/sh /system/etc/lmk.sh" >> $CONFIGFILE
+    echo "class late_start" >> $CONFIGFILE
+    echo "user root" >> $CONFIGFILE
+    echo "disabled" >> $CONFIGFILE
+    echo "oneshot" >> $CONFIGFILE
+ fi
+	echo "" >> $CONFIGFILE
 	echo "on init" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 	echo "on property:sys.boot_completed=1" >> $CONFIGFILE
 else
-if [ $ZRAM -eq 1 ]; then
+ if [ $ZRAM -eq 1 ]; then
     echo "service usertweaks /system/bin/sh /vendor/etc/shadow.sh" >> $CONFIGFILE
-else
+ else
     echo "service usertweaks /system/bin/sh /vendor/etc/shadow-zram.sh" >> $CONFIGFILE
-fi
+ fi
 	echo "class main" >> $CONFIGFILE
 	echo "group root" >> $CONFIGFILE
 	echo "user root" >> $CONFIGFILE
@@ -102,6 +110,14 @@ fi
 	echo "user root" >> $CONFIGFILE
 	echo "disabled" >> $CONFIGFILE
 	echo "oneshot" >> $CONFIGFILE
+	echo "" >> $CONFIGFILE
+ if [ $ALMK -eq 1 ]; then
+    echo "service override /system/bin/sh /vendor/etc/lmk.sh" >> $CONFIGFILE
+    echo "class late_start" >> $CONFIGFILE
+    echo "user root" >> $CONFIGFILE
+    echo "disabled" >> $CONFIGFILE
+    echo "oneshot" >> $CONFIGFILE
+ fi
 	echo "" >> $CONFIGFILE
 	echo "on init" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
@@ -115,9 +131,9 @@ echo "" >> $CONFIGFILE
 COLOR=$(cat /tmp/aroma/color.prop | cut -d '=' -f2)
 echo "# KCAL" >> $CONFIGFILE
 if [ $COLOR == 1 ]; then
-	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 269" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 285" >> $CONFIGFILE
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 256" >> $CONFIGFILE
-	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 256" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 265" >> $CONFIGFILE
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"254 252 230"\" >> $CONFIGFILE
 elif [ $COLOR == 2 ]; then
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 269" >> $CONFIGFILE
@@ -125,10 +141,10 @@ elif [ $COLOR == 2 ]; then
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 256" >> $CONFIGFILE
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"254 254 240"\" >> $CONFIGFILE
 elif [ $COLOR == 3 ]; then
-	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 270" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 287" >> $CONFIGFILE
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 257" >> $CONFIGFILE
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_cont 265" >> $CONFIGFILE
-	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"256 256 256"\" >> $CONFIGFILE
+	echo "write /sys/devices/platform/kcal_ctrl.0/kcal \"256 254 240"\" >> $CONFIGFILE
 elif [ $COLOR == 4 ]; then
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_sat 255" >> $CONFIGFILE
 	echo "write /sys/devices/platform/kcal_ctrl.0/kcal_val 255" >> $CONFIGFILE
@@ -203,10 +219,6 @@ elif [ $VOLT == 2 ]; then
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 1050 1120 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 fi
-ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
-if [ $ALMK == 1 ]; then
-echo "write /sys/module/lowmemorykiller/parameters/minfree 16969,22624,28280,33936,39592,50904" >> $CONFIGFILE
-fi
 echo "# MISC" >> $CONFIGFILE
 echo "setprop video.accelerate.hw 1" >> $CONFIGFILE
 echo "setprop debug.composition.type c2d" >> $CONFIGFILE
@@ -219,6 +231,9 @@ echo "" >> $CONFIGFILE
 
 echo "# RUN USERTWEAKS SERVICE" >> $CONFIGFILE
 echo "start usertweaks" >> $CONFIGFILE
+if [ $ALMK -eq 1 ]; then
+	echo "start override" >> $CONFIGFILE
+fi
 echo "" >> $CONFIGFILE
 echo "# INITIALIZE AND RUN SPECTRUM TWEAKS" >> $CONFIGFILE
 echo "setprop spectrum.support 1" >> $CONFIGFILE

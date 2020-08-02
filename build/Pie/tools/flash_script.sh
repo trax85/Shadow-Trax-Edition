@@ -41,6 +41,7 @@ if [ $JACK = 0 ]; then
 fi
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
+ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
 cp -f /tmp/cpio /sbin/cpio
 cd /tmp/
 /sbin/busybox dd if=/dev/block/bootdevice/by-name/boot of=./boot.img
@@ -56,6 +57,10 @@ if [ $ROM == 3 ]; then
 	chmod 755 /system/system/vendor/etc/shadow-zram.sh
     fi
     #
+    if [ $ALMK == 1 ]; then
+	cp /tmp/lmk.sh /system/system/vendor/etc/lmk.sh
+	chmod 755 /system/system/vendor/etc/lmk.sh
+    fi
 	cp /tmp/init.shadow.rc /system/system/vendor/etc/init/hw/
 	chmod 0644 /system/system/vendor/etc/init/hw/init.shadow.rc
 	# ADD SPECTRUM SUPPORT
@@ -98,6 +103,10 @@ else
 	chmod 755 /system/etc/shadow-zram.sh
     fi
     #
+    if [ $ALMK == 1 ]; then
+	cp /tmp/lmk.sh /system/etc/lmk.sh
+	chmod 755 /system/etc/lmk.sh
+    fi
 	cp -f /tmp/cpio /sbin/cpio
 	cd /tmp/
 	/sbin/busybox dd if=/dev/block/bootdevice/by-name/boot of=./boot.img
