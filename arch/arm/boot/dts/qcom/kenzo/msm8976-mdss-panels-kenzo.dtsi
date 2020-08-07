@@ -10,10 +10,6 @@
  * GNU General Public License for more details.
  */
 
-#include "../dsi-panel-nt35597-dualmipi-wqxga-video.dtsi"
-#include "../dsi-panel-nt35597-dualmipi-wqxga-cmd.dtsi"
-#include "../dsi-panel-nt35597-dsc-wqxga-video.dtsi"
-#include "../dsi-panel-nt35597-dsc-wqxga-cmd.dtsi"
 #include "dsi-panel-tianma-nt35596-1080p-video.dtsi"
 #include "dsi-panel-boe-nt35532-1080p-video.dtsi"
 #include "dsi-panel-sharp-r63315-1080p-video.dtsi"
