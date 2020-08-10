@@ -102,6 +102,8 @@
 #define ADRENO_GPMU BIT(8)
 /* The GPMU supports Limits Management */
 #define ADRENO_LM BIT(9)
+/* The core uses 64 bit GPU addresses */
+#define ADRENO_64BIT BIT(9)
 
 /* Flags to control command packet settings */
 #define KGSL_CMD_FLAGS_NONE             0
@@ -1353,5 +1355,22 @@ static inline bool adreno_long_ib_detect(struct adreno_device *adreno_dev)
 	return adreno_dev->long_ib_detect &&
 		!test_bit(ADRENO_DEVICE_ISDB_ENABLED, &adreno_dev->priv);
 }
+
+/*
+ * adreno_support_64bit() - Check the feature flag only if it is in
+ * 64bit kernel otherwise return false
+ * adreno_dev: The adreno device
+ */
+#if BITS_PER_LONG == 64
+static inline bool adreno_support_64bit(struct adreno_device *adreno_dev)
+{
+	return ADRENO_FEATURE(adreno_dev, ADRENO_64BIT);
+}
+#else
+static inline bool adreno_support_64bit(struct adreno_device *adreno_dev)
+{
+	return false;
+}
+#endif /*BITS_PER_LONG*/
 
 #endif /*__ADRENO_H */
