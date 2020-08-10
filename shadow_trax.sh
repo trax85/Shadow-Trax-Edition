@@ -34,10 +34,7 @@ Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
 export ARCH=arm64
-# GCC 10
-#export CROSS_COMPILE="/home/nesara/arm64-gcc-10.1/bin/aarch64-elf-"
-# GCC 9.x
-export CROSS_COMPILE="/home/nesara/aarch64-elf-gcc-9.2/bin/aarch64-elf-"
+export CROSS_COMPILE="/home/nesara/arm64-gcc/bin/aarch64-elf-"
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu/bin/aarch64-linux-gnu-"
 # GCC 8.3
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-android-8.x/bin/aarch64-linux-android-"
