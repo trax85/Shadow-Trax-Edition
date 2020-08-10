@@ -242,7 +242,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 # CCACHE
 CCACHE := $(shell which ccache)
 
-O3_OPTS := -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-loop-vectorize -ftree-loop-distribution -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fpeel-loops -ffast-math
+O3_OPTS := -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-loop-vectorize -ftree-loop-distribution -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fpeel-loops
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
@@ -384,19 +384,21 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-asynchronous-unwind-tables \
-		   -march=armv8-a+crypto+crc \
-		   -mfix-cortex-a53-843419 \
-		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 \
 		   -fno-delete-null-pointer-checks \
+		   -std=gnu89 \
+		   -mfix-cortex-a53-843419 \
+		   -mcpu=cortex-a72.cortex-a53+crc+crypto \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
-		   -Wno-unused-const-variable \
 		   -Wno-shift-overflow \
 		   -Wno-bool-compare \
 		   -Wno-memset-transposed-args \
 		   -Wno-discarded-array-qualifiers \
-		   -std=gnu89 \
 		   -Wno-tautological-compare -Wno-array-bounds \
+		   -Wno-duplicate-decl-specifier \
+		   -Wno-memset-elt-size -Wno-switch-unreachable \
+		   -Wno-format-truncation -Wno-format-overflow \
+		   -Wno-int-in-bool-context -Wno-bool-operation \
 		   -Wno-nonnull
 
 KBUILD_AFLAGS_KERNEL :=
@@ -601,7 +603,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O3 $(O3_OPTS)
+KBUILD_CFLAGS	+= -O2 $(O3_OPTS)
 
 ifdef CONFIG_LTO
 LTO_CFLAGS    := -flto -flto=jobserver -fno-fat-lto-objects \
