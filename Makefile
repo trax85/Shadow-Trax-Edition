@@ -192,7 +192,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ \
 # "make" in the configured kernel build directory always uses that.
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
-ARCH		?= $(SUBARCH)
+ARCH		?= arm64
 CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
 
 # Architecture as present in compile.h
@@ -242,21 +242,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 # CCACHE
 CCACHE := $(shell which ccache)
 
-O3_OPTS := -falign-functions=32 -fgcse-las \
-	   -fivopts -fgcse-sm \
-	   -fipa-pta -fomit-frame-pointer \
-	   -frename-registers -ftracer \
-	   -ftree-loop-im -ftree-loop-ivcanon \
-	   -funsafe-loop-optimizations  \
-	   -funswitch-loops -fpredictive-commoning \
-	   -fgcse-after-reload -ftree-loop-vectorize \
-	   -ftree-loop-distribution -ftree-loop-distribute-patterns \
-	   -fpeel-loops -fsplit-loops  \
-	   -ftree-slp-vectorize -ftree-partial-pre \
-	   -fsplit-paths -fipa-cp-clone \
-	   -ffast-math -fweb \
-	   -fvect-cost-model -fvect-cost-model=dynamic 
-	   
+O3_OPTS := -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-loop-vectorize -ftree-loop-distribution -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fpeel-loops
 
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
@@ -397,19 +383,22 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -march=armv8-a+crypto+crc \
-		   -mfix-cortex-a53-843419 \
-		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53 \
+		   -fno-asynchronous-unwind-tables \
 		   -fno-delete-null-pointer-checks \
+		   -std=gnu89 \
+		   -mfix-cortex-a53-843419 \
+		   -mcpu=cortex-a72.cortex-a53+crc+crypto \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
-		   -Wno-unused-const-variable \
 		   -Wno-shift-overflow \
 		   -Wno-bool-compare \
 		   -Wno-memset-transposed-args \
 		   -Wno-discarded-array-qualifiers \
-		   -std=gnu89 \
 		   -Wno-tautological-compare -Wno-array-bounds \
+		   -Wno-duplicate-decl-specifier \
+		   -Wno-memset-elt-size -Wno-switch-unreachable \
+		   -Wno-format-truncation -Wno-format-overflow \
+		   -Wno-int-in-bool-context -Wno-bool-operation \
 		   -Wno-nonnull
 
 KBUILD_AFLAGS_KERNEL :=
