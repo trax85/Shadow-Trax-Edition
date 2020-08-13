@@ -1,4 +1,5 @@
-V5.6-
+V5.6:-
+
 * EAS initial port
 * EAS energy module fixup.
 * Sched boost feature initial import.
@@ -18,8 +19,11 @@ V5.6-
 * Add mdss triple buffering support(Testing).
 * Add Wakeboost interface, Dynamic fsync.
 * Initial HDR feature import from 4.4 and 3.18 kernel.
-----------------------------------------------------
-V5.7-
+
+----------------------------------------------------------
+
+V5.7:-
+
 -EAS Scheduler
 * Upstream EAS scheduler and add bits from NGK, HANA Cl, AGNi Whyred Sources.
 * Add Walt & Pelt Load Tracking(Pelt 8ms).
@@ -62,7 +66,7 @@ V5.7-
 * Clean session when failed to open instance.
 
 -Video
-* Make Refreshrate Varible and export it to userspace (/sys/module/mdss_dsi/parameters/refresh_rate).
+* Make Refreshrate Variable and export it to userspace (/sys/module/mdss_dsi/parameters/refresh_rate).
 * Add Frame Boost Disbled by Default.
 * Mdss Save state of vsync handler.
 * Silence mdss log spams and Fix Derps.
@@ -122,7 +126,7 @@ V5.7-
 * Nuke unused and old modules from our configs and disable logging of many modules in kernel logs.
 
 -Device Tree
-* REmove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock.
+* Remove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock.
 * Nuke Unwanted Intermediate Cpu Freqs And add 672Mhz and 960Mhz Intermediates to get smoother transistion.
 * Correct Voltage values for Both CPU & GPU.
 * Add Current values for New freqs and adjust them a bit.
