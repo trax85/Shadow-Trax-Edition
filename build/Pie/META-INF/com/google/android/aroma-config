@@ -13,8 +13,8 @@ fontresload( "1", "ttf/Roboto-Regular.ttf", "15" );
 theme("zetsubou");
 
 menubox(
-  "\nShadow Kernel Installer",
-  "<@center><b>\nReady to Install</b>\n\n</@>",
+  "\n<b>Shadow Kernel Installer",
+  "<@center><b>\n\nReady to Install</b>\n\n</@>",
   "",
   "menu.prop",
   "Install\n","Install Shadow TraxEdition based on your preferences","@install",
@@ -73,7 +73,7 @@ alert(
 );
 
 viewbox(
-    "<@center>\n\nShadow Kernel\nKenzo",
+    "<@center>\n\n<b>Shadow Kernel\n\nKenzo",
     "\n\n\n\n\n  VERSION\t\t: <b><#selectbg_g>"+ini_get("rom_version")+"</#></b>\n\n" +
     "  AUTHOR\t\t: <b><#selectbg_g>"+ini_get("rom_author")+"</#></b>\n\n" +
     "  MAINTAINER\t\t: <b>@trax85</b>\n\n" +
@@ -98,7 +98,7 @@ textbox(
 );
 
 selectbox(
-  "\n\nChoose the android version that you are on.","<@center><b>\n\n\n\n\n\nThis will configure kernel according to your rom.\n</b></@>","","rom.prop",
+  "\n\nChoose Your Android Version","<@center><b>\n\n\n\n\n\nThis will configure kernel according to your rom.\n</b></@>","","rom.prop",
   "Nougat  ","\nAndroid 7",0,
   "Pie, Oreo ","\nAndroid 9, Android 8 ",0,
   "Q ","\nAndroid 10",1
@@ -125,7 +125,7 @@ form(
 );
 
 selectbox(
-  "\n\nSet your profile","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","profile.prop",
+  "\n\nSet Your profile","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","profile.prop",
   "Balanced ","\nrecommended",1,
   "Battery ","\nmay cause lags",0,
   "Performance ","\nmay yield poor backup",0
@@ -185,7 +185,7 @@ selectbox(
 );
 
 selectbox(
-  "\n\nWant enhanced colors ?","<@center><b>\n\n\n\n\nIf you choose yes then display colors will be tuned. Keep livedisplay off to see real colors.\n</b></@>","","color.prop",
+  "\n\nWant Enhanced Colors ?","<@center><b>\n\n\n\n\nIf you choose yes then display colors will be tuned. Keep livedisplay off to see real colors.\n</b></@>","","color.prop",
   "Yes, enhanced colors (warm)","\nTends to orange red",0,
   "Yes, enhanced colors (cool)","\nTends to blueish",0,
   "Yes, enhanced colors (vivid)","\nPopping colours",0,
@@ -200,7 +200,7 @@ selectbox(
 );
 
 checkbox(
-  "\n\nOther settings","<@center><b>\n\nSelect the mods you want to install</b>\n\n</@>","","mods.prop",
+  "\n\nOther Settings","<@center><b>\n\nSelect the mods you want to install</b>\n\n</@>","","mods.prop",
   "Disable Fsync","\nFaster fileystem performance, but risk of Data Loss",0,
   "USB Fastcharge","\nIncrease charge current while charging via USB",0,
   "Backlight Dimmer","\nThis lowers Max-Min brightness of display",0,
