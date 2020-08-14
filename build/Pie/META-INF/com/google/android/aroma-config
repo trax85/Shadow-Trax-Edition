@@ -138,15 +138,14 @@ alert(
   "OK"
 );
 
-alert(
-  "Profile Types",
-  "Please Read :- I presume many won't use performance mode so I made 'Profile Types'. Gaming mode has a max freq of 1.7Ghz in all types except Default type.\n\nIn type 'A & B' Performance and Gaming mode settings for Cpu & Gpu are identical(maxed out) But Performance mode has lower Max frequency depending on your selection. \n\nIn types 'C,D & Default' the Performance mode has lower settings for Cpu & Gpu compared to Gaming mode and lower max frequency depending on your selection in the next menu.\n\n",
-  "@warning",
-  "OK"
+viewbox(
+  "\n\n<b>Profile Types</b>",
+  "\n\n\n\n\nPlease Read :- \n\n\n\nI presume many won't use performance mode so I made 'Profile Types'. Gaming mode has a max freq of 1.7Ghz in all types except Default type.\n\n\nIn type 'A & B' Performance and Gaming mode settings for Cpu & Gpu are Identical meaning all boosts Maxed out, but Performance mode has Lower Max Frequency depending on your selection. \n\n\nIn types 'C,D & Default' the Performance mode has lower settings for Cpu & Gpu ,Meaning it has lower Boost and is less faster but more battery conservant compared to Gaming mode and has Lower Max Frequency depending on your selection in the next menu. \n\n\n<b>The frequency mentioned above are for Little cores ONLY Big cores Remain Uneffected.</b>\n\n\n\nPress Next to Continue...",
+  ""
 );
 
 selectbox(
-  "\n\nProfile Types","<@center><b>\n\n\n\n\nChosing any of these 4 Profile Types will enable OC of 1.7Ghz for little cores in gaming mode and the below listed frequencies are for the little cores in Perfromance mode. Choose 'Default' if you are unsure about this.\n</b></@>","","occore.prop",
+  "\n\nProfile Types","<@center><b>\n\n\n\n\nChosing any of these 4 Profile Types will enable 1.7Ghz OC for little cores in Gaming mode and the below listed frequencies are for the Little cores in Perfromance mode. Choose 'Default' if you are unsure about this.\n</b></@>","","occore.prop",
   "Type 'A'","\nPerformance max freq:1.6Ghz",0,
   "Type 'B'","\nPerformance max freq:1.4Ghz",0,
   "Type 'C'","\nPerformance max freq:1.6Ghz",0,

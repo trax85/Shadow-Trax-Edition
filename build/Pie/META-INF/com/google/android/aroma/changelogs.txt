@@ -43,12 +43,13 @@ V5.6-
 * Branch prediction hardening.
 
 -Device Tree
-* REmove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock.
+* Remove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock.
 * Nuke Unwanted Intermediate Cpu Freqs And add 672Mhz and 960Mhz Intermediates to get smoother transistion.
 * Correct Voltage values for Both CPU & GPU.
 * Add Current values for New freqs and adjust them a bit.
 * Reduce Gpu OC to 710Mhz as 753Mhz and anything higher than 710 causes kgsl faults and FC's in game.
 * Optimize Gpu Pwrlvl.
+* Reduce Display Turn On Delay.
 * Add DFPS for Boe,Tinema ,Sharp panels.
 * Add missing Nodes and blobs for our dt.
 
@@ -56,6 +57,7 @@ V5.6-
 * Restore stock Shadow lmk module as more performance improvemets were seen there.
 * Disabled adaptive LMK.
 * Disabled lmk fast run.
+
 -File-sys
 * EXT4 Enhancemets and remove spams and other fixes.
 * Fs Remove taint warnings and tracing logs.
