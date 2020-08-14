@@ -25,9 +25,7 @@ elif [ $FC = 0 ]; then
 fi
 
 REFRESH=$(cat /tmp/aroma/refresh.prop | cut -d '=' -f2)
-if [ $REFRESH == 1 ]; then
-	RFS=60
-elif [ $REFRESH == 2 ]; then
+if [ $REFRESH == 2 ]; then
 	RFS=62
 elif [ $REFRESH == 3 ]; then
 	RFS=64

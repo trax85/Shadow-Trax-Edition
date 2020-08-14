@@ -18,7 +18,7 @@
 #
 zim=/tmp/Image1
 REFRESH=$(cat /tmp/aroma/refresh.prop | cut -d '=' -f2)
-if [ $REFRESH == 6 ]; then
+if [ $REFRESH == 7 ]; then
 	dim=/tmp/dt2.img
 else
 	dim=/tmp/dt1.img
