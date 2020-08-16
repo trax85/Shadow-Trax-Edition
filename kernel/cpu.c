@@ -725,8 +725,11 @@ EXPORT_SYMBOL(cpu_active_mask);
  * CPU numbers than the big CPUs (e.g., on an 6-core system, CPUs 0-3 would be
  * little and CPUs 4-5 would be big).
  */
-#define LITTLE_CPU_MASK ((1UL << (NR_CPUS / 2)) - 1)
-#define BIG_CPU_MASK    (((1UL << NR_CPUS) - 1) & ~LITTLE_CPU_MASK)
+#define CPU_MASK(cpu) (1U << (cpu))
+
+#define LITTLE_CPU_MASK (CPU_MASK(0) | CPU_MASK(1) | CPU_MASK(2) | CPU_MASK(3))
+#define BIG_CPU_MASK (CPU_MASK(4) | CPU_MASK(5))
+
 static const unsigned long little_cluster_cpus = LITTLE_CPU_MASK;
 const struct cpumask *const cpu_lp_mask = to_cpumask(&little_cluster_cpus);
 EXPORT_SYMBOL(cpu_lp_mask);
