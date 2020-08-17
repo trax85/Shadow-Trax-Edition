@@ -1694,7 +1694,7 @@ static int get_prop_capacity(struct fg_chip *chip)
 		return MISSING_CAPACITY;
 #ifndef CONFIG_MACH_XIAOMI_KENZO
 	if (!chip->profile_loaded && !chip->use_otp_profile) {
-		pr_info("loading batt profile, return last soc\n");
+		pr_debug("loading batt profile, return last soc\n");
 		return chip->last_soc;
 	}
 #endif
