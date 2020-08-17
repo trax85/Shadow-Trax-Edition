@@ -44,7 +44,14 @@ elif [ $VIBS == 2 ]; then
 elif [ $VIBS == 3 ]; then
 	VIBS=0
 fi
-
+HAP=$(cat /tmp/aroma/haptic.prop | cut -d '=' -f2)
+if [ $HAP == 1 ]; then
+	HAPS=1856
+elif [ $HAP == 2 ]; then
+	HAPS=1334
+elif [ $HAP == 3 ]; then
+	HAPS=986
+fi
 #
 PROFILE=$(cat /tmp/aroma/profile.prop | cut -d '=' -f2)
 CMODE=$(cat /tmp/aroma/cmode.prop | cut -d '=' -f2)
@@ -141,6 +148,7 @@ USB=0
 fi
 echo "# VARIABLES FOR SH" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
+
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
 
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
@@ -256,6 +264,9 @@ elif [ $PROFILE == 2 ]; then
 elif [ $PROFILE == 3 ]; then
 	echo "setprop sys.io.scheduler \"deadline\"" >> $CONFIGFILE
 fi
+echo "# HAPTIC FEEDBACK SENSOR" >> $CONFIGFILE
+echo "write /sys/class/timed_output/vibrator/vtg_level $HAPS" >> $CONFIGFILE
+echo "" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# TOUCH BOOST" >> $CONFIGFILE
