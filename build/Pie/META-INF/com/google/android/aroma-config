@@ -125,6 +125,13 @@ form(
 );
 
 selectbox(
+  "\n\n<b>Set HapticFeedback Strength","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","haptic.prop",
+  "Strong ","\nFeedback strength is set to 50%",0,
+  "Medium ","\nFeedback strength is set to 35%",0,
+  "Low ","\nFeedback strength is set to 25%",1
+);
+
+selectbox(
   "\n\n<b>Set Your Profile","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","profile.prop",
   "Balanced ","\nRecommended",1,
   "Battery ","\nMay cause lags",0,

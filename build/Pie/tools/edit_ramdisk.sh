@@ -60,6 +60,15 @@ elif [ $VIBS == 3 ]; then
 	VIBS=0
 fi
 
+HAP=$(cat /tmp/aroma/haptic.prop | cut -d '=' -f2)
+if [ $HAP == 1 ]; then
+	HAPS=1856
+elif [ $HAP == 2 ]; then
+	HAPS=1334
+elif [ $HAP == 3 ]; then
+	HAPS=986
+fi
+
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
 ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
@@ -182,6 +191,9 @@ echo "# WAKE GESTURES" >> $CONFIGFILE
 echo "write /sys/android_touch/doubletap2wake " $DT2W >> $CONFIGFILE
 echo "write /sys/android_touch/sweep2wake " $S2W >> $CONFIGFILE
 echo "write /sys/android_touch/vib_strength " $VIBS >> $CONFIGFILE
+echo "" >> $CONFIGFILE
+echo "# HAPTIC FEEDBACK SENSOR" >> $CONFIGFILE
+echo "write /sys/class/timed_output/vibrator/vtg_level $HAPS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
