@@ -395,10 +395,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-memset-transposed-args \
 		   -Wno-discarded-array-qualifiers \
 		   -Wno-tautological-compare -Wno-array-bounds \
-		   -Wno-duplicate-decl-specifier \
-		   -Wno-memset-elt-size -Wno-switch-unreachable \
-		   -Wno-format-truncation -Wno-format-overflow \
-		   -Wno-int-in-bool-context -Wno-bool-operation \
 		   -Wno-nonnull
 
 KBUILD_AFLAGS_KERNEL :=
