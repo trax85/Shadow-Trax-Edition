@@ -69,7 +69,7 @@ static void power_suspend(struct work_struct *work)
 
 	cancel_work_sync(&power_resume_work);
 
-	pr_info("[POWERSUSPEND] Entering Suspend...\n");
+	pr_debug("[POWERSUSPEND] Entering Suspend...\n");
 	mutex_lock(&power_suspend_lock);
 	spin_lock_irqsave(&ps_state_lock, irqflags);
 	if (ps_state == POWER_SUSPEND_INACTIVE)
@@ -81,7 +81,7 @@ static void power_suspend(struct work_struct *work)
 		return;
 	}
 
-	pr_info("[POWERSUSPEND] Suspending...\n");
+	pr_debug("[POWERSUSPEND] Suspending...\n");
 	list_for_each_entry(pos, &power_suspend_handlers, link) {
 		if (pos->suspend != NULL) {
 			pos->suspend(pos);
@@ -91,22 +91,22 @@ static void power_suspend(struct work_struct *work)
 	mutex_unlock(&power_suspend_lock);
 
 	if (sync_on_powersuspend) {
-		pr_info("[POWERSUSPEND] Syncing\n");
+		pr_debug("[POWERSUSPEND] Syncing\n");
 		sys_sync();
 	}
 
 	if (use_global_suspend) {
 		if (!mutex_trylock(&pm_mutex)) {
-			pr_info("[POWERSUSPEND] Global Suspend Busy!\n");
+			pr_debug("[POWERSUSPEND] Global Suspend Busy!\n");
 			return;
 		}
 
-		pr_info("[POWERSUSPEND] Suspend Completed\n");
-		pr_info("[POWERSUSPEND] Calling System Suspend!\n");
+		pr_debug("[POWERSUSPEND] Suspend Completed\n");
+		pr_debug("[POWERSUSPEND] Calling System Suspend!\n");
 		pm_suspend(PM_HIBERNATION_PREPARE);
 		mutex_unlock(&pm_mutex);
 	} else
-		pr_info("[POWERSUSPEND] Suspend Completed.\n");
+		pr_debug("[POWERSUSPEND] Suspend Completed.\n");
 }
 
 static void power_resume(struct work_struct *work)
@@ -116,7 +116,7 @@ static void power_resume(struct work_struct *work)
 	int abort = 0;
 
 	cancel_work_sync(&power_suspend_work);
-	pr_info("[POWERSUSPEND] Entering Resume...\n");
+	pr_debug("[POWERSUSPEND] Entering Resume...\n");
 	mutex_lock(&power_suspend_lock);
 	spin_lock_irqsave(&ps_state_lock, irqflags);
 	if (ps_state == POWER_SUSPEND_ACTIVE)
@@ -126,13 +126,13 @@ static void power_resume(struct work_struct *work)
 	if (abort)
 		goto abort;
 
-	pr_info("[POWERSUSPEND] Resuming...\n");
+	pr_debug("[POWERSUSPEND] Resuming...\n");
 	list_for_each_entry_reverse(pos, &power_suspend_handlers, link) {
 		if (pos->resume != NULL) {
 			pos->resume(pos);
 		}
 	}
-	pr_info("[POWERSUSPEND] Resume Completed.\n");
+	pr_debug("[POWERSUSPEND] Resume Completed.\n");
 
 abort:
 	mutex_unlock(&power_suspend_lock);
@@ -146,23 +146,23 @@ void set_power_suspend_state(int new_state)
 	if (ps_state != new_state) {
 		spin_lock_irqsave(&ps_state_lock, irqflags);
 		if (ps_state == POWER_SUSPEND_INACTIVE && new_state == POWER_SUSPEND_ACTIVE) {
-			pr_info("[POWERSUSPEND] Suspend State Activated.\n");
+			pr_debug("[POWERSUSPEND] Suspend State Activated.\n");
 			ps_state = new_state;
 			queue_work(pwrsup_wq, &power_suspend_work);
 		} else if (ps_state == POWER_SUSPEND_ACTIVE && new_state == POWER_SUSPEND_INACTIVE) {
-			pr_info("[POWERSUSPEND] Resume State Activated.\n");
+			pr_debug("[POWERSUSPEND] Resume State Activated.\n");
 			ps_state = new_state;
 			queue_work(pwrsup_wq, &power_resume_work);
 		}
 		spin_unlock_irqrestore(&ps_state_lock, irqflags);
 	} else {
-		pr_info("[POWERSUSPEND] Ignoring State Request.\n");
+		pr_debug("[POWERSUSPEND] Ignoring State Request.\n");
 	}
 }
 
 void set_power_suspend_state_panel_hook(int new_state)
 {
-	pr_info("[POWERSUSPEND] Panel Requests %s.\n", new_state == POWER_SUSPEND_ACTIVE ? "Suspend" : "Resume");
+	pr_debug("[POWERSUSPEND] Panel Requests %s.\n", new_state == POWER_SUSPEND_ACTIVE ? "Suspend" : "Resume");
 	set_power_suspend_state(new_state);
 }
 
@@ -267,7 +267,7 @@ static int power_suspend_init(void)
 		&power_suspend_attr_group);
 
 	if (sysfs_result) {
-		pr_info("%s group create failed!\n", __FUNCTION__);
+		pr_debug("%s group create failed!\n", __FUNCTION__);
 		kobject_put(power_suspend_kobj);
 		return -ENOMEM;
 	}

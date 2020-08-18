@@ -7462,7 +7462,7 @@ static inline void dump_reg(struct smbchg_chip *chip, u16 addr,
 
 	if (NULL == name) {
 		strcat(log, "\n");
-		printk(log);
+		//printk(log);
 		return;
 	}
 

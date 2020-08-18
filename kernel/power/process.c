@@ -91,15 +91,15 @@ static int try_to_freeze_tasks(bool user_only)
 	elapsed_msecs = elapsed_msecs64;
 
 	if (wakeup) {
-		printk("\n");
+		/*printk("\n");
 		printk(KERN_ERR "Freezing of tasks aborted after %d.%03d seconds",
-		       elapsed_msecs / 1000, elapsed_msecs % 1000);
+		       elapsed_msecs / 1000, elapsed_msecs % 1000);*/
 	} else if (todo) {
-		printk("\n");
+		/*printk("\n");
 		printk(KERN_ERR "Freezing of tasks failed after %d.%03d seconds"
 		       " (%d tasks refusing to freeze, wq_busy=%d):\n",
 		       elapsed_msecs / 1000, elapsed_msecs % 1000,
-		       todo - wq_busy, wq_busy);
+		       todo - wq_busy, wq_busy);*/
 
 		read_lock(&tasklist_lock);
 		do_each_thread(g, p) {
@@ -108,10 +108,10 @@ static int try_to_freeze_tasks(bool user_only)
 				sched_show_task(p);
 		} while_each_thread(g, p);
 		read_unlock(&tasklist_lock);
-	} else {
+	} /*else {
 		printk("(elapsed %d.%03d seconds) ", elapsed_msecs / 1000,
 			elapsed_msecs % 1000);
-	}
+	}*/
 
 	return todo ? -EBUSY : 0;
 }
@@ -155,7 +155,7 @@ int freeze_processes(void)
 	if (!pm_freezing)
 		atomic_inc(&system_freezing_cnt);
 
-	printk("Freezing user space processes ... ");
+	//printk("Freezing user space processes ... ");
 	pm_freezing = true;
 	oom_kills_saved = oom_kills_count();
 	error = try_to_freeze_tasks(true);
@@ -171,11 +171,11 @@ int freeze_processes(void)
 		if (oom_kills_count() != oom_kills_saved &&
 				!check_frozen_processes()) {
 			__usermodehelper_set_disable_depth(UMH_ENABLED);
-			printk("OOM in progress.");
+			//printk("OOM in progress.");
 			error = -EBUSY;
 			goto done;
 		}
-		printk("done.");
+		//printk("done.");
 	}
 done:
 	printk("\n");
@@ -198,13 +198,13 @@ int freeze_kernel_threads(void)
 {
 	int error;
 
-	printk("Freezing remaining freezable tasks ... ");
+	//printk("Freezing remaining freezable tasks ... ");
 	pm_nosig_freezing = true;
 	error = try_to_freeze_tasks(false);
 	if (!error)
-		printk("done.");
+		//printk("done.");
 
-	printk("\n");
+	//printk("\n");
 	BUG_ON(in_atomic());
 
 	if (error)
@@ -243,7 +243,7 @@ void thaw_processes(void)
 
 	oom_killer_enable();
 
-	printk("Restarting tasks ... ");
+	//printk("Restarting tasks ... ");
 
 	__usermodehelper_set_disable_depth(UMH_FREEZING);
 	thaw_workqueues();
@@ -257,7 +257,7 @@ void thaw_processes(void)
 	usermodehelper_enable();
 
 	schedule();
-	printk("done.\n");
+	//printk("done.\n");
 }
 
 void thaw_kernel_threads(void)
@@ -265,7 +265,7 @@ void thaw_kernel_threads(void)
 	struct task_struct *g, *p;
 
 	pm_nosig_freezing = false;
-	printk("Restarting kernel threads ... ");
+	//printk("Restarting kernel threads ... ");
 
 	thaw_workqueues();
 
@@ -277,5 +277,5 @@ void thaw_kernel_threads(void)
 	read_unlock(&tasklist_lock);
 
 	schedule();
-	printk("done.\n");
+	//printk("done.\n");
 }
