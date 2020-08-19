@@ -1,5 +1,5 @@
 ini_set("rom_name",             "Shadow TraxEdition");
-ini_set("rom_version",          "TraxEdition EAS");
+ini_set("rom_version",          "TraxEdition HMP");
 ini_set("rom_author",           "energyspear17@xda, @trax85, \t\t\t\t\t\t @felix3000");
 ini_set("rom_device",           "Kenzo");
 ini_set("rom_date",             "April 11, 2020");
@@ -18,7 +18,7 @@ menubox(
   "",
   "menu.prop",
   "Install\n","Install Shadow TraxEdition based on your preferences","@install",
-  "Changelog\n","Shadow TraxEdition EAS Logs and features","@changelog",
+  "Changelog\n","Shadow TraxEdition HMP Logs and features","@changelog",
   "Exit\n","Exit Shadow Kernel manager and go back to recovery","@trash"
 );
 
@@ -220,7 +220,7 @@ menubox(
   "<@center>\n\n\nReady to install\n\n</@>",
   "",
   "menu.prop",
-  "Install Shadow EAS","","@install",
+  "Install Shadow HMP","","@install",
   "Abort installation","","@trash"
 );
 
