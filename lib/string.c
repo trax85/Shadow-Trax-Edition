@@ -28,14 +28,14 @@
 #include <linux/errno.h>
 #include <linux/memcopy.h>
 
-#ifndef __HAVE_ARCH_STRNICMP
+#ifndef __HAVE_ARCH_STRNCASECMP
 /**
- * strnicmp - Case insensitive, length-limited string comparison
+ * strncasecmp - Case insensitive, length-limited string comparison
  * @s1: One string
  * @s2: The other string
  * @len: the maximum number of characters to compare
  */
-int strnicmp(const char *s1, const char *s2, size_t len)
+int strncasecmp(const char *s1, const char *s2, size_t len)
 {
 	/* Yes, Virginia, it had better be unsigned */
 	unsigned char c1, c2;
@@ -57,6 +57,14 @@ int strnicmp(const char *s1, const char *s2, size_t len)
 	} while (--len);
 	return (int)c1 - (int)c2;
 }
+EXPORT_SYMBOL(strncasecmp);
+#endif
+#ifndef __HAVE_ARCH_STRNICMP
+#undef strnicmp
+int strnicmp(const char *s1, const char *s2, size_t len)
+{
+	return strncasecmp(s1, s2, len);
+}
 EXPORT_SYMBOL(strnicmp);
 #endif
 
@@ -72,20 +80,6 @@ int strcasecmp(const char *s1, const char *s2)
 	return c1 - c2;
 }
 EXPORT_SYMBOL(strcasecmp);
-#endif
-
-#ifndef __HAVE_ARCH_STRNCASECMP
-int strncasecmp(const char *s1, const char *s2, size_t n)
-{
-	int c1, c2;
-
-	do {
-		c1 = tolower(*s1++);
-		c2 = tolower(*s2++);
-	} while ((--n > 0) && c1 == c2 && c1 != 0);
-	return c1 - c2;
-}
-EXPORT_SYMBOL(strncasecmp);
 #endif
 
 #ifndef __HAVE_ARCH_STRCPY
@@ -302,6 +296,24 @@ char *strchr(const char *s, int c)
 EXPORT_SYMBOL(strchr);
 #endif
 
+#ifndef __HAVE_ARCH_STRCHRNUL
+/**
+ * strchrnul - Find and return a character in a string, or end of string
+ * @s: The string to be searched
+ * @c: The character to search for
+ *
+ * Returns pointer to first occurrence of 'c' in s. If c is not found, then
+ * return a pointer to the null byte at the end of s.
+ */
+char *strchrnul(const char *s, int c)
+{
+	while (*s && *s != (char)c)
+		s++;
+	return (char *)s;
+}
+EXPORT_SYMBOL(strchrnul);
+#endif
+
 #ifndef __HAVE_ARCH_STRRCHR
 /**
  * strrchr - Find the last occurrence of a character in a string
@@ -310,12 +322,12 @@ EXPORT_SYMBOL(strchr);
  */
 char *strrchr(const char *s, int c)
 {
-       const char *p = s + strlen(s);
-       do {
-           if (*p == (char)c)
-               return (char *)p;
-       } while (--p >= s);
-       return NULL;
+	const char *last = NULL;
+	do {
+		if (*s == (char)c)
+			last = s;
+	} while (*s++);
+	return (char *)last;
 }
 EXPORT_SYMBOL(strrchr);
 #endif
@@ -538,7 +550,6 @@ bool sysfs_streq(const char *s1, const char *s2)
 }
 EXPORT_SYMBOL(sysfs_streq);
 
-
 #ifndef __HAVE_ARCH_MEMSET
 /**
  * memset - Fill a region of memory with the given value
@@ -588,10 +599,10 @@ EXPORT_SYMBOL(memzero_explicit);
 void *memcpy(void *dest, const void *src, size_t count)
 {
 	unsigned long dstp = (unsigned long)dest;
- 	unsigned long srcp = (unsigned long)src;
+	unsigned long srcp = (unsigned long)src;
 
 	/* Copy from the beginning to the end */
- 	mem_copy_fwd(dstp, srcp, count);
+	mem_copy_fwd(dstp, srcp, count);
 	return dest;
 }
 EXPORT_SYMBOL(memcpy);
@@ -609,14 +620,14 @@ EXPORT_SYMBOL(memcpy);
 void *memmove(void *dest, const void *src, size_t count)
 {
 	unsigned long dstp = (unsigned long)dest;
- 	unsigned long srcp = (unsigned long)src;
+	unsigned long srcp = (unsigned long)src;
 
 	if (dest - src >= count) {
- 		/* Copy from the beginning to the end */
- 		mem_copy_fwd(dstp, srcp, count);
+		/* Copy from the beginning to the end */
+		mem_copy_fwd(dstp, srcp, count);
 	} else {
 		/* Copy from the end to the beginning */
- 		mem_copy_bwd(dstp, srcp, count);
+		mem_copy_bwd(dstp, srcp, count);
 	}
 	return dest;
 }

@@ -119,11 +119,6 @@ EXPORT_SYMBOL(flex_array_alloc);
 static int fa_element_to_part_nr(struct flex_array *fa,
 					unsigned int element_nr)
 {
-        /*
- 	 * if element_size == 0 we don't get here, so we never touch
- 	 * the zeroed fa->reciprocal_elems, which would yield invalid
- 	 * results
- 	 */
 	return reciprocal_divide(element_nr, fa->reciprocal_elems);
 }
 

@@ -87,8 +87,7 @@ config CRC32
 	  functions require M here.
 
 config CRC32_SELFTEST
-	bool "CRC32 perform self test on init"
-	default n
+	tristate "CRC32 perform self test on init"
 	depends on CRC32
 	help
 	  This option enables the CRC32 library functions to perform a
@@ -197,16 +196,13 @@ config LZO_DECOMPRESS
 	tristate
 
 config LZ4_COMPRESS
-	tristate "lz4"
-	default y
+	tristate
 
 config LZ4HC_COMPRESS
-	tristate "lz4"
-	default y
+	tristate
 
 config LZ4_DECOMPRESS
-	tristate "lz4"
-	default y
+	tristate
 
 source "lib/xz/Kconfig"
 

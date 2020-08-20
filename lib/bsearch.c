@@ -37,17 +37,17 @@ void *bsearch(const void *key, const void *base, size_t num, size_t size,
 	int result;
 
 	while (num > 0) {
- 		pivot = base + (num >> 1) * size;
- 		result = cmp(key, pivot);
+		pivot = base + (num >> 1) * size;
+		result = cmp(key, pivot);
 
 		if (result == 0)
- 			return (void *)pivot;
+			return (void *)pivot;
 
- 		if (result > 0) {
- 			base = pivot + size;
- 			num--;
- 		}
- 		num >>= 1;
+		if (result > 0) {
+			base = pivot + size;
+			num--;
+		}
+		num >>= 1;
 	}
 
 	return NULL;

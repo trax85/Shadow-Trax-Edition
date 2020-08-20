@@ -10,8 +10,8 @@
 
 static int alignment_ok(const void *base, int align)
 {
- 	return IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) ||
- 		((unsigned long)base & (align - 1)) == 0;
+	return IS_ENABLED(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) ||
+		((unsigned long)base & (align - 1)) == 0;
 }
 
 static void u32_swap(void *a, void *b, int size)
@@ -23,9 +23,9 @@ static void u32_swap(void *a, void *b, int size)
 
 static void u64_swap(void *a, void *b, int size)
 {
- 	u64 t = *(u64 *)a;
- 	*(u64 *)a = *(u64 *)b;
- 	*(u64 *)b = t;
+	u64 t = *(u64 *)a;
+	*(u64 *)a = *(u64 *)b;
+	*(u64 *)b = t;
 }
 
 static void generic_swap(void *a, void *b, int size)
@@ -64,13 +64,13 @@ void sort(void *base, size_t num, size_t size,
 	int i = (num/2 - 1) * size, n = num * size, c, r;
 
 	if (!swap_func) {
- 		if (size == 4 && alignment_ok(base, 4))
- 			swap_func = u32_swap;
- 		else if (size == 8 && alignment_ok(base, 8))
- 			swap_func = u64_swap;
- 		else
- 			swap_func = generic_swap;
- 	}
+		if (size == 4 && alignment_ok(base, 4))
+			swap_func = u32_swap;
+		else if (size == 8 && alignment_ok(base, 8))
+			swap_func = u64_swap;
+		else
+			swap_func = generic_swap;
+	}
 
 	/* heapify */
 	for ( ; i >= 0; i -= size) {

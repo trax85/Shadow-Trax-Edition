@@ -401,4 +401,3 @@ do0:
     ((op_t *) dstp)[3] = MERGE (a0, sh_1, a1, sh_2);
 }
 
-
