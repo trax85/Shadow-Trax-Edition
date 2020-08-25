@@ -122,7 +122,6 @@ struct request {
 	union {
 		struct rb_node rb_node;	/* sort/lookup */
 		void *completion_data;
-                unsigned long fifo_time;
 	};
 
 	/*
