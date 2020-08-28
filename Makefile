@@ -703,6 +703,7 @@ KBUILD_CFLAGS += -Wno-tautological-compare
 # source of a reference will be _MergedGlobals and not on of the whitelisted names.
 # See modpost pattern 2
 KBUILD_CFLAGS += -mno-global-merge
+KBUILD_CFLAGS += -Wno-deprecated-declarations
 else
 
 # This warning generated too much noise in a regular build.
@@ -716,6 +717,7 @@ KBUILD_CFLAGS   += $(call cc-disable-warning, stringop-truncation)
 KBUILD_CFLAGS   += $(call cc-disable-warning, sizeof-pointer-memaccess)
 KBUILD_CFLAGS   += $(call cc-disable-warning, packed-not-aligned)
 KBUILD_CFLAGS   += $(call cc-disable-warning, stringop-overflow)
+
 endif
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
 
