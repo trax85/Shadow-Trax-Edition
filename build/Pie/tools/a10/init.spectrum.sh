@@ -187,7 +187,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo noop > /sys/block/mmcblk0/queue/scheduler
 	echo noop > /sys/block/mmcblk1/queue/scheduler 
 	#Adreno-Idler-Driver
-	echo N > /sys/module/adreno_idler/parameters/adreno_idler_active
+	echo Y > /sys/module/adreno_idler/parameters/adreno_idler_active
 	echo 90 > /sys/module/adreno_idler/parameters/adreno_idler_downdifferential
 	echo 4 > /sys/module/adreno_idler/parameters/adreno_idler_idlewait
 	echo 9000 > /sys/module/adreno_idler/parameters/adreno_idler_idleworkload
@@ -269,7 +269,6 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	#Walt-Toggles
 	echo 1 > /proc/sys/kernel/sched_use_walt_cpu_util
 	echo 1 > /proc/sys/kernel/sched_use_walt_task_util
-	echo 1 > /proc/sys/kernel/sched_boost
 	#ScheduleTuning
 	echo -5 > /dev/stune/background/schedtune.boost
 	echo -5 > /dev/stune/foreground/schedtune.boost

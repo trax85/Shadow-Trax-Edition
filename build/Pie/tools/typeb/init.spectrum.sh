@@ -36,8 +36,8 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo schedutil > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 	echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
 	echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-	echo 960 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
-	echo 1000 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
+	echo 965 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/up_rate_limit_us
+	echo 990 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/down_rate_limit_us
 	echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/io_wait_boost
 	echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/schedutil/exp_util
 	#Core-A72 
@@ -134,15 +134,14 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo 710000000 > /sys/class/kgsl/kgsl-3d0/max_gpuclk
 	echo 710000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq
 	echo 480000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq
-	echo 2 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel
-	echo 3 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/min_pwrlevel
-	echo 4 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/default_pwrlevel
+	echo 0 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/max_pwrlevel
+	echo 1 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/min_pwrlevel
+	echo 3 > /sys/devices/soc.0/1c00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/default_pwrlevel
 	#Devfreq-Drivers
 	echo 805 > /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq
 	#Walt-Toggles
 	echo 0 > /proc/sys/kernel/sched_use_walt_cpu_util
 	echo 0 > /proc/sys/kernel/sched_use_walt_task_util
-	echo 1 > /proc/sys/kernel/sched_boost
 	#ScheduleTuning
 	echo -5 > /dev/stune/background/schedtune.boost
 	echo -5 > /dev/stune/foreground/schedtune.boost
@@ -188,7 +187,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	echo noop > /sys/block/mmcblk0/queue/scheduler
 	echo noop > /sys/block/mmcblk1/queue/scheduler 
 	#Adreno-Idler-Driver
-	echo N > /sys/module/adreno_idler/parameters/adreno_idler_active
+	echo Y > /sys/module/adreno_idler/parameters/adreno_idler_active
 	echo 90 > /sys/module/adreno_idler/parameters/adreno_idler_downdifferential
 	echo 4 > /sys/module/adreno_idler/parameters/adreno_idler_idlewait
 	echo 9000 > /sys/module/adreno_idler/parameters/adreno_idler_idleworkload
@@ -269,7 +268,6 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	#Walt-Toggles
 	echo 0 > /proc/sys/kernel/sched_use_walt_cpu_util
 	echo 0 > /proc/sys/kernel/sched_use_walt_task_util
-	echo 1 > /proc/sys/kernel/sched_boost
 	#ScheduleTuning
 	echo -5 > /dev/stune/background/schedtune.boost
 	echo -5 > /dev/stune/foreground/schedtune.boost
