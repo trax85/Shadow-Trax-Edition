@@ -54,7 +54,6 @@ elif [ $HAP == 3 ]; then
 fi
 #
 PROFILE=$(cat /tmp/aroma/profile.prop | cut -d '=' -f2)
-CMODE=$(cat /tmp/aroma/cmode.prop | cut -d '=' -f2)
 if [ $PROFILE == 1 ]; then
 GOV="interactive"
 BOOST="0"
@@ -121,18 +120,6 @@ LPT=1035
 LPH=8
 LPP=0
 LPC=6
-fi
-#
-DT2W=$(cat /tmp/aroma/dt2w.prop | cut -d '=' -f2)
-if [ $DT2W == 1 ]; then
-DTP=1
-VIBS=50
-elif [ $DT2W == 2 ]; then
-DTP=1
-VIBS=0
-elif [ $DT2W == 3 ]; then
-DTP=0
-VIBS=50
 fi
 DFSC=`grep "item.0.1" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $DFSC = 1 ]; then
@@ -295,14 +282,6 @@ echo "# KSM" >> $CONFIGFILE
 echo "write /sys/kernel/mm/ksm/run 0" >> $CONFIGFILE
 echo "write /sys/kernel/mm/ksm/run_charging 0" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
-echo "# CORE MODE" >> $CONFIGFILE
-if [ $CMODE == 1 ]; then
-	echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 0" >> $CONFIGFILE
-elif [ $CMODE == 2 ]; then
-	echo "write /sys/devices/system/cpu/cpu4/core_ctl/min_cpus 0" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu4/core_ctl/max_cpus 2" >> $CONFIGFILE
-fi
 echo "" >> $CONFIGFILE
 echo "# CPU SCHEDULER" >> $CONFIGFILE
 echo "chmod 755 /proc/sys/kernel/sched_boost" >> $CONFIGFILE

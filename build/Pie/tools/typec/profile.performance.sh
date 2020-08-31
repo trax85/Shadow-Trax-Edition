@@ -12,12 +12,9 @@ write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1401600
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 960000:50 1017600:60 1190400:70 1305600:80 1401600:90 1632000:95"
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 1
+write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
 write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 1
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
 #A72
 echo interactive > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 883200 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
@@ -28,7 +25,7 @@ write /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate 20000
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1382400
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads "75 1382400:80 1747200:85"
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 1
+write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1
 write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1
 #Cpu-Boost
