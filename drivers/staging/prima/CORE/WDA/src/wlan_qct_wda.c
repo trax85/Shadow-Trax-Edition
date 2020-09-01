@@ -16766,8 +16766,6 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
          if (SIR_COEX_IND_TYPE_CXM_FEATURES_NOTIFICATION ==
                 wdiLowLevelInd->wdiIndicationData.wdiCoexInfo.coexIndType)
          {
-            if(wdiLowLevelInd->wdiIndicationData.wdiCoexInfo.coexIndData)
-            {
                 VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                   FL("Coex state: 0x%x coex feature: 0x%x"),
                   wdiLowLevelInd->wdiIndicationData.wdiCoexInfo.coexIndData[0],
@@ -16778,7 +16776,6 @@ void WDA_lowLevelIndCallback(WDI_LowLevelIndType *wdiLowLevelInd,
                      VOS_TRACE(VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR, FL("power limit: 0x%x"),
                      (tANI_U16)(wdiLowLevelInd->wdiIndicationData.wdiCoexInfo.coexIndData[2]));
                  }
-            }
             break;
          }
 
