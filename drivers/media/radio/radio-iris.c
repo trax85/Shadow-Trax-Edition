@@ -2660,7 +2660,7 @@ static void hci_ev_raw_rds_group_data(struct radio_hci_dev *hdev,
 		}
 	} else {
 		carrier = gtc;
-		if ((carrier == rt_plus_carrier))
+		if (carrier == rt_plus_carrier)
 			hci_ev_rt_plus(radio, temp);
 		else if (carrier == ert_carrier)
 			hci_buff_ert(radio, &temp);
