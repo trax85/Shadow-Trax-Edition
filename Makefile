@@ -238,12 +238,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 # CCACHE
 CCACHE := $(shell which ccache)
 
-O3_OPTS := -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-loop-vectorize -ftree-loop-distribution -ftree-loop-distribute-patterns -ftree-slp-vectorize -fvect-cost-model -ftree-partial-pre -fpeel-loops
-
 HOSTCC       = $(CCACHE) gcc
 HOSTCXX      = $(CCACHE) g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 $(O3_OPTS) -fomit-frame-pointer -std=gnu89
-HOSTCXXFLAGS = -O2 $(O3_OPTS) 
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
+HOSTCXXFLAGS = -O2
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -382,8 +380,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-asynchronous-unwind-tables \
 		   $(call cc-option,-fno-delete-null-pointer-checks,)
 		   -std=gnu89 \
-		   -mfix-cortex-a53-843419 \
-		   -mcpu=cortex-a72.cortex-a53+crc+crypto \
+		   -mcpu=cortex-a53+crc+crypto \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
 		   -Wno-shift-overflow \
@@ -635,7 +632,7 @@ endif
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2 $(O3_OPTS)
+KBUILD_CFLAGS	+= -O2
 endif
 
 # Disable all maybe-uninitialized warnings
