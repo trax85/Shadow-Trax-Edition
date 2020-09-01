@@ -1221,8 +1221,7 @@ static int diag_switch_logging(const int requested_mode)
 		 current_mode, requested_mode, new_mode, current->tgid);
 
 	if (new_mode == current_mode) {
-		if (requested_mode != MEMORY_DEVICE_MODE ||
-		    driver->real_time_mode) {
+		if (requested_mode != MEMORY_DEVICE_MODE) {
 			pr_info_ratelimited("diag: Already in logging mode change requested, mode: %d\n",
 					    current_mode);
 		}
