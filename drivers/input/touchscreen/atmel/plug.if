@@ -2145,7 +2145,6 @@ static int mxt_plugin_hook_reg_init(struct plug_interface *pl, u8 *config_mem, s
 {
 	struct mxt_data *data;
 	struct device *dev;
-	size_t len;
 
 	if (!pl->inited)
 		return -ENODEV;
@@ -2154,7 +2153,6 @@ static int mxt_plugin_hook_reg_init(struct plug_interface *pl, u8 *config_mem, s
 	dev = &data->client->dev;
 
 	dev_info(dev, "mxt_plugin_hook_reg_init\n");
-	len = len;
 
 #if defined(CONFIG_MXT_T38_SKIP_LEN_AT_UPDATING)
 	if (data->T38_address < cfg_start_ofs) {
