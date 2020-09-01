@@ -122,8 +122,6 @@ static void msm_spm_drv_flush_shadow(struct msm_spm_driver_data *dev,
 {
 	BUG_ON(!dev);
 
-	BUG_ON(!dev->reg_shadow);
-
 	spm_raw_write(dev->reg_shadow[reg_index],
 		dev->reg_base_addr + dev->reg_offsets[reg_index]);
 }
