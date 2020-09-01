@@ -2568,23 +2568,22 @@ static int qpnp_flash_led_probe(struct spmi_device *spmi)
 			goto error_led_register;
 		}
 
-		if (&led->flash_node[i].num_regulators) {
-			rc = flash_regulator_parse_dt(led, &led->flash_node[i]);
-			if (rc) {
+		
+		rc = flash_regulator_parse_dt(led, &led->flash_node[i]);
+		if (rc) {
 				dev_err(&led->spmi_dev->dev,
 					"Unable to parse regulator data\n");
 				goto error_led_register;
-			}
+		}
 
-			rc = flash_regulator_setup(led, &led->flash_node[i],
+		rc = flash_regulator_setup(led, &led->flash_node[i],
 									true);
-			if (rc) {
+		if (rc) {
 				dev_err(&led->spmi_dev->dev,
 					"Unable to set up regulator\n");
 				goto error_led_register;
-			}
-
 		}
+
 
 		for (j = 0; j < ARRAY_SIZE(qpnp_flash_led_attrs); j++) {
 			rc =
