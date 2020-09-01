@@ -1524,7 +1524,7 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	clk_set_rate(pwr->grp_clks[6], rbbmtimer_freq);
 
 	if (of_find_property(device->pdev->dev.of_node,
-				"regulator-names", NULL) && pwr->gpu_reg) {
+				"regulator-names", NULL)) {
 		i = 0;
 		of_property_for_each_string(device->pdev->dev.of_node,
 						"regulator-names",
