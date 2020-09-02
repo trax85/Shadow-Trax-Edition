@@ -1366,7 +1366,7 @@ int checkTransition(tAuthRsnFsm *fsm, void *arg)
 
             vos_mem_copy(micFailureInfo->taMacAddr, fsm->staCtx->authMac, sizeof(tAniMacAddr));
             vos_mem_copy(micFailureInfo->dstMacAddr, fsm->staCtx->suppMac, sizeof(tAniMacAddr));
-            micFailureInfo->multicast = eANI_BOOLEAN_FALSE;
+            micFailureInfo->multicast = eSIR_FALSE;
             // Copy whatever sequence number came in the EAPOL-key message
             vos_mem_copy(micFailureInfo->TSC, rxDesc->keyRecvSeqCounter, SIR_CIPHER_SEQ_CTR_SIZE);
             gotoStateIntegFailure(fsm, micFailureInfo);
