@@ -828,7 +828,7 @@ static enum cpe_svc_result cpe_process_clk_change_req(
 	cpe_send_msg_to_inbox(t_info,
 		CPE_CMI_BASIC_RSP_OPCODE, NULL);
 
-	return CPE_PROC_SUCCESS;
+	return CPE_SVC_SUCCESS;
 }
 
 static void cpe_process_irq_int(u32 irq,
@@ -1156,7 +1156,7 @@ static enum cpe_process_result cpe_boot_complete(
 	}
 
 	pr_debug("%s: boot complete\n", __func__);
-	return CPE_SVC_SUCCESS;
+	return CPE_PROC_SUCCESS;
 }
 
 static enum cpe_process_result cpe_process_send_msg(
