@@ -33,8 +33,7 @@ cd $KERNEL_DIR
 Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
-export ARCH=arm64
-export CROSS_COMPILE="/home/nesara/arm64-gcc/bin/aarch64-elf-"
+#$export CROSS_COMPILE="/home/nesara/arm64-gcc/bin/aarch64-elf-"
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu/bin/aarch64-linux-gnu-"
 # GCC 8.3
 #export CROSS_COMPILE="/home/nesara/aarch64-linux-android-8.x/bin/aarch64-linux-android-"
@@ -54,8 +53,13 @@ fi
 #git apply -R qc.patch > /dev/null 2>&1
 #fi
 make shadow_trax_defconfig
+export ARCH=arm64
+export PATH="${PATH}:/home/nesara/proton-clang-master/bin/"
 export KBUILD_BUILD_USER="trax85"
-make -j4
+make	-j4 \
+	CC=clang \
+	CROSS_COMPILE=aarch64-linux-gnu-
+
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
 $DTBTOOL -2 -o $KERNEL_DIR/arch/arm64/boot/dt.img -s 2048 -p $KERNEL_DIR/scripts/dtc/ $KERNEL_DIR/arch/arm/boot/dts/
