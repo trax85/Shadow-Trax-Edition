@@ -1732,7 +1732,7 @@ static ssize_t wcd9xxx_slimslave_reg_show(char __user *ubuf, size_t count,
 
 	for (i = (int) *ppos / 12; i <= SLIM_MAX_REG_ADDR; i++) {
 		reg_val = wcd9xxx_interface_reg_read(debugCodec, i);
-		len = snprintf(tmp_buf, 25, "0x%.3x: 0x%.2x\n", i, reg_val);
+		len = snprintf(tmp_buf, sizeof(tmp_buf), "0x%.3x: 0x%.2x\n", i, reg_val);
 
 		if ((total + len) >= count - 1)
 			break;
