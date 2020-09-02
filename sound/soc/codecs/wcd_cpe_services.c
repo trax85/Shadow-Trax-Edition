@@ -654,7 +654,7 @@ static void cpe_notify_cmi_client(struct cpe_info *t_info, u8 *payload,
 	hdr = CMI_GET_HEADER(payload);
 	service = CMI_HDR_GET_SERVICE(hdr);
 
-	notif.event = CPE_SVC_CMI_MSG;
+	notif.event = CMI_API_MSG;
 	notif.result = result;
 	notif.message = payload;
 
@@ -828,7 +828,7 @@ static enum cpe_svc_result cpe_process_clk_change_req(
 	cpe_send_msg_to_inbox(t_info,
 		CPE_CMI_BASIC_RSP_OPCODE, NULL);
 
-	return CPE_SVC_SUCCESS;
+	return CPE_PROC_SUCCESS;
 }
 
 static void cpe_process_irq_int(u32 irq,
