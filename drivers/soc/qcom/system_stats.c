@@ -377,7 +377,7 @@
  			pr_err("%s:Failed to get memory\n", __func__);
  			return -ENOMEM;
  		}
- 		strlcpy(ss.master[i], master_name,
+ 		strscpy(ss.master[i], master_name,
  					strlen(master_name) + 1);
  	}
 
