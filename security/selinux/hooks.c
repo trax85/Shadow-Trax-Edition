@@ -325,7 +325,7 @@ static void superblock_free_security(struct super_block *sb)
 
 /* The file system's label must be initialized prior to use. */
 
-static const char *labeling_behaviors[6] = {
+static __maybe_unused const char *labeling_behaviors[6] = {
 	"uses xattr",
 	"uses transition SIDs",
 	"uses task SIDs",
