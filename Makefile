@@ -380,7 +380,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-asynchronous-unwind-tables \
 		   $(call cc-option,-fno-delete-null-pointer-checks,)
 		   -std=gnu89 \
-		   -mcpu=cortex-a53+crc+crypto \
+		   -mcpu=cortex-a53+crc+crypto -mtune=cortex-a53+crc+crypto \
 		   -Wno-deprecated-declarations \
 		   -Wno-misleading-indentation \
 		   -Wno-shift-overflow \
