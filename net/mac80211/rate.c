@@ -120,7 +120,7 @@ ieee80211_rate_control_ops_get(const char *name)
 		ops = ieee80211_try_rate_control_ops_get(ieee80211_default_rc_algo);
 
 	/* try built-in one if specific alg requested but not found */
-	if (!ops & strlen(CONFIG_MAC80211_RC_DEFAULT))
+	if ((!ops) & strlen(CONFIG_MAC80211_RC_DEFAULT))
 		ops = ieee80211_try_rate_control_ops_get(CONFIG_MAC80211_RC_DEFAULT);
 	kparam_unblock_sysfs_write(ieee80211_default_rc_algo);
 
