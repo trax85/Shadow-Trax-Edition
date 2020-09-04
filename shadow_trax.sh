@@ -58,7 +58,8 @@ export PATH="${PATH}:/home/nesara/proton-clang-master/bin/"
 export KBUILD_BUILD_USER="trax85"
 make	-j4 \
 	CC=clang \
-	CROSS_COMPILE=aarch64-linux-gnu-
+	CROSS_COMPILE=aarch64-linux-gnu- \
+	CROSS_COMPILE_ARM32=arm-linux-gnueabi- 
 
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
