@@ -634,4 +634,3 @@ KBUILD_CPPFLAGS += $(CDEFINES)
 obj-$(CONFIG_PRIMA_WLAN) += $(MODNAME).o
 obj-$(CONFIG_PRONTO_WLAN) += $(MODNAME).o
 $(MODNAME)-y := $(OBJS)
-subdir-ccflags-y := $(call cc-disable-warning, enum-conversion)
