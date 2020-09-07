@@ -97,6 +97,21 @@ static void fdatawait_one_bdev(struct block_device *bdev, void *arg)
 	filemap_fdatawait(bdev->bd_inode->i_mapping);
 }
 
+#ifdef CONFIG_DYNAMIC_FSYNC
+/*
+ * Sync all the data for all the filesystems (called by sys_sync() and
+ * emergency sync)
+ */
+void sync_filesystems(int wait)
+{
+	iterate_supers(sync_inodes_one_sb, NULL);
+	iterate_supers(sync_fs_one_sb, &wait);
+	iterate_supers(sync_fs_one_sb, &wait);
+	iterate_bdevs(fdatawrite_one_bdev, NULL);
+	iterate_bdevs(fdatawait_one_bdev, NULL);
+}
+#endif
+
 /*
  * Sync everything. We start by waking flusher threads so that most of
  * writeback runs on all devices in parallel. Then we sync all inodes reliably
@@ -159,7 +174,10 @@ SYSCALL_DEFINE1(syncfs, int, fd)
 	struct fd f ;
 	struct super_block *sb;
 	int ret;
-
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && suspend_active))
+		return 0;
+#endif
         f = fdget(fd);
 
 	if (!fsync_enabled)
@@ -226,6 +244,10 @@ static int do_fsync(unsigned int fd, int datasync)
 	struct fd f = fdget(fd);
 	int ret = -EBADF;
 
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && suspend_active))
+		return 0;
+#endif
 	if (!fsync_enabled)
 		return 0;
 
@@ -238,10 +260,6 @@ static int do_fsync(unsigned int fd, int datasync)
 
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
-#ifdef CONFIG_DYNAMIC_FSYNC
- 	if (dyn_fsync_active && suspend_active)
- 		return 0;
-#endif
 	if (!fsync_enabled)
 		return 0;
 
@@ -250,10 +268,6 @@ SYSCALL_DEFINE1(fsync, unsigned int, fd)
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
-#ifdef CONFIG_DYNAMIC_FSYNC
- 	if (dyn_fsync_active && suspend_active)
- 		return 0;
-#endif
 	if (!fsync_enabled)
 		return 0;
 		
@@ -333,10 +347,15 @@ SYSCALL_DEFINE4(sync_file_range, int, fd, loff_t, offset, loff_t, nbytes,
 	loff_t endbyte;			/* inclusive */
 	umode_t i_mode;
 
+#ifdef CONFIG_DYNAMIC_FSYNC
+	if (likely(dyn_fsync_active && suspend_active))
+		return 0;
+#endif
+
 	if (!fsync_enabled)
 		return 0;
 
-#ifdef CONFIG_DYNAMIC_FSYNC
+#ifdef SYSCALL_DEFINE4
  	if (dyn_fsync_active && suspend_active)
  		return 0;
 #endif
@@ -420,9 +439,5 @@ out:
 SYSCALL_DEFINE4(sync_file_range2, int, fd, unsigned int, flags,
 				 loff_t, offset, loff_t, nbytes)
 {
-#ifdef CONFIG_DYNAMIC_FSYNC
- 	if (dyn_fsync_active && suspend_active)
- 		return 0;
-#endif
 	return sys_sync_file_range(fd, offset, nbytes, flags);
 }
