@@ -16,56 +16,68 @@
 #include <linux/notifier.h>
 #include <linux/reboot.h>
 #include <linux/writeback.h>
+#include <linux/syscalls.h>
+#include <linux/fs.h>
 
 static int dyn_fsync_panic_event(struct notifier_block *this,
- 		unsigned long event, void *ptr)
+		unsigned long event, void *ptr)
 {
- 	emergency_sync();
- 	pr_warn("Reboot auto-fsync: panic - force flush!\n");
+	/* flush all outstanding buffers */
+	wakeup_flusher_threads(0, WB_REASON_SYNC);
+	sync_filesystems(0);
+	sync_filesystems(1);
+	sys_sync();
+	emergency_sync();
+	pr_warn("Reboot auto-fsync: panic - force flush!\n");
 
- 	return NOTIFY_DONE;
+	return NOTIFY_DONE;
 }
 
 static int dyn_fsync_notify_sys(struct notifier_block *this, unsigned long code,
- 				void *unused)
+				void *unused)
 {
- 	if (code == SYS_DOWN || code == SYS_HALT) 
- 	{
- 		emergency_sync();
- 		pr_warn("Reboot auto-fsync: reboot - force flush!\n");
- 	}
- 	return NOTIFY_DONE;
+	if (code == SYS_DOWN || code == SYS_HALT) 
+	{
+		/* flush all outstanding buffers */
+		wakeup_flusher_threads(0, WB_REASON_SYNC);
+		sync_filesystems(0);
+		sync_filesystems(1);
+		sys_sync();
+		emergency_sync();
+		pr_warn("Reboot auto-fsync: reboot - force flush!\n");
+	}
+	return NOTIFY_DONE;
 }
 
 static struct notifier_block dyn_fsync_notifier = 
 {
- 	.notifier_call = dyn_fsync_notify_sys,
+	.notifier_call = dyn_fsync_notify_sys,
 };
 
 static struct notifier_block dyn_fsync_panic_block = 
 {
- 	.notifier_call  = dyn_fsync_panic_event,
- 	.priority       = INT_MAX,
+	.notifier_call  = dyn_fsync_panic_event,
+	.priority       = INT_MAX,
 };
 
-static int dyn_fsync_init(void)
+static void dyn_fsync_init(void)
 {
- 	register_reboot_notifier(&dyn_fsync_notifier);
+	register_reboot_notifier(&dyn_fsync_notifier);
 
- 	atomic_notifier_chain_register(&panic_notifier_list,
- 		&dyn_fsync_panic_block);
+	atomic_notifier_chain_register(&panic_notifier_list,
+		&dyn_fsync_panic_block);
 
- 	pr_info("%s Reboot auto-fsync initialisation complete\n", __FUNCTION__);
+	pr_info("%s Reboot auto-fsync initialisation complete\n", __FUNCTION__);
 }
 
 static void dyn_fsync_exit(void)
 {
- 	unregister_reboot_notifier(&dyn_fsync_notifier);
+	unregister_reboot_notifier(&dyn_fsync_notifier);
 
- 	atomic_notifier_chain_unregister(&panic_notifier_list,
- 		&dyn_fsync_panic_block);
+	atomic_notifier_chain_unregister(&panic_notifier_list,
+		&dyn_fsync_panic_block);
 
- 	pr_info("%s Reboot auto-fsync unregistration complete\n", __FUNCTION__);
+	pr_info("%s Reboot auto-fsync unregistration complete\n", __FUNCTION__);
 }
 
 module_init(dyn_fsync_init);
