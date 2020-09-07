@@ -223,10 +223,8 @@ EXPORT_SYMBOL(vfs_fsync);
 
 static int do_fsync(unsigned int fd, int datasync)
 {
-	struct fd f ;
+	struct fd f = fdget(fd);
 	int ret = -EBADF;
-	
-        f = fdget(fd);
 
 	if (!fsync_enabled)
 		return 0;
