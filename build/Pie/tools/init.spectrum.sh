@@ -21,6 +21,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
     chmod 0644 /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/max_freq
     chmod 0644 /sys/devices/soc.0/qcom,cpubw.50/devfreq/cpubw/min_freq
     chmod 0644 /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/max_freq
-    chmod 0644 /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq 
+    chmod 0644 /sys/devices/soc.0/qcom,gpubw.36/devfreq/gpubw/min_freq
+    chmod 0644 /sys/module/lazyplug/parameters/lazyplug_active 
     write /sys/module/msm_thermal/parameters/enabled y
 fi

@@ -65,6 +65,7 @@ on property:persist.spectrum.profile=0
 	write /sys/module/cpu_boost/parameters/input_boost_ms 0
 	write /sys/module/msm_performance/parameters/touchboost 0
 	#Hotplug
+	write /sys/module/lazyplug/parameters/lazyplug_active 1
 	write /sys/module/lazyplug/parameters/nr_run_profile_sel 4
 	write /sys/module/lazyplug/parameters/nr_run_hysteresis 6
 	write /sys/module/lazyplug/parameters/cpu_nr_run_threshold 500

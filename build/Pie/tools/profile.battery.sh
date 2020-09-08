@@ -1,49 +1,53 @@
 #!/system/bin/sh
 # SPECTRUM & FRANCO KERNEL MANAGERS
 # Profile initialization by Zile995
-
+echo 1 > /sys/devices/system/cpu/cpu0/online
+echo 1 > /sys/devices/system/cpu/cpu1/online
+echo 1 > /sys/devices/system/cpu/cpu2/online
+echo 1 > /sys/devices/system/cpu/cpu3/online
+echo 1 > /sys/devices/system/cpu/cpu4/online
+echo 1 > /sys/devices/system/cpu/cpu5/online
 #A53
 echo cultivation > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo 691200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
 echo 1305600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/go_hispeed_load 99
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/above_hispeed_delay 30000
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/hispeed_freq 1305600
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/min_sample_time 45000
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/timer_rate 40000
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/max_freq_hysteresis 0
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/timer_slack -1
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/powersave_bias 1
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/fastlane 0
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/align_windows 1
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/target_loads "60 400000:25 691200:40 1017600:55 1190400:85 1305600:99"
-write /sys/devices/system/cpu/cpu0/cpufreq/cultivation/use_sched_load 0
+echo 99 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/go_hispeed_load
+echo 30000 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/above_hispeed_delay
+echo 1305600 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/hispeed_freq
+echo 45000 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/min_sample_time
+echo 40000 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/timer_rate 
+echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/max_freq_hysteresis
+echo -1 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/timer_slack
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/powersave_bias
+echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/fastlane
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/align_windows
+echo "60 400000:25 691200:40 1017600:55 1190400:85 1305600:99" > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/target_loads
+echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/cultivation/use_sched_load
 #a72
 echo cultivation > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
 echo 1305600 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/go_hispeed_load 99
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/above_hispeed_delay 25000
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/hispeed_freq 0
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/min_sample_time 30000
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/timer_rate 25000
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/max_freq_hysteresis 0
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/timer_slack -1
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/powersave_bias 1
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/fastlane 0
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/align_windows 1
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/target_loads "90"
-write /sys/devices/system/cpu/cpu4/cpufreq/cultivation/use_sched_load 0
+echo 691200 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/go_hispeed_load
+echo 99 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/above_hispeed_delay 
+echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/hispeed_freq
+echo 30000 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/min_sample_time
+echo 25000 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/timer_rate 
+echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/max_freq_hysteresis
+echo -1 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/timer_slack
+echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/powersave_bias
+echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/fastlane
+echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/align_windows
+echo 90 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/target_loads 
+echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/cultivation/use_sched_load
 #Cpu-Boost
-write /sys/module/cpu_boost/parameters/input_boost_enabled 0
-write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0 4:0 5:0"
-write /sys/module/cpu_boost/parameters/input_boost_ms 0
-write /sys/module/msm_performance/parameters/touchboost 0
+echo 0 > /sys/module/cpu_boost/parameters/input_boost_enabled
+echo "0:0 1:0 2:0 3:0 4:0 5:0" > /sys/module/cpu_boost/parameters/input_boost_freq
+echo 0 > /sys/module/cpu_boost/parameters/input_boost_ms
 #Hotplug
-write /sys/module/lazyplug/parameters/lazyplug_active 1
-write /sys/module/lazyplug/parameters/nr_run_profile_sel 6
-write /sys/module/lazyplug/parameters/nr_run_hysteresis 6
-write /sys/module/lazyplug/parameters/cpu_nr_run_threshold 500
+echo 1 > /sys/module/lazyplug/parameters/lazyplug_active
+echo 6 > /sys/module/lazyplug/parameters/nr_run_profile_sel
+echo 6 > /sys/module/lazyplug/parameters/nr_run_hysteresis
+echo 500 > /sys/module/lazyplug/parameters/cpu_nr_run_threshold
 #Workqueue
 echo Y > /sys/module/workqueue/parameters/power_efficient 
 #Scheduler

@@ -1,41 +1,43 @@
 #!/system/bin/sh
 # SPECTRUM & FRANCO KERNEL MANAGERS
 # Profile initialization by Zile995
-
+echo 1 > /sys/devices/system/cpu/cpu0/online
+echo 1 > /sys/devices/system/cpu/cpu1/online
+echo 1 > /sys/devices/system/cpu/cpu2/online
+echo 1 > /sys/devices/system/cpu/cpu3/online
+echo 1 > /sys/devices/system/cpu/cpu4/online
+echo 1 > /sys/devices/system/cpu/cpu5/online
 #A53
 echo interactive > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 echo 691200 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
 echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay 25000
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 90
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate 20000
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq 1401600
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "40 960000:50 1017600:60 1190400:70 1305600:80 1401600:90"
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
-write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
+echo 75 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load 
+echo 25000 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
+echo 1401600 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
+echo 20000 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
+echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
+echo "80 960000:30 1017600:40 1190400:50 1305600:60 1401600:75" > /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif
 #A72
 echo interactive > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 883200 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
 echo 1804800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay "15000 1382400:25000"
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load 80
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate 20000
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 1382400
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads "75 1382400:80 1747200:85"
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 40000
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1
-write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1
+echo 50 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
+echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
+echo "15000 1382400:25000" > /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay 
+echo 1804800 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq 
+echo 20000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
+echo "50 1190400:35 1382400:50 1612800:60 1747200:70 1804800:75" > /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
+echo 45000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/max_freq_hysteresis 
+echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif
+echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load
 #Cpu-Boost
-write /sys/module/cpu_boost/parameters/boost_ms 250
-write /sys/module/cpu_boost/parameters/input_boost_enabled 1
-write /sys/module/cpu_boost/parameters/input_boost_freq "0:1017600 1:1017600 2:1017600 3:1017600 4:1190400 5:1190400"
-write /sys/module/cpu_boost/parameters/input_boost_ms 80
-write /sys/module/msm_performance/parameters/touchboost 1
+echo 0 > /sys/module/cpu_boost/parameters/input_boost_enabled
+echo "0:1305600 1:1305600 2:1305600 3:1305600 4:1190400 5:1190400" > /sys/module/cpu_boost/parameters/input_boost_freq
+echo 500 > /sys/module/cpu_boost/parameters/input_boost_ms
 #Hotplug
-write /sys/module/lazyplug/parameters/lazyplug_active 0
+echo 0 > /sys/module/lazyplug/parameters/lazyplug_active
 #Workqueue
 echo N > /sys/module/workqueue/parameters/power_efficient
 #Scheduler
