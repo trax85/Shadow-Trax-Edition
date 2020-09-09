@@ -59,7 +59,9 @@ export KBUILD_BUILD_USER="trax85"
 make	-j4 \
 	CC=clang \
 	CROSS_COMPILE=aarch64-linux-gnu- \
-	CROSS_COMPILE_ARM32=arm-linux-gnueabi- 
+	CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+	OBJDUMP=llvm-objdump STRIP=llvm-strip \
+	AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy
 
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
