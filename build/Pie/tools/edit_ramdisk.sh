@@ -10,14 +10,7 @@ elif [ $PROFILE == 3 ]; then
 PROF=1
 fi
 
-DFSC=`grep "item.0.1" /tmp/aroma/mods.prop | cut -d '=' -f2`
-if [ $DFSC = 1 ]; then
-	DFS=0
-elif [ $DFSC = 0 ]; then
-	DFS=1
-fi
-
-FC=`grep "item.0.2" /tmp/aroma/mods.prop | cut -d '=' -f2`
+FC=`grep "item.0.1" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $FC = 1 ]; then
 	USB=1
 elif [ $FC = 0 ]; then
@@ -70,7 +63,7 @@ elif [ $HAP == 3 ]; then
 fi
 
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
-ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
+ALMK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 echo "# USER TWEAKS" >> $CONFIGFILE
 if [ $ROM -eq 2 ] || [ $ROM -eq 1 ]; then
@@ -200,7 +193,7 @@ echo "" >> $CONFIGFILE
 echo "# FSYNC" >> $CONFIGFILE
 echo "write /sys/module/sync/parameters/fsync_enabled $DFS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
-BDM=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
+BDM=`grep "item.0.2" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $DFSC = 1 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer Y" >> $CONFIGFILE
 elif [ $DFSC = 0 ]; then
