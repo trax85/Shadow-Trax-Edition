@@ -355,11 +355,6 @@ SYSCALL_DEFINE4(sync_file_range, int, fd, loff_t, offset, loff_t, nbytes,
 	if (!fsync_enabled)
 		return 0;
 
-#ifdef SYSCALL_DEFINE4
- 	if (dyn_fsync_active && suspend_active)
- 		return 0;
-#endif
-
 	ret = -EINVAL;
 	if (flags & ~VALID_FLAGS)
 		goto out;
