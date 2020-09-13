@@ -27,7 +27,7 @@ V5.7:-
 * Upstream EAS scheduler and add bits from NGK, HANA Cl, AGNi Whyred Sources.
 * Add Walt & Pelt Load Tracking(Pelt 8ms).
 * Add New fair and core codes for better Cpu capacity calculation and load transistion to cores.
-* Add CpuGovernors Based on Schedutil,Blu_Schedutil,Electroutil,Pwrutilx,Energy-DCFC,HelixSchedutil,Darkutil.
+* Add CpuGovernors Based on Schedutil-Blu_SChedutil-Electroutil-Pwrutilx-Energy-DCFC-HelixSchedutil-Darkutil.
 * Add Proper Energy-model For kenzo and Update Them to Freq-Power Style Tuples.
 * Add Dynamic Schedtune boost(DSB) Enabled for top-app.
 * Add Simple Waitqueue (swait) implementation.
@@ -47,6 +47,7 @@ V5.7:-
 * Reduce log spam.
 
 -GPU Driver
+* Remove POPP
 * Improve existing flags and add New flags for better perf.
 * Mark Kgsl threads as irq perf critical.
 * Increse priotiy of RT threads And remove deadlocks.
@@ -155,8 +156,8 @@ V5.7:-
 * Add missing Nodes and blobs for our dt.
 * Add 1.79Ghz and 1.63Ghz clock for a53 cores.
 * Reduce memory utilizations.
-* Fix LPM values , Temprature threshold and UV all GPU and CPU ceil and floor values.
 * Lots of Tuning for best performance with less impact on battery.
+* Fix LPM values , Temprature threshold and UV all GPU and CPU ceil and floor values.
 
 -Makefile
 * Disable a few warinings for Clang.
