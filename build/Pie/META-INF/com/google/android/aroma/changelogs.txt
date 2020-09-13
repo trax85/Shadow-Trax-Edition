@@ -1,5 +1,4 @@
-V5.6:-
-
+V5.6-
 * EAS initial port
 * EAS energy module fixup.
 * Sched boost feature initial import.
@@ -28,15 +27,26 @@ V5.7:-
 * Upstream EAS scheduler and add bits from NGK, HANA Cl, AGNi Whyred Sources.
 * Add Walt & Pelt Load Tracking(Pelt 8ms).
 * Add New fair and core codes for better Cpu capacity calculation and load transistion to cores.
-* Add CpuGovernors Based on Schedutil-Blu_SChedutil-Electroutil-Pwrutilx-Energy-DCFC-HelixSchedutil-Darkutil.
+* Add CpuGovernors Based on Schedutil,Blu_Schedutil,Electroutil,Pwrutilx,Energy-DCFC,HelixSchedutil,Darkutil.
 * Add Proper Energy-model For kenzo and Update Them to Freq-Power Style Tuples.
 * Add Dynamic Schedtune boost(DSB) Enabled for top-app.
 * Add Simple Waitqueue (swait) implementation.
 * Add Scheduler Enhancements(Pelt,Walt,Fair,RT) To improve UI and General Perfromance.
-* Preempt backport from 3.18 Kernel
+* Preempt backport from 3.18 Kernel.
+* Fix Clang warnings.
+
+-ARM64
+* Add vDSO 32bit support.
+* Enable Dcache and word access.
+* Topology upstream now uses the em table data to calculate load-freq.
+* Disable tracing.
+* Strcmp align to 64B cache line.
+* Remove hack in mmap randomize layout.
+* Move post_ttbr_update_workaround to C code.
+* Optimize our setup for A53 Cluster.
+* Reduce log spam.
 
 -GPU Driver
-* Remove POPP
 * Improve existing flags and add New flags for better perf.
 * Mark Kgsl threads as irq perf critical.
 * Increse priotiy of RT threads And remove deadlocks.
@@ -51,7 +61,7 @@ V5.7:-
 * Add Cpufreq Driver Enhancements from HANA Cl Kernel.
 
 -Devfreq Driver
-* Add Devfreq boost Driver For boosting cpubw Bus Frequencies.
+* Add Devfreq Boost Driver For boosting cpubw Bus Frequencies.
 * Add More Fixes and optimizations.
 
 -Sound
@@ -66,7 +76,7 @@ V5.7:-
 * Clean session when failed to open instance.
 
 -Video
-* Make Refreshrate Variable and export it to userspace (/sys/module/mdss_dsi/parameters/refresh_rate).
+* Make Refreshrate Varible(VRR) and export it to userspace (/sys/module/mdss_dsi/parameters/refresh_rate).
 * Add Frame Boost Disbled by Default.
 * Mdss Save state of vsync handler.
 * Silence mdss log spams and Fix Derps.
@@ -78,51 +88,60 @@ V5.7:-
 
 -Prima
 * Downgrade prima to LA.BR.1.3.6_rb1.25.
+* Fixes for clang.
 * Misc fixes for GCC 5 and 6.
 * Kill logspam.
 
--Lz4
-* Update lz4 module from 4.14 backports
-* Update decompression algo which can be helpful for zram decompression speeds.
-* Misc fixes and remove spams.
+-Android Binder
+* Sync with 3.18 Ver Binder.
+* Port 3.18 Binder Functions as later versions of android specify its use.
+* Disable logging and tracing.
+* Other misc optimization and fixes.
 
--ARM64
-* Enable Dcache and word access.
-* Topology upstream now uses the em table data to calculate load-freq.
-* Disable tracing.
-* Strcmp align to 64B cache line.
-* Remove hack in mmap randomize layout.
-* Move post_ttbr_update_workaround to C code. 
-* Reduce log spam.
+-ZRAM
+* Revert to older version.
+* Import Facebooks Zstd compression.
+* Misc fixes and improvements.
+* Add Zstd support. 
+
+-LZ4
+* Update to new LZ4 decompression module.
+* Add related Fixes.
 
 -FileSystem
 * Add sealing API.
-* BACKPORT fs limit filesystem stacking depth.
+* Sync with 3.18 Ext4 and F2FS.
+* Optimize Ext4 and F2FS read speeds.
 * Mbcache2 reimplement mbcache.
 * Make fync as default.
-* Implement readpages() to optimize sequential read.
 * Disable tracing.
 * Properly fix use of uninitialized variables.
 * Nuke a lot of warnings and errors being thrown in dmesg logs.
 * Other optimization and stuff
 
+-Crypto
+* Add crypto_crc32_arm64.
+* Crypto Optimise flags for arm a72 and a53.
+* Crypto add NEON-accelerated implementation of Speck-XTS add add test vectors for Speck64-XTS and Speck128-XTS.
+* Update Lz4 module to work with new LZ4 decompressor
+* Add Zstd Crypto module.
+
 -Kernel
-* Compiled with Linaro Linaro GCC 7.5.
+* Compiled with Latest Proton Clang 12.
+* Compiled with Link Time Optimization and ThinLTO support.
 * Add API to mark IRQs and kthreads as performance critical.
 * Make kernel tick rate as 256Hz.
 * Add API to create kthreads bound to low-power CPUs.
-* Fix GCC 7.x and 6.x warnings ,Uninitializeed Warnings , Duplicate Const warnings all sorts of stuff.
+* Fix GCC 9.X ,7.x and 6.x warnings ,Uninitializeed Warnings , Duplicate Const warnings all sorts of stuff.
 * Implement lockless wakeups In futex.
 * Add Devfreq boosting and cpuboosting at various points to improve perf and reduce latency.
-* Add crypto_crc32_arm64.
 * Add missing crc32-arm64 hw acclerted module.
 * Reduce priority of core AES cipher.
 * Schedutil is default governor.
-* Crypto Optimise flags for arm a72 and a53.
-* Crypto add NEON-accelerated implementation of Speck-XTS add add test vectors for Speck64-XTS and Speck128-XTS.
 * Random Backport from linux-4.2.
 * Timer Backport from linux-3.18.
 * Optimise timer for performace.
+* Add Thinlto support.
 * Nuke unused and old modules from our configs and disable logging of many modules in kernel logs.
 
 -Device Tree
@@ -135,21 +154,25 @@ V5.7:-
 * Add DFPS for Boe,Tinema ,Sharp panels.
 * Add missing Nodes and blobs for our dt.
 * Add 1.79Ghz and 1.63Ghz clock for a53 cores.
+* Reduce memory utilizations.
 * Fix LPM values , Temprature threshold and UV all GPU and CPU ceil and floor values.
+* Lots of Tuning for best performance with less impact on battery.
 
 -Makefile
-* Nuke useless flags.
-* Remove disable warinings.
-* Add proper hardware flags.
+* Disable a few warinings for Clang.
+* Remove few hardware optimizations flags and optimize for A53 only.
 * Compile with O2.
-* Flag optimizations from O3 and Ofast specific flags.
-* Support for GCC 7.xx. and 8.xx.
+* Add ThinLTO support.
+* Remove redundant Flag optimizations.
+* Support for GCC 9.x ,7.xx. and 8.xx and Clang 12.
+* Add Clang Polly Optimization.
 * Disable stack conservation.
 
 -Aroma & Other
 * Script Changes and New theme for our Shadow .
 * Spectrum New implimentaion as many modules had trouble with our traditional Spectrum implimentation.
 * Spectrum Modification to accomodate our new changes.
+* Rework Thermals for better Gaming and less throttling.
 * Add Refresh rate option.
 * Add 1.7Ghz option for users to risk their life or not.
 * Add support for Android 10.
