@@ -1246,7 +1246,6 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 				"%s: %s: not supported if using topology\n",
 				__func__, "SET_PARAMS_32");
 			err = -EINVAL;
-			goto done;
 		}
 
 		if (copy_from_user(&det_params32, arg,
@@ -1453,7 +1452,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 			dev_err(rtd->dev,
 				"%s REG_SND_MODEL failed err %d\n",
 				__func__, err);
-		goto done;
+		return err;
 		}
 		break;
 	case SNDRV_LSM_SET_PARAMS: {
@@ -1873,7 +1872,7 @@ static int msm_lsm_pcm_copy(struct snd_pcm_substream *substream, int ch,
 	}
 	rc = wait_event_timeout(prtd->period_wait,
 		(atomic_read(&prtd->buf_count) |
-		atomic_read(&prtd->read_abort)), msecs_to_jiffies(2000));
+		atomic_read(&prtd->read_abort)), (2 * HZ));
 	if (!rc) {
 		dev_err(rtd->dev,
 			"%s: timeout for read retry\n", __func__);

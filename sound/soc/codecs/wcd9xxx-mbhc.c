@@ -65,7 +65,7 @@
 #define BUTTON_MIN 0x8000
 #define STATUS_REL_DETECTION 0x0C
 
-#define HS_DETECT_PLUG_TIME_MS (1 * 1000)
+#define HS_DETECT_PLUG_TIME_MS (5 * 1000)
 #define ANC_HPH_DETECT_PLUG_TIME_MS (5 * 1000)
 #define HS_DETECT_PLUG_INERVAL_MS 100
 #define SWCH_REL_DEBOUNCE_TIME_MS 50
@@ -3742,7 +3742,7 @@ irqreturn_t wcd9xxx_dce_handler(int irq, void *data)
 	sta = wcd9xxx_read_sta_result(codec);
 	if (mbhc_status != STATUS_REL_DETECTION) {
 		if (mbhc->mbhc_last_resume &&
-		    !time_after(jiffies, mbhc->mbhc_last_resume + msecs_to_jiffies(1000))) {
+		    !time_after(jiffies, mbhc->mbhc_last_resume + HZ)) {
 			pr_debug("%s: Button is released after resume\n",
 				__func__);
 			n_btn_meas = 0;

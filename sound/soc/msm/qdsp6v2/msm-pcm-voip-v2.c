@@ -503,7 +503,7 @@ static void voip_process_ul_pkt(uint8_t *voc_pkt,
 		snd_pcm_period_elapsed(prtd->capture_substream);
 	} else {
 		spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
-//		pr_err("UL data dropped\n");
+		pr_err("UL data dropped\n");
 	}
 
 	wake_up(&prtd->out_wait);
@@ -670,7 +670,7 @@ static void voip_process_dl_pkt(uint8_t *voc_pkt, void *private_data)
 	} else {
 		*((uint32_t *)voc_pkt) = 0;
 		spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
-//		pr_err("DL data not available\n");
+		pr_err("DL data not available\n");
 	}
 	wake_up(&prtd->in_wait);
 }
@@ -801,7 +801,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 	ret = wait_event_interruptible_timeout(prtd->in_wait,
 				(!list_empty(&prtd->free_in_queue) ||
 				prtd->state == VOIP_STOPPED),
-				msecs_to_jiffies(1000));
+				1 * HZ);
 	if (prtd->voip_reset) {
 		pr_debug("%s: RESET event happened during VoIP\n", __func__);
 		return -ENETRESET;
@@ -874,7 +874,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	ret = wait_event_interruptible_timeout(prtd->out_wait,
 				(!list_empty(&prtd->out_queue) ||
 				prtd->state == VOIP_STOPPED),
-				msecs_to_jiffies(1000));
+				1 * HZ);
 
 	if (prtd->voip_reset) {
 		pr_debug("%s: RESET event happened during VoIP\n", __func__);

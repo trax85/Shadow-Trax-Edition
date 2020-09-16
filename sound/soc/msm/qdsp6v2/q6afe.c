@@ -984,7 +984,7 @@ static int afe_get_cal_topology_id(u16 port_id, u32 *topology_id)
 		return -EINVAL;
 	}
 	if (topology_id == NULL) {
-		pr_debug("%s: topology_id is NULL\n", __func__);
+		pr_err("%s: topology_id is NULL\n", __func__);
 		return -EINVAL;
 	}
 	*topology_id = 0;
@@ -1002,7 +1002,7 @@ static int afe_get_cal_topology_id(u16 port_id, u32 *topology_id)
 	afe_top_info = ((struct audio_cal_info_afe_top *)
 		cal_block->cal_info);
 	if (!afe_top_info->topology) {
-		pr_debug("%s: invalid topology id : [%d, %d]\n",
+		pr_err("%s: invalid topology id : [%d, %d]\n",
 		       __func__, afe_top_info->acdb_id, afe_top_info->topology);
 		ret = -EINVAL;
 		goto unlock;
@@ -2941,7 +2941,7 @@ int afe_cmd_memory_map(phys_addr_t dma_addr_p, u32 dma_buf_sz)
 	struct afe_service_cmd_shared_mem_map_regions *mregion = NULL;
 	struct  afe_service_shared_map_region_payload *mregion_pl = NULL;
 	int index = 0;
-	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
+	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
 
 	pr_debug("%s:\n", __func__);
 
@@ -4636,7 +4636,7 @@ static int afe_set_cal(int32_t cal_type, size_t data_size,
 {
 	int				ret = 0;
 	int				cal_index;
-	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
+	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
 	pr_debug("%s:\n", __func__);
 
 	cal_index = get_cal_type_index(cal_type);
@@ -4843,7 +4843,7 @@ static int afe_map_cal_data(int32_t cal_type,
 {
 	int ret = 0;
 	int cal_index;
-	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
+	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
 	pr_debug("%s:\n", __func__);
 
 	cal_index = get_cal_type_index(cal_type);

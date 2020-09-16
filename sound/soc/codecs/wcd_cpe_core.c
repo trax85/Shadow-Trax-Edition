@@ -33,7 +33,7 @@
 #include "wcd_cpe_services.h"
 #include "wcd_cmi_api.h"
 
-#define CMI_CMD_TIMEOUT 10000
+#define CMI_CMD_TIMEOUT (10 * HZ)
 #define WCD_CPE_LSM_MAX_SESSIONS 1
 #define WCD_CPE_AFE_MAX_PORTS 4
 #define AFE_SVC_EXPLICIT_PORT_START 1
@@ -59,8 +59,8 @@
 }
 
 #define WCD_CPE_STATE_MAX_LEN 11
-#define CPE_OFFLINE_WAIT_TIMEOUT 2000
-#define CPE_READY_WAIT_TIMEOUT 3000
+#define CPE_OFFLINE_WAIT_TIMEOUT (2 * HZ)
+#define CPE_READY_WAIT_TIMEOUT (3 * HZ)
 #define WCD_CPE_SYSFS_DIR_MAX_LENGTH 32
 
 #define CPE_ERR_IRQ_CB(core) \
@@ -1041,7 +1041,7 @@ void wcd_cpe_ssr_work(struct work_struct *work)
 				__func__, rc);
 
 		rc = wait_for_completion_timeout(&core->offline_compl,
-						 msecs_to_jiffies(CPE_OFFLINE_WAIT_TIMEOUT));
+						 CPE_OFFLINE_WAIT_TIMEOUT);
 		if (!rc) {
 			dev_err(core->dev,
 				"%s: wait for cpe offline timed out\n",
@@ -1067,7 +1067,7 @@ void wcd_cpe_ssr_work(struct work_struct *work)
 	}
 
 	rc = wait_for_completion_timeout(&core->ready_compl,
-					 msecs_to_jiffies(CPE_READY_WAIT_TIMEOUT));
+					 CPE_READY_WAIT_TIMEOUT);
 	if (!rc) {
 		dev_err(core->dev,
 			"%s: ready to online timed out, status = %u\n",
@@ -1943,6 +1943,7 @@ struct wcd_cpe_core *wcd_cpe_init(const char *img_fname,
 	init_completion(&core->online_compl);
 	init_waitqueue_head(&core->ssr_entry.offline_poll_wait);
 	mutex_init(&core->ssr_lock);
+	mutex_init(&core->session_lock);
 	core->cpe_users = 0;
 	core->cpe_clk_ref = 0;
 
@@ -2199,7 +2200,7 @@ static int wcd_cpe_cmi_send_lsm_msg(
 	}
 
 	ret = wait_for_completion_timeout(&session->cmd_comp,
-					  msecs_to_jiffies(CMI_CMD_TIMEOUT));
+					  CMI_CMD_TIMEOUT);
 	if (ret > 0) {
 		pr_debug("%s: command 0x%x, received response 0x%x\n",
 			__func__, hdr->opcode, session->cmd_err_code);
@@ -2895,7 +2896,7 @@ static int wcd_cpe_send_param_snd_model(struct wcd_cpe_core *core,
 	struct cpe_lsm_session *session, struct cpe_lsm_ids *ids)
 {
 	int ret = 0;
-	struct cmi_obm_msg obm_msg = {0};
+	struct cmi_obm_msg obm_msg;
 	struct cpe_param_data *param_d;
 
 
@@ -3432,6 +3433,7 @@ static struct cpe_lsm_session *wcd_cpe_alloc_lsm_session(
 	 * If this is the first session to be allocated,
 	 * only then register the afe service.
 	 */
+	WCD_CPE_GRAB_LOCK(&core->session_lock, "session_lock");
 	if (!wcd_cpe_lsm_session_active())
 		afe_register_service = true;
 
@@ -3443,6 +3445,7 @@ static struct cpe_lsm_session *wcd_cpe_alloc_lsm_session(
 		dev_err(core->dev,
 			"%s: max allowed sessions already allocated\n",
 			__func__);
+		WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 		return NULL;
 	}
 
@@ -3451,6 +3454,7 @@ static struct cpe_lsm_session *wcd_cpe_alloc_lsm_session(
 		dev_err(core->dev,
 			"%s: Failed to enable cpe, err = %d\n",
 			__func__, ret);
+		WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 		return NULL;
 	}
 
@@ -3497,6 +3501,8 @@ static struct cpe_lsm_session *wcd_cpe_alloc_lsm_session(
 	init_completion(&session->cmd_comp);
 
 	lsm_sessions[session_id] = session;
+
+	WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 	return session;
 
 err_afe_mode_cmd:
@@ -3511,6 +3517,7 @@ err_ret:
 
 err_session_alloc:
 	wcd_cpe_vote(core, false);
+	WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 	return NULL;
 }
 
@@ -3633,7 +3640,7 @@ static int wcd_cpe_lsm_eob(
 			struct cpe_lsm_session *session)
 {
 	int ret = 0;
-	struct cmi_hdr lab_eob = {0};
+	struct cmi_hdr lab_eob;
 
 	if (fill_lsm_cmd_header_v0_inband(&lab_eob, session->id,
 		0, CPE_LSM_SESSION_CMD_EOB)) {
@@ -3660,9 +3667,11 @@ static int wcd_cpe_dealloc_lsm_session(void *core_handle,
 	struct wcd_cpe_core *core = core_handle;
 	int ret = 0;
 
+	WCD_CPE_GRAB_LOCK(&core->session_lock, "session_lock");
 	if (!session) {
 		dev_err(core->dev,
 			"%s: Invalid lsm session\n", __func__);
+		WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 		return -EINVAL;
 	}
 
@@ -3673,6 +3682,7 @@ static int wcd_cpe_dealloc_lsm_session(void *core_handle,
 			"%s: Wrong session id %d max allowed = %d\n",
 			__func__, session->id,
 			WCD_CPE_LSM_MAX_SESSIONS);
+		WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 		return -EINVAL;
 	}
 
@@ -3693,6 +3703,7 @@ static int wcd_cpe_dealloc_lsm_session(void *core_handle,
 			"%s: Failed to un-vote cpe, err = %d\n",
 			__func__, ret);
 
+	WCD_CPE_REL_LOCK(&core->session_lock, "session_lock");
 	return ret;
 }
 
@@ -3946,7 +3957,7 @@ static int wcd_cpe_cmi_send_afe_msg(
 	}
 
 	ret = wait_for_completion_timeout(&port_d->afe_cmd_complete,
-					  msecs_to_jiffies(CMI_CMD_TIMEOUT));
+					  CMI_CMD_TIMEOUT);
 	if (ret > 0) {
 		pr_debug("%s: command 0x%x, received response 0x%x\n",
 			 __func__, hdr->opcode, port_d->cmd_result);

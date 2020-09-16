@@ -1,4 +1,5 @@
-/* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
+
+/* Copyright (c) 2014-2016, 2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -608,8 +609,10 @@ static enum cpe_svc_result cpe_deregister_generic(struct cpe_info *t_info,
 		return CPE_SVC_INVALID_HANDLE;
 	}
 
+	CPE_SVC_GRAB_LOCK(&cpe_d.cpe_svc_lock, "cpe_svc");
 	list_del(&(n->list));
 	kfree(reg_handle);
+	CPE_SVC_REL_LOCK(&cpe_d.cpe_svc_lock, "cpe_svc");
 
 	return CPE_SVC_SUCCESS;
 }
@@ -1101,7 +1104,7 @@ static void cpe_clk_plan_work(struct work_struct *work)
 
 	/* Wait for clk plan command to complete */
 	rc = wait_for_completion_timeout(&t_info->core_svc_cmd_compl,
-					 msecs_to_jiffies(10000));
+					 (10 * HZ));
 	if (!rc) {
 		pr_err("%s: clk plan cmd timed out\n",
 			__func__);
