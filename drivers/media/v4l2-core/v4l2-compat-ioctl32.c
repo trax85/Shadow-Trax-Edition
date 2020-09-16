@@ -352,7 +352,7 @@ static int put_v4l2_standard32(struct v4l2_standard __user *kp, struct v4l2_stan
 {
 	if (!access_ok(VERIFY_WRITE, up, sizeof(struct v4l2_standard32)) ||
 		convert_in_user(&kp->index, &up->index) ||
-		convert_in_user(&kp->id, &up->id) ||
+		copy_in_user(&up->id, &kp->id, sizeof(__u64)) ||
 		copy_in_user(up->name, kp->name, 24) ||
 		copy_in_user(&up->frameperiod, &kp->frameperiod, sizeof(kp->frameperiod)) ||
 		convert_in_user(&kp->framelines, &up->framelines) ||
@@ -614,7 +614,7 @@ static int put_v4l2_buffer32(struct v4l2_buffer __user *kp, struct v4l2_buffer32
 	if (V4L2_TYPE_IS_PRIVATE(type)) {
 		if (convert_in_user(&kp->m.userptr, &up->m.userptr))
 			return -EFAULT;
-	}
+        }
 
 	if (V4L2_TYPE_IS_MULTIPLANAR(type)) {
 		num_planes = length;

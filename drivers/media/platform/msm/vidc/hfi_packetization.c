@@ -82,7 +82,7 @@ static int nal_type[] = {
 		HFI_NAL_FORMAT_FOUR_BYTE_LENGTH,
 };
 
-int hal_to_hfi_type(int property, int hal_type)
+static inline int hal_to_hfi_type(int property, int hal_type)
 {
 	if (hal_type && (roundup_pow_of_two(hal_type) != hal_type)) {
 		/* Not a power of 2, it's not going

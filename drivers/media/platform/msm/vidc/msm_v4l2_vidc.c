@@ -65,9 +65,11 @@ static int msm_v4l2_open(struct file *filp)
 		return -ENOMEM;
 	}
 
-	dprintk(VIDC_DBG, "pm_qos_add with latency 1000usec\n");
-	pm_qos_add_request(&msm_v4l2_vidc_pm_qos_request,
-			PM_QOS_CPU_DMA_LATENCY, 1000);
+	if (!pm_qos_request_active(&msm_v4l2_vidc_pm_qos_request)) {
+		dprintk(VIDC_DBG, "pm_qos_add with latency 1000usec\n");
+		pm_qos_add_request(&msm_v4l2_vidc_pm_qos_request,
+				PM_QOS_CPU_DMA_LATENCY, 1000);
+	}
 
 	clear_bit(V4L2_FL_USES_V4L2_FH, &vdev->flags);
 	filp->private_data = &(vidc_inst->event_handler);
@@ -96,10 +98,12 @@ static int msm_v4l2_close(struct file *filp)
 
 	rc = msm_vidc_close(vidc_inst);
 
-	dprintk(VIDC_DBG, "pm_qos_update and remove\n");
-	pm_qos_update_request(&msm_v4l2_vidc_pm_qos_request,
-			PM_QOS_DEFAULT_VALUE);
-	pm_qos_remove_request(&msm_v4l2_vidc_pm_qos_request);
+	if (pm_qos_request_active(&msm_v4l2_vidc_pm_qos_request)) {
+		dprintk(VIDC_DBG, "pm_qos_update and remove\n");
+		pm_qos_update_request(&msm_v4l2_vidc_pm_qos_request,
+				PM_QOS_DEFAULT_VALUE);
+		pm_qos_remove_request(&msm_v4l2_vidc_pm_qos_request);
+	}
 
 	trace_msm_v4l2_vidc_close_end("msm_v4l2_close end");
 	return rc;
@@ -294,7 +298,8 @@ static const struct v4l2_ioctl_ops msm_v4l2_ioctl_ops = {
 	.vidioc_enum_framesizes = msm_v4l2_enum_framesizes,
 };
 
-//static const struct v4l2_ioctl_ops msm_v4l2_enc_ioctl_ops = {};
+static const struct v4l2_ioctl_ops msm_v4l2_enc_ioctl_ops = {
+};
 
 static unsigned int msm_v4l2_poll(struct file *filp,
 	struct poll_table_struct *pt)
