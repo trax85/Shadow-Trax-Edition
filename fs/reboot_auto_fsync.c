@@ -56,7 +56,7 @@ static struct notifier_block dyn_fsync_panic_block =
 	.priority       = INT_MAX,
 };
 
-static void dyn_fsync_init(void)
+static int __init dyn_fsync_init(void)
 {
 	register_reboot_notifier(&dyn_fsync_notifier);
 
@@ -64,9 +64,11 @@ static void dyn_fsync_init(void)
 		&dyn_fsync_panic_block);
 
 	pr_info("%s Reboot auto-fsync initialisation complete\n", __FUNCTION__);
+	
+	return 0;
 }
 
-static void dyn_fsync_exit(void)
+static void __exit dyn_fsync_exit(void)
 {
 	unregister_reboot_notifier(&dyn_fsync_notifier);
 
