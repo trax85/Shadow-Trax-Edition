@@ -38,6 +38,10 @@
 #include "../codecs/wcd-mbhc-v2.h"
 #include "../codecs/wsa881x.h"
 
+#if defined(CONFIG_SPEAKER_EXT_PA)
+#include <linux/delay.h>
+#endif
+
 #define DRV_NAME "msm8952-slimbus-wcd"
 
 #define BTSCO_RATE_8KHZ         8000
@@ -109,6 +113,7 @@ static void *adsp_state_notifier;
 
 static int msm8952_enable_codec_mclk(struct snd_soc_codec *codec, int enable,
 					bool dapm);
+extern void msleep(unsigned int msecs);
 
 /*
  * Android L spec
@@ -1635,7 +1640,7 @@ static void msm_afe_clear_config(void)
 
 static uint32_t get_mi2s_rx_clk_val(void)
 {
-	if (mi2s_rx_bit_format == (SNDRV_PCM_FORMAT_S24_LE || SNDRV_PCM_FORMAT_S24_3LE || 
+	if (mi2s_rx_bit_format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE | 
 							   SNDRV_PCM_FORMAT_S32_LE))
 		return Q6AFE_LPASS_IBIT_CLK_3_P072_MHZ;
 	else

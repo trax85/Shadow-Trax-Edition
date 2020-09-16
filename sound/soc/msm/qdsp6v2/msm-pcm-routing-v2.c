@@ -6348,7 +6348,7 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 			}
 			if (bedai->format == SNDRV_PCM_FORMAT_S32_LE)
 				bits_per_sample = 32;
-			else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE || SNDRV_PCM_FORMAT_S24_3LE))
+			else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE))
 				bits_per_sample = 24;
 
 			app_type = playback ?
