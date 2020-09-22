@@ -67,8 +67,8 @@ module_param(det_extn_cable_en, int,
 MODULE_PARM_DESC(det_extn_cable_en, "enable/disable extn cable detect");
 
 /* AGNi Audio Jack Testing & Debuging (psndna88@gmail.com) */
-int hs_detect_plug_time_ms = (1 * 500);
-int special_hs_detect_time_ms = (1 * 1000);
+int hs_detect_plug_time_ms = (1 * 1000);	
+int special_hs_detect_time_ms = (2 * 1000);	
 int mbhc_button_press_threshold_min = 250;
 int wcd_fake_removal_min_period_ms = 100;
 int fake_rem_retry_attempts;
@@ -798,7 +798,7 @@ static void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 
 		mbhc->hph_status |= jack_type;
 
-		if (new_jack) {
+		if (new_jack ==1) {
 		if (!skip_report) {
 			pr_info("%s: Reporting insertion %d(%x)\n", __func__,
 				 jack_type, mbhc->hph_status);
@@ -1560,7 +1560,7 @@ exit:
 	if (mbhc->mbhc_cb->hph_pull_down_ctrl)
 		mbhc->mbhc_cb->hph_pull_down_ctrl(codec, true);
 
-	if (new_jack)
+	if (new_jack ==1)
 	skip_impdet_retry = false;
 
 	mbhc->mbhc_cb->lock_sleep(mbhc, false);
@@ -1600,7 +1600,7 @@ static void wcd_mbhc_detect_plug_type(struct wcd_mbhc *mbhc)
 
 static void wcd_mbhc_swch_irq_handler(struct wcd_mbhc *mbhc)
 {
-	bool detection_type;
+	bool detection_type = false;
 	bool micbias1 = false;
 	struct snd_soc_codec *codec = mbhc->codec;
 
@@ -1717,10 +1717,12 @@ static void wcd_mbhc_swch_irq_handler(struct wcd_mbhc *mbhc)
 			WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_ELECT_SCHMT_ISRC, 0);
 			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_LINEOUT);
 		} else if (mbhc->current_plug == MBHC_PLUG_TYPE_ANC_HEADPHONE) {
-			wcd_mbhc_hs_elec_irq(mbhc, WCD_MBHC_ELEC_HS_REM,
-					     false);
-			wcd_mbhc_hs_elec_irq(mbhc, WCD_MBHC_ELEC_HS_INS,
-					     false);
+			mbhc->mbhc_cb->irq_control(codec,	
+					mbhc->intr_ids->mbhc_hs_rem_intr,	
+					false);	
+			mbhc->mbhc_cb->irq_control(codec,	
+					mbhc->intr_ids->mbhc_hs_ins_intr,	
+					false);
 			WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_ELECT_DETECTION_TYPE,
 						 0);
 			WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_ELECT_SCHMT_ISRC, 0);
@@ -1846,7 +1848,7 @@ static int wcd_mbhc_get_button_mask(struct wcd_mbhc *mbhc)
 static irqreturn_t wcd_mbhc_hs_ins_irq(int irq, void *data)
 {
 	struct wcd_mbhc *mbhc = data;
-	bool detection_type, hphl_sch, mic_sch;
+	bool detection_type = false, hphl_sch, mic_sch;
 	u16 elect_result;
 	static u16 hphl_trigerred;
 	static u16 mic_trigerred;
