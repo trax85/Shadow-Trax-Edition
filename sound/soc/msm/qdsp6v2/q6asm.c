@@ -4902,7 +4902,7 @@ int q6asm_stream_media_format_block_aptx_dec(struct audio_client *ac,
  		goto fail_cmd;
  	}
  	rc = wait_event_timeout(ac->cmd_wait,
- 				(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
+ 				(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
  	if (!rc) {
  		pr_err("%s :timeout. waited for FORMAT_UPDATE\n", __func__);
  		rc = -ETIMEDOUT;
@@ -5705,7 +5705,7 @@ int q6asm_dts_eagle_set(struct audio_client *ac, int param_id, uint32_t size,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), 1*HZ);
+			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(1000));
 	if (!rc) {
 		pr_err("DTS_EAGLE_ASM - %s: timeout, set-params paramid[0x%x]\n",
 			__func__, ad->data.param_id);
@@ -5816,7 +5816,7 @@ int q6asm_dts_eagle_get(struct audio_client *ac, int param_id, uint32_t size,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), 1*HZ);
+			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(1000));
 	if (!rc) {
 		pr_err("DTS_EAGLE_ASM - %s: timeout in get\n",
 			__func__);
@@ -5971,7 +5971,7 @@ int q6asm_set_aptx_dec_bt_addr(struct audio_client *ac,
  	}
 
  	rc = wait_event_timeout(ac->cmd_wait,
- 			(atomic_read(&ac->cmd_state) >= 0), 5*HZ);
+ 			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(5000));
  	if (!rc) {
  		pr_err("%s: timeout, set-params paramid[0x%x]\n", __func__,
  			paylod.encdec.param_id);
@@ -6839,7 +6839,7 @@ int q6asm_send_audio_effects_params(struct audio_client *ac, char *params,
 		goto fail_send_param;
 	}
 	rc = wait_event_timeout(ac->cmd_wait,
-				(atomic_read(&ac->cmd_state) <= 0), 1*HZ);
+				(atomic_read(&ac->cmd_state) <= 0), msecs_to_jiffies(1000));
 	if (!rc) {
 		pr_err("%s: timeout, audio effects set-params\n", __func__);
 		rc = -ETIMEDOUT;
