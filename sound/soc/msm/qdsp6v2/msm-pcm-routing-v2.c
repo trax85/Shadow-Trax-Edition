@@ -108,9 +108,6 @@ static int msm_routing_send_device_pp_params(int port_id,  int copp_idx);
 static int msm_routing_get_bit_width(unsigned int format) {
 	int bit_width;
 	switch (format) {
-	case SNDRV_PCM_FORMAT_S32_LE:
-		bit_width = 32;
-		break;	
 	case SNDRV_PCM_FORMAT_S24_LE:
 	case SNDRV_PCM_FORMAT_S24_3LE:
 		bit_width = 24;
@@ -158,7 +155,7 @@ static void msm_pcm_routing_cfg_pp(int port_id, int copp_idx, int topology,
 					__func__, topology, port_id, rc);
 		}
 		break;
-	case ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX:
+        case ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX:
 		pr_debug("%s: DTS_EAGLE_COPP_TOPOLOGY_ID\n", __func__);
 		msm_dts_eagle_init_post(port_id, copp_idx);
 		break;
@@ -193,7 +190,7 @@ static void msm_pcm_routing_deinit_pp(int port_id, int topology)
 			msm_dolby_dap_deinit(port_id);
 		}
 		break;
-	case ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX:
+        case ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX:
 		pr_debug("%s: DTS_EAGLE_COPP_TOPOLOGY_ID\n", __func__);
 		msm_dts_eagle_deinit_post(port_id, topology);
 		break;
@@ -5785,6 +5782,7 @@ static const struct snd_soc_dapm_route intercon[] = {
 	{"VOIP_UL", NULL, "VOC_EXT_EC MUX"},
 	{"VoLTE_UL", NULL, "VOC_EXT_EC MUX"},
 	{"VOICE2_UL", NULL, "VOC_EXT_EC MUX"},
+	{"VoWLAN_UL", NULL, "VOC_EXT_EC MUX"},
 	{"VOICEMMODE1_UL", NULL, "VOC_EXT_EC MUX"},
 	{"VOICEMMODE2_UL", NULL, "VOC_EXT_EC MUX"},
 
@@ -6332,7 +6330,7 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 	for_each_set_bit(i, &bedai->fe_sessions, MSM_FRONTEND_DAI_MM_SIZE) {
 		fdai = &fe_dai_map[i][session_type];
 		if (fdai->strm_id != INVALID_SESSION) {
-			int app_type, app_type_idx, copp_idx, acdb_dev_id;
+			int app_type = 0, app_type_idx, copp_idx, acdb_dev_id;
 			if (session_type == SESSION_TYPE_TX &&
 			    fdai->be_srate &&
 			    (fdai->be_srate != bedai->sample_rate)) {
@@ -6346,10 +6344,9 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 						fdai->event_info.priv_data);
 				fdai->be_srate = 0; /* might not need it */
 			}
-			if (bedai->format == SNDRV_PCM_FORMAT_S32_LE)
+			if (bedai->format == SNDRV_PCM_FORMAT_S24_LE)
 				bits_per_sample = 32;
-			else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE))
-				bits_per_sample = 24;
+                        else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE))
 
 			app_type = playback ?
 				   fe_dai_app_type_cfg[i].app_type : 0;
@@ -6562,6 +6559,33 @@ static const struct snd_kcontrol_new device_pp_params_mixer_controls[] = {
 	msm_routing_put_device_pp_params_mixer),
 };
 
+static int msm_aptx_dec_license_control_get(struct snd_kcontrol *kcontrol,
+ 				struct snd_ctl_elem_value *ucontrol)
+ {
+ 	ucontrol->value.integer.value[0] =
+ 			core_get_license_status(ASM_MEDIA_FMT_APTX);
+ 	pr_debug("%s: status %ld\n", __func__,
+ 			ucontrol->value.integer.value[0]);
+ 	return 0;
+ }
+
+ static int msm_aptx_dec_license_control_put(struct snd_kcontrol *kcontrol,
+ 				struct snd_ctl_elem_value *ucontrol)
+ {
+ 	int32_t status = 0;
+
+ 	status = core_set_license(ucontrol->value.integer.value[0],
+ 				APTX_CLASSIC_DEC_LICENSE_ID);
+ 	pr_debug("%s: status %d\n", __func__, status);
+ 	return status;
+ }
+
+ static const struct snd_kcontrol_new aptx_dec_license_controls[] = {
+ 	SOC_SINGLE_EXT("APTX Dec License", SND_SOC_NOPM, 0,
+ 	0xFFFF, 0, msm_aptx_dec_license_control_get,
+ 	msm_aptx_dec_license_control_put),
+ };
+
 static struct snd_pcm_ops msm_routing_pcm_ops = {
 	.hw_params	= msm_pcm_routing_hw_params,
 	.close          = msm_pcm_routing_close,
@@ -6624,13 +6648,16 @@ static int msm_routing_probe(struct snd_soc_platform *platform)
 				device_pp_params_mixer_controls,
 				ARRAY_SIZE(device_pp_params_mixer_controls));
 
-	msm_dts_eagle_add_controls(platform);
+        msm_dts_eagle_add_controls(platform);
 
 	snd_soc_add_platform_controls(platform, msm_source_tracking_controls,
 				      ARRAY_SIZE(msm_source_tracking_controls));
 
 	/* create generic hw dep node */
 	msm_pcm_create_generic_hwdep_node(platform);
+
+        snd_soc_add_platform_controls(platform, aptx_dec_license_controls,
+ 					ARRAY_SIZE(aptx_dec_license_controls));
 	return 0;
 }
 

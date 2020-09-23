@@ -45,11 +45,11 @@
 #include "msm8916-wcd-irq.h"
 #include "msm8x16_wcd_registers.h"
 
-#define MSM8X16_WCD_RATES (SNDRV_PCM_RATE_8000_384000)
-
+#define MSM8X16_WCD_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
+			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000)
 #define MSM8X16_WCD_FORMATS (SNDRV_PCM_FMTBIT_S16_LE |\
-		SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S24_3LE |\
-		SNDRV_PCM_FMTBIT_S32_LE)
+		SNDRV_PCM_FMTBIT_S24_LE |\
+		SNDRV_PCM_FMTBIT_S24_3LE)
 
 #define NUM_INTERPOLATORS	3
 #define BITS_PER_REG		8
@@ -613,9 +613,9 @@ static void msm8x16_wcd_enable_master_bias(struct snd_soc_codec *codec,
 static void msm8x16_wcd_mbhc_common_micb_ctrl(struct snd_soc_codec *codec,
 					      int event, bool enable)
 {
-	u16 reg;
-	u8 mask;
-	u8 val;
+	u16 reg = 0;
+	u8 mask = 0;
+	u8 val = 0;
 
 	switch (event) {
 	case MBHC_COMMON_MICB_PRECHARGE:
@@ -1869,13 +1869,11 @@ static int msm8x16_wcd_codec_enable_on_demand_supply(
 				 __func__, on_demand_supply_name[w->shift]);
 			goto out;
 		}
-		if (atomic_dec_return(&supply->ref) == 0){
+		if (atomic_dec_return(&supply->ref) == 0)
 			ret = regulator_disable(supply->supply);
-			if (ret)
-				dev_err(codec->dev, "%s: Failed to disable %s\n",
-					__func__,
-					on_demand_supply_name[w->shift]);
-		}
+		if (ret)
+			dev_err(codec->dev, "%s: Failed to disable %s\n",
+				__func__, on_demand_supply_name[w->shift]);
 		break;
 	default:
 		break;
@@ -3548,7 +3546,7 @@ static int msm8x16_wcd_codec_set_iir_gain(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_codec *codec = w->codec;
-	int value = 0, reg;
+	int value = 0, reg = 0;
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
@@ -4426,9 +4424,6 @@ static int msm8x16_wcd_hw_params(struct snd_pcm_substream *substream,
 		tx_fs_rate = 0x05;
 		rx_fs_rate = 0xA0;
 		break;
-	case 384000:
-		tx_fs_rate = 0x06;
-		rx_fs_rate = 0xC0;
 	default:
 		dev_err(dai->codec->dev,
 			"%s: Invalid sampling rate %d\n", __func__,
@@ -4468,7 +4463,6 @@ static int msm8x16_wcd_hw_params(struct snd_pcm_substream *substream,
 		snd_soc_update_bits(dai->codec,
 				MSM8X16_WCD_A_CDC_CLK_RX_I2S_CTL, 0x20, 0x20);
 		break;
-	case SNDRV_PCM_FORMAT_S32_LE:	
 	case SNDRV_PCM_FORMAT_S24_LE:
 	case SNDRV_PCM_FORMAT_S24_3LE:
 		snd_soc_update_bits(dai->codec,
@@ -4550,7 +4544,7 @@ static struct snd_soc_dai_driver msm8x16_wcd_i2s_dai[] = {
 			.stream_name = "AIF1 Playback",
 			.rates = MSM8X16_WCD_RATES,
 			.formats = MSM8X16_WCD_FORMATS,
-			.rate_max = 384000,
+			.rate_max = 192000,
 			.rate_min = 8000,
 			.channels_min = 1,
 			.channels_max = 3,

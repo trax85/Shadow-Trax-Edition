@@ -94,7 +94,7 @@ MODULE_PARM_DESC(cpe_debug_mode, "boot cpe in debug mode");
 
 static atomic_t kp_tomtom_priv;
 
-static int high_perf_mode;
+static int high_perf_mode = 1;
 module_param(high_perf_mode, int,
 			S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(high_perf_mode, "enable/disable class AB config for hph");
@@ -344,7 +344,7 @@ static struct afe_param_id_clip_bank_sel clip_bank_sel = {
 
 #define WCD9330_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
 			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
-			SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000)
+ 			SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000)
 
 #define NUM_DECIMATORS 10
 #define NUM_INTERPOLATORS 8
@@ -361,10 +361,13 @@ static struct afe_param_id_clip_bank_sel clip_bank_sel = {
 #define TOMTOM_MCLK_CLK_12P288MHZ 12288000
 #define TOMTOM_MCLK_CLK_9P6MHZ 9600000
 
-#define TOMTOM_FORMATS_S16_S24_LE (SNDRV_PCM_FMTBIT_S16_LE | \
-			SNDRV_PCM_FMTBIT_S24_LE)
+#define TOMTOM_FORMATS_S16_S24_LE (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FORMAT_S16_LE | \
+  SNDRV_PCM_FORMAT_S24_LE |  SNDRV_PCM_FMTBIT_S24_LE |  \
+  SNDRV_PCM_FMTBIT_S24_3LE |  SNDRV_PCM_FORMAT_S24_LE )
 
-#define TOMTOM_FORMATS (SNDRV_PCM_FMTBIT_S16_LE)
+#define TOMTOM_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FORMAT_S16_LE | \
+  SNDRV_PCM_FORMAT_S24_LE |  SNDRV_PCM_FMTBIT_S24_LE | \
+  SNDRV_PCM_FMTBIT_S24_3LE |  SNDRV_PCM_FORMAT_S24_LE)
 
 #define TOMTOM_SLIM_PGD_PORT_INT_TX_EN0 (TOMTOM_SLIM_PGD_PORT_INT_EN0 + 2)
 #define TOMTOM_ZDET_BOX_CAR_AVG_LOOP_COUNT 1
@@ -427,7 +430,7 @@ static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
 static const DECLARE_TLV_DB_SCALE(line_gain, 0, 7, 1);
 static const DECLARE_TLV_DB_SCALE(analog_gain, 0, 25, 1);
 static struct snd_soc_dai_driver tomtom_dai[];
-static const DECLARE_TLV_DB_SCALE(aux_pga_gain, 0, 2, 0);
+//static const DECLARE_TLV_DB_SCALE(aux_pga_gain, 0, 2, 0);
 
 /* Codec supports 2 IIR filters */
 enum {
@@ -748,8 +751,8 @@ static int tomtom_update_uhqa_mode(struct snd_soc_codec *codec, int path)
 	if (((tomtom_get_sample_rate(codec, path) & 0xE0) == 0xA0) &&
 		(tomtom_compare_bit_format(codec, 24))) {
 		tomtom_p->uhqa_mode = 1;
-	} else {
-		tomtom_p->uhqa_mode = 0;
+	} else if (( tomtom_compare_bit_format (codec, 16 ))) {
+                tomtom_p-> uhqa_mode = 1 ;
 	}
 	dev_dbg(codec->dev, "%s: uhqa_mode=%d", __func__, tomtom_p->uhqa_mode);
 	return ret;
@@ -1245,10 +1248,10 @@ static const char *const tomtom_anc_func_text[] = {"OFF", "ON"};
 static const struct soc_enum tomtom_anc_func_enum =
 		SOC_ENUM_SINGLE_EXT(2, tomtom_anc_func_text);
 
-static const char *const tabla_ear_pa_gain_text[] = {"POS_6_DB", "POS_2_DB"};
-static const struct soc_enum tabla_ear_pa_gain_enum[] = {
+//static const char *const tabla_ear_pa_gain_text[] = {"POS_6_DB", "POS_2_DB"};
+/*static const struct soc_enum tabla_ear_pa_gain_enum[] = {
 		SOC_ENUM_SINGLE_EXT(2, tabla_ear_pa_gain_text),
-};
+};*/
 
 /*cut of frequency for high pass filter*/
 static const char * const cf_text[] = {
@@ -3935,8 +3938,7 @@ static int tomtom_codec_enable_dec(struct snd_soc_dapm_widget *w,
 				CF_MIN_3DB_150HZ) &&
 			(tx_hpf_work[decimator - 1].tx_hpf_bypass != true)) {
 
-			queue_delayed_work(system_power_efficient_wq, 
-					&tx_hpf_work[decimator - 1].dwork,
+			schedule_delayed_work(&tx_hpf_work[decimator - 1].dwork,
 					msecs_to_jiffies(300));
 		}
 		/* apply the digital gain after the decimator is enabled*/
@@ -5862,6 +5864,7 @@ static void tomtom_set_rxsb_port_format(struct snd_pcm_hw_params *params,
 		tomtom_p->dai[dai->id].bit_width = 16;
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
+        case SNDRV_PCM_FORMAT_S24_3LE:
 		bit_sel = 0x0;
 		tomtom_p->dai[dai->id].bit_width = 24;
 		break;
@@ -5921,6 +5924,7 @@ static void tomtom_set_tx_sb_port_format(struct snd_pcm_hw_params *params,
 		tomtom_p->dai[dai->id].bit_width = 16;
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
+        case SNDRV_PCM_FORMAT_S24_3LE:
 		bit_sel = 0x0;
 		tomtom_p->dai[dai->id].bit_width = 24;
 		break;
@@ -6035,6 +6039,7 @@ static int tomtom_hw_params(struct snd_pcm_substream *substream,
 			tomtom->dai[dai->id].bit_width = 16;
 			break;
 		case SNDRV_PCM_FORMAT_S24_LE:
+                case SNDRV_PCM_FORMAT_S24_3LE:
 			tomtom->dai[dai->id].bit_width = 24;
 			i2s_bit_mode = 0x00;
 			break;

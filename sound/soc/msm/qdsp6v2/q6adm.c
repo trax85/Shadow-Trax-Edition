@@ -311,7 +311,7 @@ int adm_dts_eagle_set(int port_id, int copp_idx, int param_id,
 	admp.hdr.token = p_idx << 16 | copp_idx;
 	admp.hdr.opcode = ADM_CMD_SET_PP_PARAMS_V5;
 	admp.payload_addr_lsw = lower_32_bits(this_adm.outband_memmap.paddr);
-	admp.payload_addr_msw = populate_upper_32_bits(
+	admp.payload_addr_msw = msm_audio_populate_upper_32_bits(
 						this_adm.outband_memmap.paddr);
 	admp.mem_map_handle = atomic_read(&this_adm.mem_map_handles[
 					  ADM_DTS_EAGLE]);
@@ -421,7 +421,7 @@ int adm_dts_eagle_get(int port_id, int copp_idx, int param_id,
 	admp.data_payload_addr_lsw =
 				lower_32_bits(this_adm.outband_memmap.paddr);
 	admp.data_payload_addr_msw =
-				populate_upper_32_bits(
+				msm_audio_populate_upper_32_bits(
 						this_adm.outband_memmap.paddr);
 	admp.mem_map_handle = atomic_read(&this_adm.mem_map_handles[
 					  ADM_DTS_EAGLE]);
@@ -1600,7 +1600,7 @@ static int adm_memory_map_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 	int     ret = 0;
 	int     i = 0;
 	int     cmd_size = 0;
-	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
+	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
 
 	pr_debug("%s:\n", __func__);
 	if (this_adm.apr == NULL) {
@@ -1664,7 +1664,7 @@ static int adm_memory_map_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 
 	ret = wait_event_timeout(this_adm.adm_wait,
 				 atomic_read(&this_adm.adm_stat),
-				 msecs_to_jiffies(5000));
+				 5 * HZ);
 	if (!ret) {
 		pr_err("%s: timeout. waited for memory_map\n", __func__);
 		ret = -EINVAL;
@@ -1715,7 +1715,7 @@ static int adm_memory_unmap_regions(void)
 
 	ret = wait_event_timeout(this_adm.adm_wait,
 				 atomic_read(&this_adm.adm_stat),
-				 msecs_to_jiffies(5000));
+				 5 * HZ);
 	if (!ret) {
 		pr_err("%s: timeout. waited for memory_unmap\n",
 		       __func__);
@@ -2264,14 +2264,14 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 	pr_debug("%s:port %#x path:%d rate:%d mode:%d perf_mode:%d,topo_id %d\n",
 		 __func__, port_id, path, rate, channel_mode, perf_mode,
 		 topology);
-
-	/* For DTS EAGLE only, force 24 bit */
+        /* For DTS EAGLE only, force 24 bit */
 	if ((topology == ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX) &&
 		(perf_mode == LEGACY_PCM_MODE)) {
 		bit_width = 24;
 		pr_debug("%s: Force open adm in 24-bit for DTS HPX topology 0x%x\n",
 			__func__, topology);
 	}
+
 	port_id = q6audio_convert_virtual_to_portid(port_id);
 	port_idx = adm_validate_and_get_port_index(port_id);
 	if (port_idx < 0) {
@@ -2366,7 +2366,7 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 		(uint32_t)this_adm.outband_memmap.size);
 		}
 	}
-		if ((topology == ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX) &&
+                if ((topology == ADM_CMD_COPP_OPEN_TOPOLOGY_ID_DTS_HPX) &&
 		    (perf_mode == LEGACY_PCM_MODE)) {
 			int res = 0;
 			atomic_set(&this_adm.mem_map_index, ADM_DTS_EAGLE);
@@ -2380,6 +2380,7 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 				pr_err("%s: DTS_EAGLE mmap did not work!",
 					__func__);
 		}
+
 		open.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
 						   APR_HDR_LEN(APR_HDR_SIZE),
 						   APR_PKT_VER);
@@ -2659,7 +2660,7 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 			}
 		}
 
-		if ((perf_mode == LEGACY_PCM_MODE) &&
+                if ((perf_mode == LEGACY_PCM_MODE) &&
 		    (this_adm.outband_memmap.paddr != 0) &&
 		    (atomic_read(
 			&this_adm.copp.topology[port_idx][copp_idx]) ==
@@ -2927,7 +2928,7 @@ static int adm_set_cal(int32_t cal_type, size_t data_size, void *data)
 {
 	int				ret = 0;
 	int				cal_index;
-	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
+	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
 
 	pr_debug("%s:\n", __func__);
 
@@ -2963,7 +2964,7 @@ static int adm_map_cal_data(int32_t cal_type,
 {
 	int ret = 0;
 	int cal_index;
-	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
+	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
 
 	pr_debug("%s:\n", __func__);
 
@@ -3059,8 +3060,8 @@ static int adm_init_cal_data(void)
 		{{ADM_RTAC_APR_CAL_TYPE,
 		{NULL, NULL, NULL, NULL, NULL, NULL} },
 		{NULL, NULL, cal_utils_match_buf_num} },
-
-		{{DTS_EAGLE_CAL_TYPE,
+ 
+                {{DTS_EAGLE_CAL_TYPE,
 		{NULL, NULL, NULL, NULL, NULL, NULL} },
 		{NULL, NULL, cal_utils_match_buf_num} },
 

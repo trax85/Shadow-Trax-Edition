@@ -15,7 +15,6 @@
 #include <sound/hwdep.h>
 #include <sound/devdep_params.h>
 #include <sound/msm-dts-eagle.h>
-
 #include "msm-pcm-routing-devdep.h"
 #include "msm-ds2-dap-config.h"
 
@@ -53,7 +52,7 @@ static int msm_pcm_routing_hwdep_ioctl(struct snd_hwdep *hw, struct file *file,
 	case SNDRV_DEVDEP_DAP_IOCTL_GET_VISUALIZER:
 		ret = msm_ds2_dap_ioctl(hw, file, cmd, argp);
 		break;
-	case DTS_EAGLE_IOCTL_GET_CACHE_SIZE:
+        case DTS_EAGLE_IOCTL_GET_CACHE_SIZE:
 	case DTS_EAGLE_IOCTL_SET_CACHE_SIZE:
 	case DTS_EAGLE_IOCTL_GET_PARAM:
 	case DTS_EAGLE_IOCTL_SET_PARAM:
@@ -81,7 +80,7 @@ static int msm_pcm_routing_hwdep_ioctl(struct snd_hwdep *hw, struct file *file,
 void msm_pcm_routing_hwdep_free(struct snd_pcm *pcm)
 {
 	pr_debug("%s\n", __func__);
-	msm_dts_eagle_pcm_free(pcm);
+        msm_dts_eagle_pcm_free(pcm);
 }
 
 #ifdef CONFIG_COMPAT
@@ -105,7 +104,7 @@ static int msm_pcm_routing_hwdep_compat_ioctl(struct snd_hwdep *hw,
 	case SNDRV_DEVDEP_DAP_IOCTL_GET_VISUALIZER32:
 		ret = msm_ds2_dap_compat_ioctl(hw, file, cmd, argp);
 		break;
-	case DTS_EAGLE_IOCTL_GET_CACHE_SIZE32:
+        case DTS_EAGLE_IOCTL_GET_CACHE_SIZE32:
 	case DTS_EAGLE_IOCTL_SET_CACHE_SIZE32:
 	case DTS_EAGLE_IOCTL_GET_PARAM32:
 	case DTS_EAGLE_IOCTL_SET_PARAM32:

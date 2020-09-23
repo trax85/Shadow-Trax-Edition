@@ -32,7 +32,6 @@
 #include <asm/dma.h>
 #include <linux/dma-mapping.h>
 #include <linux/msm_audio_ion.h>
-#include <linux/pm_wakeup.h>
 
 #include <sound/timer.h>
 #include <sound/tlv.h>
@@ -45,7 +44,6 @@
 #include <sound/compress_driver.h>
 #include <sound/msm-audio-effects-q6-v2.h>
 #include <sound/msm-dts-eagle.h>
-
 #include "msm-pcm-routing-v2.h"
 #include "audio_ocmem.h"
 
@@ -84,19 +82,6 @@ const DECLARE_TLV_DB_LINEAR(msm_compr_vol_gain, 0,
 
 #define MAX_NUMBER_OF_STREAMS 2
 
-uint16_t bits_per_sample = 16;
-static int __init setup_bits_per_sample(char *str)
-{
-	if (!strncmp(str, "32bit", strlen(str)))
-		bits_per_sample = 32;
-
-	if (!strncmp(str, "24bit", strlen(str)))
-		bits_per_sample = 24;
-
-	return bits_per_sample;
-}
-__setup("androidboot.bps=", setup_bits_per_sample);
-
 /*
  * Max size for getting DTS EAGLE Param through kcontrol
  * Safe for both 32 and 64 bit platforms
@@ -105,6 +90,19 @@ __setup("androidboot.bps=", setup_bits_per_sample);
  * 40 = size of dts_eagle_param_desc + module_id cast to 64 bits
  */
 #define DTS_EAGLE_MAX_PARAM_SIZE_FOR_ALSA ((64 * 4) - 40)
+
+uint16_t bits_per_sample = 16;
+ static int __init setup_bits_per_sample(char *str)
+ {
+ 	if (!strncmp(str, "32bit", strlen(str)))
+ 		bits_per_sample = 32;
+
+ 	if (!strncmp(str, "24bit", strlen(str)))
+ 		bits_per_sample = 24;
+
+ 	return bits_per_sample;
+ }
+ __setup("androidboot.bps=", setup_bits_per_sample);
 
 struct msm_compr_gapless_state {
 	bool set_next_stream_id;
@@ -124,7 +122,6 @@ struct msm_compr_pdata {
 	bool use_dsp_gapless_mode;
 	struct msm_compr_dec_params *dec_params[MSM_FRONTEND_DAI_MAX];
 	struct msm_compr_ch_map *ch_map[MSM_FRONTEND_DAI_MAX];
-	bool is_in_use[MSM_FRONTEND_DAI_MAX];
 };
 
 struct msm_compr_audio {
@@ -187,11 +184,12 @@ struct msm_compr_audio {
 	spinlock_t lock;
 };
 
-const u32 compr_codecs[] = {SND_AUDIOCODEC_AC3, SND_AUDIOCODEC_EAC3};
+const u32 compr_codecs[] = {
+ 	SND_AUDIOCODEC_AC3, SND_AUDIOCODEC_EAC3, SND_AUDIOCODEC_DTS};
 
 static unsigned int supported_sample_rates[] = {
 	8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000,
-	88200, 96000, 176400, 192000, 352800, 384000
+	88200, 96000, 176400, 192000
 };
 
 struct query_audio_effect {
@@ -220,8 +218,6 @@ struct msm_compr_ch_map {
 	bool set_ch_map;
 	char channel_map[PCM_FORMAT_MAX_NUM_CHANNEL];
 };
-
-static struct wakeup_source drain_wake_lock;
 
 static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 				     struct msm_compr_dec_params *dec_params,
@@ -324,14 +320,14 @@ static int msm_compr_set_volume(struct snd_compr_stream *cstream,
 			return rc;
 		}
 	}
-	if (rc < 0)
+	if (rc < 0){
 		pr_err("%s: Send vol gain command failed rc=%d\n",
-		       __func__, rc);
-	else
+		       __func__, rc);}
+        else{
 		if (msm_dts_eagle_set_stream_gain(prtd->audio_client,
 						volume_l, volume_r))
 			pr_debug("%s: DTS_EAGLE send stream gain failed\n",
-				__func__);
+				__func__);}
 
 	return rc;
 }
@@ -685,7 +681,7 @@ static void populate_codec_list(struct msm_compr_audio *prtd)
 			COMPR_PLAYBACK_MIN_NUM_FRAGMENTS;
 	prtd->compr_cap.max_fragments =
 			COMPR_PLAYBACK_MAX_NUM_FRAGMENTS;
-	prtd->compr_cap.num_codecs = 12;
+	prtd->compr_cap.num_codecs = 14;
 	prtd->compr_cap.codecs[0] = SND_AUDIOCODEC_MP3;
 	prtd->compr_cap.codecs[1] = SND_AUDIOCODEC_AAC;
 	prtd->compr_cap.codecs[2] = SND_AUDIOCODEC_AC3;
@@ -698,6 +694,8 @@ static void populate_codec_list(struct msm_compr_audio *prtd)
 	prtd->compr_cap.codecs[9] = SND_AUDIOCODEC_VORBIS;
 	prtd->compr_cap.codecs[10] = SND_AUDIOCODEC_ALAC;
 	prtd->compr_cap.codecs[11] = SND_AUDIOCODEC_APE;
+        prtd->compr_cap.codecs[12] = SND_AUDIOCODEC_DTS;
+ 	prtd->compr_cap.codecs[13] = SND_AUDIOCODEC_APTX;
 }
 
 static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
@@ -716,6 +714,7 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 	struct asm_vorbis_cfg vorbis_cfg;
 	struct asm_alac_cfg alac_cfg;
 	struct asm_ape_cfg ape_cfg;
+        struct aptx_dec_bt_addr_cfg aptx_cfg;
 	union snd_codec_options *codec_options;
 
 	int ret = 0;
@@ -748,10 +747,6 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 		}
 
 		switch (prtd->codec_param.codec.format) {
-		case SNDRV_PCM_FORMAT_S32_LE:
-			bit_width = 32;
-			sample_word_size = 32;
-			break;	
 		case SNDRV_PCM_FORMAT_S24_LE:
 			bit_width = 24;
 			sample_word_size = 32;
@@ -789,6 +784,9 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 		if (prtd->codec_param.codec.format ==
 					SND_AUDIOSTREAMFORMAT_MP4ADTS)
 			aac_cfg.format = 0x0;
+                else if (prtd->codec_param.codec.format ==
+ 					SND_AUDIOSTREAMFORMAT_MP4LATM)
+ 			aac_cfg.format = 0x04;
 		else
 			aac_cfg.format = 0x03;
 		aac_cfg.ch_cfg = prtd->num_channels;
@@ -927,6 +925,29 @@ static int msm_compr_send_media_format_block(struct snd_compr_stream *cstream,
 			pr_err("%s: CMD Format block failed ret %d\n",
 					__func__, ret);
 		break;
+        case FORMAT_DTS:
+ 		pr_debug("SND_AUDIOCODEC_DTS\n");
+ 		/* no media format block needed */
+ 		break;
+
+ 	case FORMAT_APTX:
+ 		pr_debug("SND_AUDIOCODEC_APTX\n");
+ 		memset(&aptx_cfg, 0x0, sizeof(struct aptx_dec_bt_addr_cfg));
+ 		ret = q6asm_stream_media_format_block_aptx_dec(
+ 							prtd->audio_client,
+ 							prtd->sample_rate,
+ 							stream_id);
+ 		if (ret >= 0) {
+ 			aptx_cfg.nap = codec_options->aptx_dec.nap;
+ 			aptx_cfg.uap = codec_options->aptx_dec.uap;
+ 			aptx_cfg.lap = codec_options->aptx_dec.lap;
+ 			q6asm_set_aptx_dec_bt_addr(prtd->audio_client,
+ 							&aptx_cfg);
+ 		} else {
+ 			pr_err("%s: CMD Format block failed ret %d\n",
+ 					 __func__, ret);
+ 		}
+ 		break;
 
 	default:
 		pr_debug("%s, unsupported format, skip", __func__);
@@ -946,7 +967,7 @@ static int msm_compr_init_pp_params(struct snd_compr_stream *cstream,
 	};
 
 	switch (ac->topology) {
-	case ASM_STREAM_POSTPROC_TOPO_ID_HPX_PLUS: /* HPX + SA+ topology */
+        case ASM_STREAM_POSTPROC_TOPO_ID_HPX_PLUS: /* HPX + SA+ topology */
 
 		ret = q6asm_set_softvolume_v2(ac, &softvol,
 					      SOFT_VOLUME_INSTANCE_1);
@@ -1107,16 +1128,11 @@ static int msm_compr_open(struct snd_compr_stream *cstream)
 {
 	struct snd_compr_runtime *runtime = cstream->runtime;
 	struct snd_soc_pcm_runtime *rtd = cstream->private_data;
-	struct msm_compr_audio *prtd = NULL;
+	struct msm_compr_audio *prtd;
 	struct msm_compr_pdata *pdata =
 			snd_soc_platform_get_drvdata(rtd->platform);
 
 	pr_debug("%s\n", __func__);
-	if (pdata->is_in_use[rtd->dai_link->be_id] == true) {
-		pr_err("%s: %s is already in use,err: %d ",
-			__func__, rtd->dai_link->cpu_dai_name, -EBUSY);
-		return -EBUSY;
-	}
 	prtd = kzalloc(sizeof(struct msm_compr_audio), GFP_KERNEL);
 	if (prtd == NULL) {
 		pr_err("Failed to allocate memory for msm_compr_audio\n");
@@ -1128,7 +1144,7 @@ static int msm_compr_open(struct snd_compr_stream *cstream)
 	pdata->cstream[rtd->dai_link->be_id] = cstream;
 	pdata->audio_effects[rtd->dai_link->be_id] =
 		 kzalloc(sizeof(struct msm_compr_audio_effects), GFP_KERNEL);
-	if (pdata->audio_effects[rtd->dai_link->be_id] == NULL) {
+	if (!pdata->audio_effects[rtd->dai_link->be_id]) {
 		pr_err("%s: Could not allocate memory for effects\n", __func__);
 		pdata->cstream[rtd->dai_link->be_id] = NULL;
 		kfree(prtd);
@@ -1136,11 +1152,10 @@ static int msm_compr_open(struct snd_compr_stream *cstream)
 	}
 	pdata->dec_params[rtd->dai_link->be_id] =
 		 kzalloc(sizeof(struct msm_compr_dec_params), GFP_KERNEL);
-	if (pdata->dec_params[rtd->dai_link->be_id] == NULL) {
+	if (!pdata->dec_params[rtd->dai_link->be_id]) {
 		pr_err("%s: Could not allocate memory for dec params\n",
 			__func__);
 		kfree(pdata->audio_effects[rtd->dai_link->be_id]);
-		pdata->audio_effects[rtd->dai_link->be_id] = NULL;
 		pdata->cstream[rtd->dai_link->be_id] = NULL;
 		kfree(prtd);
 		return -ENOMEM;
@@ -1150,9 +1165,7 @@ static int msm_compr_open(struct snd_compr_stream *cstream)
 	if (!prtd->audio_client) {
 		pr_err("%s: Could not allocate memory for client\n", __func__);
 		kfree(pdata->audio_effects[rtd->dai_link->be_id]);
-		pdata->audio_effects[rtd->dai_link->be_id] = NULL;
 		kfree(pdata->dec_params[rtd->dai_link->be_id]);
-		pdata->dec_params[rtd->dai_link->be_id] = NULL;
 		pdata->cstream[rtd->dai_link->be_id] = NULL;
 		kfree(prtd);
 		return -ENOMEM;
@@ -1184,8 +1197,6 @@ static int msm_compr_open(struct snd_compr_stream *cstream)
 
 	spin_lock_init(&prtd->lock);
 
-	wakeup_source_init(&drain_wake_lock, "drain");
-
 	atomic_set(&prtd->eos, 0);
 	atomic_set(&prtd->start, 0);
 	atomic_set(&prtd->drain, 0);
@@ -1212,7 +1223,7 @@ static int msm_compr_open(struct snd_compr_stream *cstream)
 	} else {
 		pr_err("%s: Unsupported stream type", __func__);
 	}
-	pdata->is_in_use[rtd->dai_link->be_id] = true;
+
 	return 0;
 }
 
@@ -1306,17 +1317,12 @@ static int msm_compr_free(struct snd_compr_stream *cstream)
 		atomic_read(&pdata->audio_ocmem_req));
 	q6asm_audio_client_buf_free_contiguous(dir, ac);
 
-	wakeup_source_trash(&drain_wake_lock);
 	q6asm_audio_client_free(ac);
-	if (pdata->audio_effects[soc_prtd->dai_link->be_id] != NULL) {
-		kfree(pdata->audio_effects[soc_prtd->dai_link->be_id]);
-		pdata->audio_effects[soc_prtd->dai_link->be_id] = NULL;
-	}
-	if (pdata->dec_params[soc_prtd->dai_link->be_id] != NULL) {
-		kfree(pdata->dec_params[soc_prtd->dai_link->be_id]);
-		pdata->dec_params[soc_prtd->dai_link->be_id] = NULL;
-	}
-	pdata->is_in_use[soc_prtd->dai_link->be_id] = false;
+
+	kfree(pdata->audio_effects[soc_prtd->dai_link->be_id]);
+	pdata->audio_effects[soc_prtd->dai_link->be_id] = NULL;
+	kfree(pdata->dec_params[soc_prtd->dai_link->be_id]);
+	pdata->dec_params[soc_prtd->dai_link->be_id] = NULL;
 	kfree(prtd);
 	runtime->private_data = NULL;
 
@@ -1454,6 +1460,18 @@ static int msm_compr_set_params(struct snd_compr_stream *cstream,
 		prtd->codec = FORMAT_APE;
 		break;
 	}
+    
+        case SND_AUDIOCODEC_DTS: {
+		pr_debug("%s: SND_AUDIOCODEC_DTS\n", __func__);
+ 		prtd->codec = FORMAT_DTS;
+ 		break;
+ 	}
+
+ 	case SND_AUDIOCODEC_APTX: {
+ 		pr_debug("%s: SND_AUDIOCODEC_APTX\n", __func__);
+ 		prtd->codec = FORMAT_APTX;
+ 		break;
+ 	}
 
 	default:
 		pr_err("codec not supported, id =%d\n", params->codec.id);
@@ -1491,14 +1509,11 @@ static int msm_compr_drain_buffer(struct msm_compr_audio *prtd,
 	prtd->drain_ready = 0;
 	spin_unlock_irqrestore(&prtd->lock, *flags);
 	pr_debug("%s: wait for buffer to be drained\n",  __func__);
-
-	__pm_stay_awake(&drain_wake_lock);
 	rc = wait_event_interruptible(prtd->drain_wait,
 					prtd->drain_ready ||
 					prtd->cmd_interrupt ||
 					atomic_read(&prtd->xrun) ||
 					atomic_read(&prtd->error));
-	__pm_relax(&drain_wake_lock);
 	pr_debug("%s: out of buffer drain wait with ret %d\n", __func__, rc);
 	spin_lock_irqsave(&prtd->lock, *flags);
 	if (prtd->cmd_interrupt) {
@@ -1961,7 +1976,8 @@ static int msm_compr_trigger(struct snd_compr_stream *cstream, int cmd)
 
 		if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE)
 			bits_per_sample = 24;
-		else if (prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S32_LE)
+		else if (prtd->codec_param.codec.format ==
+			 SNDRV_PCM_FORMAT_S32_LE)
 			bits_per_sample = 32;
 
 		pr_debug("%s: open_write stream_id %d bits_per_sample %d",
@@ -2257,6 +2273,10 @@ static int msm_compr_get_codec_caps(struct snd_compr_stream *cstream,
 		break;
 	case SND_AUDIOCODEC_APE:
 		break;
+        case SND_AUDIOCODEC_DTS:
+ 		break;
+ 	case SND_AUDIOCODEC_APTX:
+ 		break;
 	default:
 		pr_err("%s: Unsupported audio codec %d\n",
 			__func__, codec->codec);
@@ -2479,7 +2499,7 @@ static int msm_compr_audio_effects_config_put(struct snd_kcontrol *kcontrol,
 						    &(audio_effects->equalizer),
 						     values);
 		break;
-	case DTS_EAGLE_MODULE:
+        case DTS_EAGLE_MODULE:
 		pr_debug("%s: DTS_EAGLE_MODULE\n", __func__);
 		if (!msm_audio_effects_is_effmodule_supp_in_top(effects_module,
 						prtd->audio_client->topology))
@@ -2496,6 +2516,7 @@ static int msm_compr_audio_effects_config_put(struct snd_kcontrol *kcontrol,
 					AUDPROC_MODULE_ID_DTS_HPX_PREMIX);
 
 		break;
+
 	case SOFT_VOLUME_MODULE:
 		pr_debug("%s: SOFT_VOLUME_MODULE\n", __func__);
 		break;
@@ -2524,7 +2545,7 @@ static int msm_compr_audio_effects_config_get(struct snd_kcontrol *kcontrol,
 	struct msm_compr_audio_effects *audio_effects = NULL;
 	struct snd_compr_stream *cstream = NULL;
 	struct msm_compr_audio *prtd = NULL;
-	long *values = &(ucontrol->value.integer.value[0]);
+        long *values = &(ucontrol->value.integer.value[0]);
 
 	pr_debug("%s\n", __func__);
 	if (fe_id >= MSM_FRONTEND_DAI_MAX) {
@@ -2543,8 +2564,7 @@ static int msm_compr_audio_effects_config_get(struct snd_kcontrol *kcontrol,
 		pr_err("%s: cannot set audio effects\n", __func__);
 		return -EINVAL;
 	}
-
-	switch (audio_effects->query.mod_id) {
+        switch (audio_effects->query.mod_id) {
 	case DTS_EAGLE_MODULE:
 		pr_debug("%s: DTS_EAGLE_MODULE handling queued get\n",
 			 __func__);
@@ -2566,6 +2586,7 @@ static int msm_compr_audio_effects_config_get(struct snd_kcontrol *kcontrol,
 		pr_err("%s: Invalid effects config module\n", __func__);
 		return -EINVAL;
 	}
+
 	return 0;
 }
 
@@ -2669,6 +2690,7 @@ static int msm_compr_send_dec_params(struct snd_compr_stream *cstream,
 	switch (prtd->codec) {
 	case FORMAT_MP3:
 	case FORMAT_MPEG4_AAC:
+        case FORMAT_APTX:
 		pr_debug("%s: no runtime parameters for codec: %d\n", __func__,
 			 prtd->codec);
 		break;
@@ -2733,6 +2755,8 @@ static int msm_compr_dec_params_put(struct snd_kcontrol *kcontrol,
 	case FORMAT_VORBIS:
 	case FORMAT_ALAC:
 	case FORMAT_APE:
+        case FORMAT_DTS:
+ 	case FORMAT_APTX:
 		pr_debug("%s: no runtime parameters for codec: %d\n", __func__,
 			 prtd->codec);
 		break;
@@ -2891,7 +2915,6 @@ static int msm_compr_probe(struct snd_soc_platform *platform)
 		pdata->dec_params[i] = NULL;
 		pdata->cstream[i] = NULL;
 		pdata->ch_map[i] = NULL;
-		pdata->is_in_use[i] = false;
 	}
 
 	/*
