@@ -72,6 +72,9 @@ struct cgroup_subsys_state {
 	 */
 	struct cgroup *cgroup;
 
+        /* PI: the parent css */
+	struct cgroup_subsys_state *parent;
+
 	/*
 	 * State maintained by the cgroup system to allow subsystems
 	 * to be "busy". Should be accessed via css_get(),
@@ -207,10 +210,10 @@ struct cgroup {
 	struct cgroupfs_root *root;
 
 	/*
-	 * List of cg_cgroup_links pointing at css_sets with
-	 * tasks in this cgroup. Protected by css_set_lock
+	 * List of cgrp_cset_links pointing at css_sets with tasks in this
+	 * cgroup.  Protected by css_set_lock.
 	 */
-	struct list_head css_sets;
+	struct list_head cset_links;
 
 	struct list_head allcg_node;	/* cgroupfs_root->allcg_list */
 	struct list_head cft_q_node;	/* used during cftype add/rm */
@@ -268,13 +271,6 @@ enum {
 	 *   match.
 	 *
 	 * - Remount is disallowed.
-	 *
-	 * - cpuset: tasks will be kept in empty cpusets when hotplug happens
-	 *   and take masks of ancestors with non-empty cpus/mems, instead of
-	 *   being moved to an ancestor.
-	 *
-	 * - cpuset: a task can be moved into an empty cpuset, and again it
-	 *   takes masks of ancestors.
 	 *
 	 * - memcg: use_hierarchy is on by default and the cgroup file for
 	 *   the flag is not created.
@@ -364,11 +360,10 @@ struct css_set {
 	struct list_head tasks;
 
 	/*
-	 * List of cg_cgroup_link objects on link chains from
-	 * cgroups referenced from this css_set. Protected by
-	 * css_set_lock
+	 * List of cgrp_cset_links pointing at cgroups referenced from this
+	 * css_set.  Protected by css_set_lock.
 	 */
-	struct list_head cg_links;
+	struct list_head cgrp_links;
 
 	/*
 	 * Set of subsystem states, one for each subsystem. This array
@@ -449,13 +444,13 @@ struct cftype {
 	 * entry. The key/value pairs (and their ordering) should not
 	 * change between reboots.
 	 */
-	int (*read_map)(struct cgroup *cont, struct cftype *cft,
+	int (*read_map)(struct cgroup *cgrp, struct cftype *cft,
 			struct cgroup_map_cb *cb);
 	/*
 	 * read_seq_string() is used for outputting a simple sequence
 	 * using seqfile.
 	 */
-	int (*read_seq_string)(struct cgroup *cont, struct cftype *cft,
+	int (*read_seq_string)(struct cgroup *cgrp, struct cftype *cft,
 			       struct seq_file *m);
 
 	ssize_t (*write)(struct cgroup *cgrp, struct cftype *cft,
@@ -585,6 +580,7 @@ struct cgroup_subsys {
 	void (*css_offline)(struct cgroup *cgrp);
 	void (*css_free)(struct cgroup *cgrp);
 
+	int (*allow_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
 	int (*can_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
 	void (*cancel_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
 	void (*attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
@@ -600,6 +596,7 @@ struct cgroup_subsys {
 	 * True if this subsys uses ID. ID is not available before cgroup_init()
 	 * (not available in early_init time.)
 	 */
+        struct cftype *legacy_cftypes;	/* for the legacy hierarchies */
 	bool use_id;
 
 	/*
@@ -816,7 +813,7 @@ struct cgroup *cgroup_next_descendant_post(struct cgroup *pos,
 
 /* A cgroup_iter should be treated as an opaque object */
 struct cgroup_iter {
-	struct list_head *cg_link;
+	struct list_head *cset_link;
 	struct list_head *task;
 };
 
@@ -872,8 +869,18 @@ bool css_is_ancestor(struct cgroup_subsys_state *cg,
 
 /* Get id and depth of css */
 unsigned short css_id(struct cgroup_subsys_state *css);
-unsigned short css_depth(struct cgroup_subsys_state *css);
 struct cgroup_subsys_state *cgroup_css_from_dir(struct file *f, int id);
+
+/*
+ * Default Android check for whether the current process is allowed to move a
+ * task across cgroups, either because CAP_SYS_NICE is set or because the uid
+ * of the calling process is the same as the moved task or because we are
+ * running as root.
+ * Returns 0 if this is allowed, or -EACCES otherwise.
+ */
+int subsys_cgroup_allow_attach(struct cgroup *cgrp,
+			       struct cgroup_taskset *tset);
+
 
 #else /* !CONFIG_CGROUPS */
 
@@ -897,7 +904,11 @@ static inline int cgroup_attach_task_all(struct task_struct *from,
 {
 	return 0;
 }
-
+static inline int subsys_cgroup_allow_attach(struct cgroup *cgrp,
+					     struct cgroup_taskset *tset)
+{
+	return 0;
+}
 #endif /* !CONFIG_CGROUPS */
 
 #endif /* _LINUX_CGROUP_H */
