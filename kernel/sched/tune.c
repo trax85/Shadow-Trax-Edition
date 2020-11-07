@@ -949,11 +949,18 @@ schedtune_exit(struct cgroup *cgrp,
 	schedtune_tasks_update(tsk, cpu, old_st->idx, -1);
 }
 
+static int
+schedtune_allow_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
+{
+	return 0;
+}
+
 struct cgroup_subsys schedtune_subsys = {
 	.name           = "schedtune",
 	.css_alloc	= schedtune_css_alloc,
 	.css_free	= schedtune_css_free,
 	.exit		= schedtune_exit,
+	.allow_attach	= schedtune_allow_attach,
 	.can_attach     = schedtune_can_attach,
 	.cancel_attach  = schedtune_cancel_attach,
 	.base_cftypes	= files,
