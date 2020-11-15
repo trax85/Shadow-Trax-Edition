@@ -35,13 +35,13 @@ const struct cred *override_fsids(struct sdcardfs_sb_info *sbi,
 		return NULL;
 
 	if (sbi->options.gid_derivation) {
-		if (data->under_obb)
-			uid = AID_MEDIA_OBB;
-		else
-			uid = multiuser_get_uid(data->userid, sbi->options.fs_low_uid);
-	} else {
-		uid = sbi->options.fs_low_uid;
-	}
+ 		if (data->under_obb)
+ 			uid = AID_MEDIA_OBB;
+ 		else
+ 			uid = multiuser_get_uid(data->userid, sbi->options.fs_low_uid);
+ 	} else {
+ 		uid = sbi->options.fs_low_uid;
+ 	}
 	cred->fsuid = uid;
 	cred->fsgid = sbi->options.fs_low_gid;
 
@@ -638,7 +638,7 @@ static int sdcardfs_permission(struct vfsmount *mnt, struct inode *inode, int ma
 	struct sdcardfs_inode_data *top = top_data_get(SDCARDFS_I(inode));
 
 	if (IS_ERR(mnt))
-		return PTR_ERR(mnt);
+ 		return PTR_ERR(mnt);
 	if (!top)
 		return -EINVAL;
 
@@ -829,11 +829,11 @@ out_err:
 }
 
 static int sdcardfs_fillattr(struct vfsmount *mnt, struct inode *inode,
-				struct kstat *lower_stat, struct kstat *stat)
+ 				struct kstat *lower_stat, struct kstat *stat)
 {
 	struct sdcardfs_inode_info *info = SDCARDFS_I(inode);
 	struct sdcardfs_inode_data *top = top_data_get(info);
-	struct super_block *sb = inode->i_sb;
+        struct super_block *sb = inode->i_sb;
 
 	if (!top)
 		return -EINVAL;
@@ -846,11 +846,11 @@ static int sdcardfs_fillattr(struct vfsmount *mnt, struct inode *inode,
 	stat->gid = make_kgid(&init_user_ns, get_gid(mnt, sb, top));
 	stat->rdev = inode->i_rdev;
 	stat->size = lower_stat->size;
-	stat->atime = lower_stat->atime;
-	stat->mtime = lower_stat->mtime;
-	stat->ctime = lower_stat->ctime;
-	stat->blksize = lower_stat->blksize;
-	stat->blocks = lower_stat->blocks;
+ 	stat->atime = lower_stat->atime;
+ 	stat->mtime = lower_stat->mtime;
+ 	stat->ctime = lower_stat->ctime;
+ 	stat->blksize = lower_stat->blksize;
+ 	stat->blocks = lower_stat->blocks;
 	data_put(top);
 	return 0;
 }
