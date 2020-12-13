@@ -11,6 +11,7 @@ set_perm(0, 0, 0777, "/tmp/mkbootimg");
 set_perm(0, 0, 0777, "/tmp/unpackbootimg");
 set_perm(0, 0, 0777, "/tmp/flash_kernel.sh");
 set_perm(0, 0, 0777, "/tmp/edit_ramdisk.sh");
+set_perm(0, 0, 0777, "/tmp/thermals.sh");
 set_perm(0, 0, 0777, "/tmp/init.spectrum.sh");
 set_perm(0, 0, 0777, "/tmp/profile.performance.sh");
 set_perm(0, 0, 0777, "/tmp/profile.balance.sh");
@@ -24,82 +25,37 @@ ui_print(" ");
 ui_print("Running Ramdisk Edit Scripts...");
 set_progress(0.4);
 run_program("/tmp/edit_ramdisk.sh");
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "1"
+then
+	ui_print("Profile Type A Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "2"
+then
+	ui_print("Profile Type B Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "3"
+then
+	ui_print("Profile Type C Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "4"
+then
+	ui_print("Profile Type D Selected");
+endif;
+if
+	file_getprop("/tmp/aroma/occore.prop","selected") == "5"
+then
+	ui_print("Profile Type Default Selected");
+endif;
 mount("ext4", "EMMC", "/dev/block/bootdevice/by-name/system", "/system");
 run_program("/tmp/flash_kernel.sh");
 ui_print(" ");
+set_progress(0.5);
+run_program("/tmp/thermals.sh");
 ui_print("Finished Running Scripts");
-run_program("/tmp/aroma/sleep","500");
-if
-  	file_getprop("/tmp/aroma/rom.prop","selected") == "3"
-then
-if
-  	file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
-then
-	ui_print("Flashing Old Thermals For Q...");  
-  	package_extract_dir("thermal/old", "/system/system");
-	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
-	set_perm(0, 0, 0755, "/system/system/vendor/lib/libthermalclient.so");
-	set_perm(0, 0, 0755, "/system/system/vendor/lib64/libthermalclient.so");
-	set_perm(0, 0, 0755, "/system/system/vendor/lib64/libthermalioctl.so");
-  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
-  	unmount("/system/system");
-	ui_print("Finished Flashing Thermals");
-endif;  
-if
-  	file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
-then
-	ui_print("Flashing New Thermals For Q...");
-  	package_extract_dir("thermal/new", "/system/system");
-  	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
-  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
-  	unmount("/system/system");
-	ui_print("Finished Flashing Thermals");
-endif;
-if
-  	file_getprop("/tmp/aroma/thermal.prop","selected") == "3"
-then
-	ui_print("Flashing New Thermals For Q...");
-  	package_extract_dir("thermal/cpuonly", "/system/system");
-  	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
-  	set_perm(0, 0, 0644, "/system/system/vendor/etc/thermal-engine.config");
-  	unmount("/system/system");
-	ui_print("Finished Flashing Thermals");
-endif;  
-else
-if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "1"
-then  
-	ui_print("Flashing Old Thermals For Pie and Lower...");
-  	package_extract_dir("thermal/old", "/system");
-  	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
-	set_perm(0, 0, 0755, "/system/system/vendor/lib/libthermalclient.so");
-	set_perm(0, 0, 0755, "/system/system/vendor/lib64/libthermalclient.so");
-	set_perm(0, 0, 0755, "/system/system/vendor/lib64/libthermalioctl.so");
-  	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine");
-  	unmount("/system");
-	ui_print("Finished Flashing Thermals");
-endif;
-if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "2"
-then
-	ui_print("Flashing New Thermals For Pie and Lower..");
-  	package_extract_dir("thermal/new", "/system");
-	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine"); 
-  	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
-  	unmount("/system");
-	ui_print("Finished Flashing Thermals");
-endif;
-if
-  file_getprop("/tmp/aroma/thermal.prop","selected") == "3"
-then
-	ui_print("Flashing New Thermals For Pie and Lower..");
-  	package_extract_dir("thermal/cpuonly", "/system");
-	set_perm(0, 0, 0755, "/system/system/vendor/bin/thermal-engine"); 
-  	set_perm(0, 0, 0755, "/system/vendor/bin/thermal-engine");
-  	unmount("/system");
-	ui_print("Finished Flashing Thermals");
-endif;
-endif;
 ui_print(" ");
 ui_print("Cleaning Up Installer...");
 set_progress(0.7);
