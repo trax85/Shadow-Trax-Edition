@@ -391,7 +391,7 @@
 
 		qcom,cpr-fuse-corners = <3>;
 		qcom,cpr-voltage-ceiling = <865000 965000 1200000>;
-		qcom,cpr-voltage-floor =   <540000  755000  845000>;
+		qcom,cpr-voltage-floor =   <680000  755000  845000>;
 		vdd-apc-supply = <&pm8950_s5>;
 
 		vdd-mx-supply = <&pm8950_s6_level_ao>;
@@ -478,7 +478,7 @@
 			<0 37 150>, /* NOM + 15mv, TURBO + 60mv */
 			<0  0   0>;
 		qcom,cpr-voltage-floor-override =
-			<(-1) (-1) 540000 540000 580000 725000
+			<(-1) (-1) 705000 710000 710000 725000
 			760000 820000 840000 860000 905000 965000 1155000>;
 		qcom,cpr-enable;
 	};
