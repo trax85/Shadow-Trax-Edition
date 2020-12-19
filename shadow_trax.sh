@@ -66,8 +66,8 @@ make	-j4 \
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
 $DTBTOOL -2 -o $KERNEL_DIR/arch/arm64/boot/dt.img -s 2048 -p $KERNEL_DIR/scripts/dtc/ $KERNEL_DIR/arch/arm/boot/dts/
-mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/$VERSION/tools/dt1.img
-cp $KERNEL_DIR/arch/arm64/boot/Image $KERNEL_DIR/build/$VERSION/tools/Image1
+mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/$VERSION/tools/dt.img
+cp $KERNEL_DIR/arch/arm64/boot/Image $KERNEL_DIR/build/$VERSION/tools/Image
 zimage=$KERNEL_DIR/arch/arm64/boot/Image
 if ! [ -a $zimage ];
 then

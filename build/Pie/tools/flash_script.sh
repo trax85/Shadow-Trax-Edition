@@ -16,12 +16,11 @@
  # Please maintain this if you use this script or any part of it
  #
 #
-zim=/tmp/Image1
+zim=/tmp/Image
+dim=/tmp/dt.img
 REFRESH=$(cat /tmp/aroma/refresh.prop | cut -d '=' -f2)
 if [ $REFRESH == 7 ]; then
-	dim=/tmp/dt2.img
 else
-	dim=/tmp/dt1.img
 fi
 cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 ramoops_memreserve=4M"
 cmd=$cmd" androidboot.selinux=permissive"
