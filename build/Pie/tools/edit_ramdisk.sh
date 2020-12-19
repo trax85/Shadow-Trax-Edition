@@ -212,14 +212,19 @@ echo "" >> $CONFIGFILE
 
 VOLT=$(cat /tmp/aroma/uv.prop | cut -d '=' -f2)
 if [ $VOLT == 1 ]; then
-	echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
+	echo "# CPU & GPU EXTREME UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"680 700 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 790 890 920 930 940 950 1030 1120 680 700 740 800 810 810 820 900 950 960\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"540 540 580 760 860 910 930 940 950 1030 1120 680 700 720 780 810 810 820 900 950 960\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 elif [ $VOLT == 2 ]; then
+	echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"680 700 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 780 880 910 930 940 950 1030 1120 680 700 740 800 810 810 820 900 950 960\"" >> $CONFIGFILE
+	echo "" >> $CONFIGFILE
+elif [ $VOLT == 3 ]; then
 	echo "# CPU & GPU LIGHT UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 770 820 880 940 970 1030 1050\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 1050 1120 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 1060 1140 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 fi
 echo "# MISC" >> $CONFIGFILE
