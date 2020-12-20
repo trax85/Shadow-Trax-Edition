@@ -18,12 +18,36 @@
 #
 zim=/tmp/Image
 dim=/tmp/dt.img
-REFRESH=$(cat /tmp/aroma/refresh.prop | cut -d '=' -f2)
-if [ $REFRESH == 7 ]; then
-else
-fi
 cmd="androidboot.hardware=qcom ehci-hcd.park=3 androidboot.bootdevice=7824900.sdhci lpm_levels.sleep_disabled=1 ramoops_memreserve=4M"
 cmd=$cmd" androidboot.selinux=permissive"
+#Dynamic Fps On/off Toggles
+SFPS=$(cat /tmp/aroma/sfps.prop | cut -d '=' -f2)
+if [ $SFPS == 1 ]; then
+#Dynamic Fps
+	cmd=$cmd" android.dynamicfps=true"
+else
+#Static Fps
+	REFRESH=$(cat /tmp/aroma/refresh.prop | cut -d '=' -f2)
+	cmd=$cmd" android.dynamicfps=false"
+	if [ $REFRESH == 1 ]; then
+		cmd=$cmd" android.staticfps=60"
+	fi
+	if [ $REFRESH == 2 ]; then
+		cmd=$cmd" android.staticfps=62"
+	fi
+	if [ $REFRESH == 3 ]; then
+		cmd=$cmd" android.staticfps=64"
+	fi
+	if [ $REFRESH == 4 ]; then
+		cmd=$cmd" android.staticfps=66"
+	fi
+	if [ $REFRESH == 5 ]; then
+		cmd=$cmd" android.staticfps=68"
+	fi
+	if [ $REFRESH == 6 ]; then
+		cmd=$cmd" android.staticfps=70"
+	fi
+fi
 OC=$(cat /tmp/aroma/occore.prop | cut -d '=' -f2)
 if [ $OC == 1 ]; then
 	cmd=$cmd" cpu_max_c1=1799040"" cpu_max_c2=1804800"

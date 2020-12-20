@@ -66,6 +66,32 @@ static char rc_range_bpg_offset[] = {2, 0, 0, -2, -4, -6, -8, -8, -8, -10, -10,
 extern void lazyplug_enter_lazy(bool enter);
 #endif
 
+bool enable_dfps = false;
+int set_sfps = 60;
+
+static int __init set_dynamic_fps(char *str)
+{
+	if (!strncmp(str, "true", strlen(str))) {
+		enable_dfps = true;
+	        pr_info("mdss-dsi-panel: android.dynamicfps = Enabled..\n");
+	}
+
+	return 1;
+}
+__setup("android.dynamicfps=", set_dynamic_fps);
+
+static int __init set_static_fps(char *str)
+{
+	if(!enable_dfps){
+		if (get_option(&str,&set_sfps)) {
+	        	pr_info("mdss-dsi-panel: android.staticfps = %d..\n",set_sfps);
+		}
+	}
+
+	return 1;
+}
+__setup("android.staticfps=", set_static_fps);
+
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
 {
 	if (ctrl->pwm_pmi)
@@ -1912,6 +1938,9 @@ static void mdss_dsi_parse_dfps_config(struct device_node *pan_node,
 	dynamic_fps = of_property_read_bool(pan_node,
 			"qcom,mdss-dsi-pan-enable-dynamic-fps");
 
+	if(!enable_dfps)
+		return;
+
 	if (!dynamic_fps)
 		return;
 
@@ -2232,7 +2261,7 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	}
 
 	rc = of_property_read_u32(np, "qcom,mdss-dsi-panel-framerate", &tmp);
-	pinfo->mipi.frame_rate = (!rc ? tmp : 60);
+	pinfo->mipi.frame_rate = (!rc ? tmp : set_sfps);
 	rc = of_property_read_u32(np, "qcom,mdss-dsi-panel-clockrate", &tmp);
 	pinfo->clk_rate = (!rc ? tmp : 0);
 	rc = of_property_read_u32(np, "qcom,mdss-mdp-transfer-time-us", &tmp);
