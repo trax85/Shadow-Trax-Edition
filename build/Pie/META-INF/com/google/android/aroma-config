@@ -166,19 +166,33 @@ selectbox(
   "Disabled ","\nRecommended for 3Gb Devices (Better performance)",1
 );
 
+viewbox(
+  "\n\n<b>Dynamic and Static Fps</b>",
+  "\n\n\n\n\nPlease Read :- \n\n\n\nDyanmic Fps:-  In this type of implimentation you have the ability to change RefreshRate during system runtime. This can be edited using any root explorer the file can be found in /sys/module/mdss_dsi/parameters/dsi_refreshrate the value in the file can be set between 60-70 and Turning on/off display will set your new Refreshrate.\n\n\n\nStatic Fps:-  In this type of implimentation the RefreshRate is set once during flashing and cannot be changed later on. It will need reflashing of kernel to change the RefreshRate of your panel. 
+/sys/module/mdss_dsi/parameters/dsi_refreshrate will be inactive and wont work in this implimentation.\n\n\n\n
+Known Issues:- Some panels have issues(Flicker/Blue Bars) with higher RefreshRates and They show-up on Dynamic Fps option so if you are having this issue then its recommended to use Static fps Option",
+  ""
+);
+
+selectbox(
+  "\n\n<b>Enable/Disable Dynamic Fps","<@center><b>\n\n\n\n\n\nThis will configure kernel to either use Static Or Dynamic Fps Implimentation\n</b></@>","","sfps.prop",
+  "Dynamic Fps ","\nCan Be changed later on without any reflashing required",0,
+  "Static Fps ","\nCannot be changed once set will need reflashing to change Refreshrate",1
+);
+
 selectbox(
   "\n\n<b>Set RefreshRate","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","refresh.prop",
-  "60 Hz","\nStock AF!",1,
+  "60 Hz","\nDefault",1,
   "62 Hz","\nlil OC :)",0,
   "64 Hz","\nTianma Panel Limit.",0,
   "66 Hz","\nBoe and Sharp panel Stable Limit.",0,
   "68 Hz","\nOC all the way!",0,
-  "70 Hz","\nKABOOM!!",0,
-  "Disabled","\nStock refresh rates with no VaribleRefreshRate toggles",0
+  "70 Hz","\nKABOOM!!!",0
 );
 
 selectbox(
   "\n\n<@center><b>Apply UV to CPU and GPU ?\nWarning ! </@>","<@center><b>\n\n\n\n\nThis will change your stock voltages.\nSelect NO if you are unsure about this.\n</b></@>","","uv.prop",
+  "Extreme UV ","\nMay cause Random Reboots for some people",0,
   "Heavy UV ","\nVery low Voltages for Both CPU and GPU",0,
   "Light UV ","\nLow Volatges for CPU and slight uv for GPU",0, 
   "No UV ","\nNo Voltage changes For CPU and GPU",1
