@@ -1250,7 +1250,7 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
 {
 	lockdep_assert_held(&p->pi_lock);
 
-        new_mask = get_adjusted_cpumask(p, new_mask);
+        //new_mask = get_adjusted_cpumask(p, new_mask);
 
 	if (p->sched_class->set_cpus_allowed)
 		p->sched_class->set_cpus_allowed(p, new_mask);
@@ -1276,7 +1276,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 	unsigned int dest_cpu;
 	int ret = 0;
 
-	new_mask = get_adjusted_cpumask(p, new_mask);
+	//new_mask = get_adjusted_cpumask(p, new_mask);
 
 	rq = task_rq_lock(p, &flags);
 
