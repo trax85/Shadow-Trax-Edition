@@ -14,7 +14,6 @@
 #
 # Please maintain this if you use this script or any part of it.
 #
-VERSION="Pie"
 DEVICE="Kenzo"
 yellow='\033[0;33m'
 white='\033[0m'
@@ -22,7 +21,7 @@ red='\033[0;31m'
 gre='\e[0;32m'
 echo -e ""
 echo -e "$gre ====================================\n\n Welcome to Shadow building program !\n\n ===================================="
-echo -e "$gre \n 1.Build Shadow clean\n\n 2.Build Shadow dirty\n"
+echo -e "$gre \n 1.Build Shadow Clean\n\n 2.Build Shadow Dirty\n"
 echo -n " Enter your choice:"
 read qc
 echo -e "$white"
@@ -33,56 +32,52 @@ cd $KERNEL_DIR
 Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
-#$export CROSS_COMPILE="/home/nesara/arm64-gcc/bin/aarch64-elf-"
-#export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu/bin/aarch64-linux-gnu-"
-# GCC 8.3
-#export CROSS_COMPILE="/home/nesara/aarch64-linux-android-8.x/bin/aarch64-linux-android-"
-# GCC lINARO 7.X 
-#export CROSS_COMPILE="/home/nesara/aarch64-linux-gnu-7.5/bin/aarch64-linux-gnu-"
-#export CROSS_COMPILE="/home/nesara/aarch64-linux-android/bin/aarch64-linux-android-"
-# GCC 6.5.1
-#export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
 if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
 make clean > /dev/null
 fi
-#if [ $qc == 2 ]; then
-#echo -e "$yellow Applying quick charging patch \n $white"
-#git apply qc.patch
-#elif [ $qc == 1 ]; then
-#git apply -R qc.patch > /dev/null 2>&1
-#fi
+#
+# Do Kenzo Configs
+#
 make shadow_trax_defconfig
 export ARCH=arm64
+#
+# Export Clang path
+#
 export PATH="${PATH}:/home/nesara/proton-clang-master/bin/"
 export KBUILD_BUILD_USER="trax85"
+#
+# Build Shadow Kernel
+#
 make	-j4 \
 	CC=clang \
 	CROSS_COMPILE=aarch64-linux-gnu- \
 	CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
 	OBJDUMP=llvm-objdump STRIP=llvm-strip \
 	AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy
-
+#
+# Append date,time and Export Image and device tree
+#
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
 $DTBTOOL -2 -o $KERNEL_DIR/arch/arm64/boot/dt.img -s 2048 -p $KERNEL_DIR/scripts/dtc/ $KERNEL_DIR/arch/arm/boot/dts/
-mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/$VERSION/tools/dt.img
-cp $KERNEL_DIR/arch/arm64/boot/Image $KERNEL_DIR/build/$VERSION/tools/Image
+mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/tools/dt.img
+cp $KERNEL_DIR/arch/arm64/boot/Image $KERNEL_DIR/build/tools/Image
 zimage=$KERNEL_DIR/arch/arm64/boot/Image
 if ! [ -a $zimage ];
 then
 echo -e "$red << Failed to compile zImage, fix the errors first >>$white"
 else
-cd $KERNEL_DIR/build/$VERSION
+cd $KERNEL_DIR/build
 rm *.zip > /dev/null 2>&1
+#
+# Zip Flash Tools and make shadow zip
+#
 echo -e "$yellow\n Build succesful, generating flashable zip now \n $white"
-zip -r shadow-$DEVICE-$VERSION-$date.zip * > /dev/null
+zip -r Shadow-Trax-Kernel-$date.zip * > /dev/null
 End=$(date +"%s")
 Diff=$(($End - $Start))
-echo -e "$yellow $KERNEL_DIR/export/$VERSION/Shadow-Kernel-Test-$date.zip \n$white"
-echo -e "$gre << Build completed in $(($Diff / 60)) minutes and $(($Diff % 60)) seconds, variant($qc) >> \n $white"
+echo -e "$yellow $KERNEL_DIR/export/$VERSION/Shadow-Trax-Kernel-$date.zip \n$white"
+echo -e "$gre << Build completed in $(($Diff / 60)) minutes and $(($Diff % 60)) seconds >> \n $white"
 fi
 cd $KERNEL_DIR
-#if [ $qc == 2 ]; then
-#git apply -R qc.patch
-#fi
