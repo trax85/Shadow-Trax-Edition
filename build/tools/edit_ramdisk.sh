@@ -2,15 +2,28 @@
 #Shadow-EAS Ramdisk Edits 
 CONFIGFILE="/tmp/init.shadow.rc"
 PROFILE=$(cat /tmp/aroma/profile.prop | cut -d '=' -f2)
+OCCORE=$(cat /tmp/aroma/occore.prop | cut -d '=' -f2)
 if [ $PROFILE == 1 ]; then
 PROF=0
 elif [ $PROFILE == 2 ]; then
 PROF=2
-elif [ $PROFILE == 3 ]; then
-PROF=1
+fi
+if [ $PROFILE == 3 ]; then
+	if [ $OCCORE == 1 ] || [ $OCCORE == 2 ]; then
+		PROF=0
+	else
+		PROF=1
+	fi
 fi
 
-FC=`grep "item.0.1" /tmp/aroma/mods.prop | cut -d '=' -f2`
+FS=`grep "item.0.1" /tmp/aroma/mods.prop | cut -d '=' -f2`
+if [ $FS = 1 ]; then
+	FS=0
+elif [ $FS = 0 ]; then
+	FS=1
+fi
+
+FC=`grep "item.0.2" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $FC = 1 ]; then
 	USB=1
 elif [ $FC = 0 ]; then
@@ -63,7 +76,7 @@ elif [ $HAP == 3 ]; then
 fi
 
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
-ALMK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
+ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 echo "# USER TWEAKS" >> $CONFIGFILE
 if [ $ROM -eq 2 ] || [ $ROM -eq 1 ]; then
@@ -191,9 +204,9 @@ echo "" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/read_ahead_kb 256" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# FSYNC" >> $CONFIGFILE
-echo "write /sys/module/sync/parameters/fsync_enabled $DFS" >> $CONFIGFILE
+echo "write /sys/module/sync/parameters/fsync_enabled $FS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
-BDM=`grep "item.0.2" /tmp/aroma/mods.prop | cut -d '=' -f2`
+BDM=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $DFSC = 1 ]; then
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer Y" >> $CONFIGFILE
 elif [ $DFSC = 0 ]; then
@@ -214,17 +227,17 @@ VOLT=$(cat /tmp/aroma/uv.prop | cut -d '=' -f2)
 if [ $VOLT == 1 ]; then
 	echo "# CPU & GPU EXTREME UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"680 700 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"540 540 580 760 860 910 930 940 950 1030 1120 680 700 720 780 810 810 820 900 950 960\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"540 540 580 760 860 910 930 940 950 1030 1120 680 700 720 780 810 810 820 900 960 970\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 elif [ $VOLT == 2 ]; then
 	echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"680 700 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 780 880 910 930 940 950 1030 1120 680 700 740 800 810 810 820 900 950 960\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 780 880 910 930 940 950 1030 1120 680 700 740 800 810 810 820 920 980 990\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 elif [ $VOLT == 3 ]; then
 	echo "# CPU & GPU LIGHT UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"700 720 770 820 880 940 970 1030 1050\"" >> $CONFIGFILE
-	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 1060 1140 710 720 760 800 830 850 870 950 960 980\"" >> $CONFIGFILE
+	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"720 730 750 880 920 930 940 950 980 1060 1140 710 720 760 800 830 850 870 950 990 1000\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
 fi
 echo "# MISC" >> $CONFIGFILE

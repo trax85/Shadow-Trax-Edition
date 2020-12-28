@@ -2,13 +2,13 @@
 
 Special Thanks To These Wonderful People !
 
--@ScremMyScillEX - For Being there all the time and Helping with the kernel and Giving us asm AROMA
--@Perre2324 - For Helping me with driver issues ,other kernel mods and for wonderful commits
+-@ScreaMySkrillEX - For Being there all the time and Helping with the kernel and Giving us asm AROMA
+-@Pierre2324 - For Helping me with driver issues ,other kernel mods and for wonderful commits
 
 
 Thanks To All My Testers For Supporting Me All The Way !!
 
--@PranavRenz, @brownnibba, @Skyking469, @hckd1, @Kenzobestphone, @GhostLeader37
+-@PranavRenz, @brownnibba, @Skyking469, @hckd1, @Kenzobestphone, @NothingHereBye, @GhostLeader37
 
 Thanks To All These People For Helping With All The Other Stuff !
 

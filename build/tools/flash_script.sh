@@ -54,17 +54,17 @@ if [ $OC == 1 ]; then
 else
 	cmd=$cmd" cpu_max_c1=1401600"" cpu_max_c2=1804800"
 fi
-AUDIO=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
+AUDIO=`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $AUDIO = 1 ]; then
 	cmd=$cmd" snd-soc-msm8x16-wcd.dig_core_collapse_enable=0 androidboot.bps=24bit"
 fi
-JACK=`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
+JACK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
 if [ $JACK = 0 ]; then
 	cmd=$cmd" android.audiojackmode=stock"
 fi
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
-ALMK=`grep "item.0.5" /tmp/aroma/mods.prop | cut -d '=' -f2`
+ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
 cp -f /tmp/cpio /sbin/cpio
 cd /tmp/
 /sbin/busybox dd if=/dev/block/bootdevice/by-name/boot of=./boot.img

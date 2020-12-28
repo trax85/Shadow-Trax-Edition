@@ -96,8 +96,6 @@ V5.7:-
 * Kill logspam.
 
 -Android Binder
-* Sync with 3.18 Ver Binder.
-* Port 3.18 Binder Functions as later versions of android specify its use.
 * Disable logging and tracing.
 * Other misc optimization and fixes.
 

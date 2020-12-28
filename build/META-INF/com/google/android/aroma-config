@@ -2,7 +2,7 @@ ini_set("rom_name",             "Shadow TraxEdition");
 ini_set("rom_version",          "TraxEdition EAS");
 ini_set("rom_author",           "energyspear17@xda, @trax85, \t\t\t\t\t\t @felix3000");
 ini_set("rom_device",           "Kenzo");
-ini_set("rom_date",             "April 11, 2020");
+ini_set("rom_date",             "December 31, 2020");
 
 ini_set("force_colorspace","rgba");
 #ini_set("dp","6");
@@ -131,13 +131,6 @@ selectbox(
   "Low ","\nFeedback strength is set to 25%",1
 );
 
-selectbox(
-  "\n\n<b>Set Your Profile","<@center><b>\n\n\n\n\nThis will tune your default kernel settings according to your requirement.\n</b></@>","","profile.prop",
-  "Balanced ","\nRecommended",1,
-  "Battery ","\nMay cause lags",0,
-  "Performance ","\nMay yield poor battery backup",0
-);
-
 alert(
   "NOTICE:",
   "Please Read -\n\nInstall Spectrum App/Spectrum supported KM After Flashing kernel as each profile Concentrates to do one thing. So Please use Spectrum to change between profiles to get Optimum Perf and Battery.\n\nBalance - For Normal use like Browsing, Chatting Streaming and other daily tasks.\n\nBattery - Very Light use like Calls and Chat.\n\nPerformance - Intermediate of Balance and Gaming(Depends on your profile Type).\n\nGaming - Heavily Focused on Gaming Performance.\n\n",
@@ -158,6 +151,20 @@ selectbox(
   "Type 'C'","\nPerformance max freq:1.6Ghz",0,
   "Type 'D'","\nPerformance max freq:1.4Ghz",0,
   "Default","\nPerformance & gaming mode max freq:1.4Ghz",1
+);
+
+alert(
+  "NOTICE:",
+  "Please Read -\n\nIf you Choose Profile A or B dont select Performance profile as default profile in next menu as it casues reboots when phone is put to sleep. Therefore Avoid putting phone to sleep while you are on Spectrum's gaming(All Profiles) or performance(A & B profiles) mode.\n\n",
+  "@warning",
+  "OK"
+);
+
+selectbox(
+  "\n\n<b>Set Your Default Profile","<@center><b>\n\n\n\n\nThe Choosen profile will be automatically set on boot.\n</b></@>","","profile.prop",
+  "Balanced ","\nRecommended Default Profile",1,
+  "Battery ","\nMay cause lags",0,
+  "Performance ","\nMay yield poor battery backup",0
 );
 
 selectbox(
@@ -222,11 +229,12 @@ selectbox(
 
 checkbox(
   "\n\n<b>Other Settings","<@center><b>\n\nSelect the mods you want to install</b>\n\n</@>","","mods.prop",
+  "Disable Fsync","\nGives slight performance boost at the cost of data-loss in case of reboot",0,
   "USB Fastcharge","\nIncrease charge current while charging via USB",0,
   "Backlight Dimmer","\nThis lowers Max-Min brightness of display",0,
   "Audio Mod Capability","\nDisable audio codec power gating",0,
   "New Jack Detection","\nEnable this if you have headset jack issues",0,
-  "Less Aggresive LMK","\nEnable this if you have background apps crashing",0
+  "More Aggresive LMK","\nEnable this if you Experience lags during multitask",0
 );
 
 menubox(
