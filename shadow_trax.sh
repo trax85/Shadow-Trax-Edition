@@ -33,6 +33,9 @@ cd $KERNEL_DIR
 Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
+#
+# Give Gcc Path
+#
 export ARCH=arm64
 export CROSS_COMPILE="/home/nesara/gcc-linaro-6.5.1/bin/aarch64-linux-gnu-"
 echo -e "$yellow Running make clean before compiling \n$white"
@@ -40,15 +43,13 @@ if [ $qc == 1 ]; then
 make clean > /dev/null
 fi
 #
-#if [ $qc == 2 ]; then
-#echo -e "$yellow Applying quick charging patch \n $white"
-#git apply qc.patch
-#elif [ $qc == 1 ]; then
-#git apply -R qc.patch > /dev/null 2>&1
-#fi
+# Make Kenzo configs
+#
 make shadow_trax_defconfig
-#export KBUILD_BUILD_HOST="xda"
 export KBUILD_BUILD_USER="trax85"
+#
+# Build Image
+#
 make -j4
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
@@ -63,6 +64,9 @@ else
 cd $KERNEL_DIR/build/$VERSION
 rm *.zip > /dev/null 2>&1
 echo -e "$yellow\n Build succesful, generating flashable zip now \n $white"
+#
+# Make Flashable zip
+#
 zip -r shadow-$DEVICE-$VERSION-$date.zip * > /dev/null
 End=$(date +"%s")
 Diff=$(($End - $Start))
@@ -70,6 +74,3 @@ echo -e "$yellow $KERNEL_DIR/export/$VERSION/shadow-$DEVICE-$VERSION-$date.zip \
 echo -e "$gre << Build completed in $(($Diff / 60)) minutes and $(($Diff % 60)) seconds, variant($qc) >> \n $white"
 fi
 cd $KERNEL_DIR
-#if [ $qc == 2 ]; then
-#git apply -R qc.patch
-#fi
