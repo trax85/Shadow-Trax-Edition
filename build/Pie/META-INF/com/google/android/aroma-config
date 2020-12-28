@@ -2,13 +2,13 @@ ini_set("rom_name",             "Shadow TraxEdition");
 ini_set("rom_version",          "TraxEdition HMP");
 ini_set("rom_author",           "energyspear17@xda, @trax85, \t\t\t\t\t\t @felix3000");
 ini_set("rom_device",           "Kenzo");
-ini_set("rom_date",             "April 11, 2020");
+ini_set("rom_date",             "December 29, 2020");
 
 ini_set("force_colorspace","rgba");
 #ini_set("dp","6");
 
 fontresload( "0", "ttf/Roboto-Regular.ttf", "11" );
-fontresload( "1", "ttf/Roboto-Regular.ttf", "15" ); 
+fontresload( "1", "ttf/Roboto-Regular.ttf", "15" );
 
 theme("zetsubou");
 
@@ -24,12 +24,12 @@ menubox(
 
 
 ###############
-# DISPLAY CHANGELOG 
+# DISPLAY CHANGELOG
 ###############
 
 if prop("menu.prop","selected")=="2" then
 
-    #-- TextDialog 
+    #-- TextDialog
  textdialog(
     #-- Title
     "Shadow TraxEdition Changelog",
@@ -38,10 +38,10 @@ if prop("menu.prop","selected")=="2" then
     #-- Custom OK Button Text (Optional)
     "Close"
  );
- 
+
   #-- Back to Menu ( 2 Wizard UI to Back )
   back("1");
-  
+
 endif;
 
 ###############
@@ -168,7 +168,7 @@ selectbox(
 
 viewbox(
   "\n\n<b>Dynamic and Static Fps</b>",
-  "\n\n\n\n\nPlease Read :- \n\n\n\nDyanmic Fps:-  In this type of implimentation you have the ability to change RefreshRate during system runtime. This can be edited using any root explorer the file can be found in /sys/module/mdss_dsi/parameters/dsi_refreshrate the value in the file can be set between 60-70 and Turning on/off display will set your new Refreshrate.\n\n\n\nStatic Fps:-  In this type of implimentation the RefreshRate is set once during flashing and cannot be changed later on. It will need reflashing of kernel to change the RefreshRate of your panel. 
+  "\n\n\n\n\nPlease Read :- \n\n\n\nDyanmic Fps:-  In this type of implimentation you have the ability to change RefreshRate during system runtime. This can be edited using any root explorer the file can be found in /sys/module/mdss_dsi/parameters/dsi_refreshrate the value in the file can be set between 60-70 and Turning on/off display will set your new Refreshrate.\n\n\n\nStatic Fps:-  In this type of implimentation the RefreshRate is set once during flashing and cannot be changed later on. It will need reflashing of kernel to change the RefreshRate of your panel.
 /sys/module/mdss_dsi/parameters/dsi_refreshrate will be inactive and wont work in this implimentation.\n\n\n\n
 Known Issues:- Some panels have issues(Flicker/Blue Bars) with higher RefreshRates and They show-up on Dynamic Fps option so if you are having this issue then its recommended to use Static fps Option",
   ""
@@ -194,7 +194,7 @@ selectbox(
   "\n\n<@center><b>Apply UV to CPU and GPU ?\nWarning ! </@>","<@center><b>\n\n\n\n\nThis will change your stock voltages.\nSelect NO if you are unsure about this.\n</b></@>","","uv.prop",
   "Extreme UV ","\nMay cause Random Reboots for some people",0,
   "Heavy UV ","\nVery low Voltages for Both CPU and GPU",0,
-  "Light UV ","\nLow Volatges for CPU and slight uv for GPU",0, 
+  "Light UV ","\nLow Volatges for CPU and slight uv for GPU",0,
   "No UV ","\nNo Voltage changes For CPU and GPU",1
 );
 
@@ -258,11 +258,11 @@ ini_set("text_next", "Finish");
 if getvar("retstatus")=="0" then
 checkviewbox(
     "\n\nInstallation Completed",
-  
+
     "<#selectbg_g>\n\n\n\n\n<b>Congratulations...</b></#>\n\n"+
     "<b>"+ini_get("rom_name")+"</b> has been installed into your device.\n\n"+
     "Installer Status: "+getvar("retstatus")+"\n\n",
-	
+
     "@welcome",
 
     "Reboot your device now.",
@@ -271,7 +271,7 @@ checkviewbox(
 
     "reboot_it"
 );
-  
+
 else
    viewbox("Installation Failed","\n\nInstaller Status: "+ getvar("retstatus"),"@warning");
 endif;
