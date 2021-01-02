@@ -6346,7 +6346,7 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 			}
 			if (bedai->format == SNDRV_PCM_FORMAT_S24_LE)
 				bits_per_sample = 32;
-                        else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE))
+                        else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE || SNDRV_PCM_FORMAT_S24_3LE))
 
 			app_type = playback ?
 				   fe_dai_app_type_cfg[i].app_type : 0;
