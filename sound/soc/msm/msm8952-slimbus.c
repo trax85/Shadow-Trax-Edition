@@ -15,6 +15,7 @@
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
+#include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/workqueue.h>
@@ -1635,7 +1636,7 @@ static void msm_afe_clear_config(void)
 
 static uint32_t get_mi2s_rx_clk_val(void)
 {
-	if (mi2s_rx_bit_format == (SNDRV_PCM_FORMAT_S24_LE || SNDRV_PCM_FORMAT_S24_3LE || 
+	if (mi2s_rx_bit_format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE | 
 							   SNDRV_PCM_FORMAT_S32_LE))
 		return Q6AFE_LPASS_IBIT_CLK_3_P072_MHZ;
 	else
