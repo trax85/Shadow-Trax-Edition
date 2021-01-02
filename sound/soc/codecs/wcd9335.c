@@ -166,16 +166,6 @@ enum tasha_sido_voltage {
 	SIDO_VOLTAGE_NOMINAL_MV = 1200,
 };
 
-static int pdesireaudio_uhqa_mode = 1;
-module_param(pdesireaudio_uhqa_mode, int,
- 		S_IRUGO | S_IWUSR | S_IWGRP);
-MODULE_PARM_DESC(pdesireaudio_uhqa_mode, "enable/disable PDesireAudio UHQA Mode");
-
-static int pdesireaudio_class_ab_mode = 1;
-module_param(pdesireaudio_class_ab_mode, int,
- 		S_IRUGO | S_IWUSR | S_IWGRP);
-MODULE_PARM_DESC(pdesireaudio_class_ab_mode, "enable/disable PDesireAudio Class AB Mode");
-
 static int dig_core_collapse_enable = 0;
 module_param(dig_core_collapse_enable, int,
 		S_IRUGO | S_IWUSR | S_IWGRP);
@@ -3681,11 +3671,7 @@ static void tasha_codec_hph_post_pa_config(struct tasha_priv *tasha,
 			scale_val = 0x3;
 			break;
 		case CLS_H_LOHIFI:
-			// Force HIFI
- 			if (!pdesireaudio_uhqa_mode)
- 				scale_val = 0x1;
- 			else
- 				scale_val = 0x3;
+			scale_val = 0x1;
 			break;
 		}
 		break;
@@ -4106,16 +4092,10 @@ static void tasha_codec_hph_mode_config(struct snd_soc_codec *codec,
 
 	switch (mode) {
 	case CLS_H_LP:
-		if (!pdesireaudio_uhqa_mode)
- 			tasha_codec_hph_lp_config(codec, event);
- 		else
- 			tasha_codec_hph_hifi_config(codec, event);
+		tasha_codec_hph_lp_config(codec, event);
 		break;
 	case CLS_H_LOHIFI:
-		if (!pdesireaudio_uhqa_mode)
- 			tasha_codec_hph_lohifi_config(codec, event);
- 		else
- 			tasha_codec_hph_hifi_config(codec, event);
+		tasha_codec_hph_lohifi_config(codec, event);
 		break;
 	case CLS_H_HIFI:
 		tasha_codec_hph_hifi_config(codec, event);
@@ -4154,20 +4134,11 @@ static int tasha_codec_hphr_dac_event(struct snd_soc_dapm_widget *w,
 					__func__, hph_mode);
 			return -EINVAL;
 		}
-		if (!pdesireaudio_class_ab_mode) {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_PRE_DAC,
- 					 WCD_CLSH_STATE_HPHR,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_H_HIFI : hph_mode));
- 		} else {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_PRE_DAC,
- 					 WCD_CLSH_STATE_HPHR,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_AB : hph_mode));
- 		}
-
+		wcd_clsh_fsm(codec, &tasha->clsh_d,
+			     WCD_CLSH_EVENT_PRE_DAC,
+			     WCD_CLSH_STATE_HPHR,
+			     ((hph_mode == CLS_H_LOHIFI) ?
+			       CLS_H_HIFI : hph_mode));
 
 		tasha_codec_hph_mode_config(codec, event, hph_mode);
 
@@ -4200,19 +4171,11 @@ static int tasha_codec_hphr_dac_event(struct snd_soc_dapm_widget *w,
 		     WCD_CLSH_STATE_HPHL))
 			tasha_codec_hph_mode_config(codec, event, hph_mode);
 
-		if (!pdesireaudio_class_ab_mode) {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_POST_PA,
- 					 WCD_CLSH_STATE_HPHR,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_H_HIFI : hph_mode));
- 		} else {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_POST_PA,
- 					 WCD_CLSH_STATE_HPHR,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_AB : hph_mode));
- 		}
+		wcd_clsh_fsm(codec, &tasha->clsh_d,
+			     WCD_CLSH_EVENT_POST_PA,
+			     WCD_CLSH_STATE_HPHR,
+			     ((hph_mode == CLS_H_LOHIFI) ?
+			       CLS_H_HIFI : hph_mode));
 		break;
 	};
 
@@ -4250,20 +4213,11 @@ static int tasha_codec_hphl_dac_event(struct snd_soc_dapm_widget *w,
 					__func__, hph_mode);
 			return -EINVAL;
 		}
-		if (!pdesireaudio_class_ab_mode) {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_PRE_DAC,
- 					 WCD_CLSH_STATE_HPHL,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_H_HIFI : hph_mode));
- 		} else {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_PRE_DAC,
- 					 WCD_CLSH_STATE_HPHL,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_AB : hph_mode));
- 		}
-
+		wcd_clsh_fsm(codec, &tasha->clsh_d,
+			     WCD_CLSH_EVENT_PRE_DAC,
+			     WCD_CLSH_STATE_HPHL,
+			     ((hph_mode == CLS_H_LOHIFI) ?
+			       CLS_H_HIFI : hph_mode));
 
 		tasha_codec_hph_mode_config(codec, event, hph_mode);
 
@@ -4295,19 +4249,11 @@ static int tasha_codec_hphl_dac_event(struct snd_soc_dapm_widget *w,
 		if (!(wcd_clsh_get_clsh_state(&tasha->clsh_d) &
 		     WCD_CLSH_STATE_HPHR))
 			tasha_codec_hph_mode_config(codec, event, hph_mode);
-		if (!pdesireaudio_class_ab_mode) {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
- 					 WCD_CLSH_EVENT_POST_PA,
- 					 WCD_CLSH_STATE_HPHL,
- 					 ((hph_mode == CLS_H_LOHIFI) ?
- 					   CLS_H_HIFI : hph_mode));
- 		} else {
- 			wcd_clsh_fsm(codec, &tasha->clsh_d,
+		wcd_clsh_fsm(codec, &tasha->clsh_d,
 			     WCD_CLSH_EVENT_POST_PA,
 			     WCD_CLSH_STATE_HPHL,
-			      ((hph_mode == CLS_H_LOHIFI) ?
- 				   CLS_AB : hph_mode));
- 		}
+			     ((hph_mode == CLS_H_LOHIFI) ?
+			       CLS_H_HIFI : hph_mode));
 		break;
 	};
 
