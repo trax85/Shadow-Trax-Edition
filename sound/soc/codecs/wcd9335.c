@@ -160,8 +160,8 @@ enum {
 };
 
 enum tasha_sido_voltage {
-	SIDO_VOLTAGE_SVS_MV = 1050,
-	SIDO_VOLTAGE_NOMINAL_MV = 1250,
+	SIDO_VOLTAGE_SVS_MV = 950,
+	SIDO_VOLTAGE_NOMINAL_MV = 1200,
 };
 
 static int pdesireaudio_uhqa_mode = 1;
