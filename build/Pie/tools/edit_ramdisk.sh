@@ -313,7 +313,7 @@ if [ $VOLT == 1 ]; then
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"680 700 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"540 540 580 760 860 910 930 940 950 1030 1120 680 700 720 780 810 810 820 900 950 960\"" >> $CONFIGFILE
 	echo "" >> $CONFIGFILE
-if [ $VOLT == 2 ]; then
+elif [ $VOLT == 2 ]; then
 	echo "# CPU & GPU HEAVY UV" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/GPU_mV_table \"680 700 760 800 860 910 970 1030 1050\"" >> $CONFIGFILE
 	echo "write /sys/devices/system/cpu/cpu0/cpufreq/UV_mV_table \"680 710 760 780 880 910 930 940 950 1030 1120 680 700 740 800 810 810 820 900 950 960\"" >> $CONFIGFILE
