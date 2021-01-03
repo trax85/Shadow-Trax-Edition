@@ -33,7 +33,7 @@
 #include <sound/q6afe-v2.h>
 #include <sound/audio_cal_utils.h>
 
-#define APR_TIMEOUT	(5 * HZ)
+#define APR_TIMEOUT	5000
 #define LSM_ALIGN_BOUNDARY 512
 #define LSM_SAMPLE_RATE 16000
 #define QLSM_PARAM_ID_MINOR_VERSION 1
@@ -251,7 +251,7 @@ static void q6lsm_session_free(struct lsm_client *client)
 	unsigned long flags;
 	pr_debug("%s: Freeing session ID %d\n", __func__, client->session);
 	spin_lock_irqsave(&lsm_session_lock, flags);
-	lsm_session[client->session] = LSM_INVALID_SESSION_ID;
+	lsm_session[client->session] = NULL;
 	spin_unlock_irqrestore(&lsm_session_lock, flags);
 	client->session = LSM_INVALID_SESSION_ID;
 }
@@ -383,7 +383,7 @@ static int q6lsm_apr_send_pkt(struct lsm_client *client, void *handle,
 		ret = wait_event_timeout(client->cmd_wait,
 					 (atomic_read(&client->cmd_state) ==
 					      CMD_STATE_CLEARED),
-					 APR_TIMEOUT);
+					 msecs_to_jiffies(APR_TIMEOUT));
 		if (likely(ret)) {
 			/* q6 returned error */
 			if (client->cmd_err_code)
@@ -1423,7 +1423,7 @@ int q6lsm_set_one_param(struct lsm_client *client,
 	struct lsm_module_param_ids ids;
 	u8 *packet;
 
-	memset(&ids, sizeof(ids), 0);
+	memset(&ids, 0, sizeof(ids));
 	switch (param_type) {
 	case LSM_ENDPOINT_DETECT_THRESHOLD: {
 		ids.module_id = p_info->module_id;

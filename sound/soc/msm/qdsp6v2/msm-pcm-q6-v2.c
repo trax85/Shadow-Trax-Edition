@@ -57,7 +57,7 @@ struct snd_msm {
 };
 
 #define CMD_EOS_MIN_TIMEOUT_LENGTH  50
-#define CMD_EOS_TIMEOUT_MULTIPLIER  (HZ * 50)
+#define CMD_EOS_TIMEOUT_MULTIPLIER  50000
 
 static struct snd_pcm_hardware msm_pcm_hardware_capture = {
 	.info =                 (SNDRV_PCM_INFO_MMAP |
@@ -68,9 +68,9 @@ static struct snd_pcm_hardware msm_pcm_hardware_capture = {
 	.formats =              (SNDRV_PCM_FMTBIT_S16_LE |
 				SNDRV_PCM_FMTBIT_S24_LE |
 				SNDRV_PCM_FMTBIT_S24_3LE),
-	.rates =                SNDRV_PCM_RATE_8000_48000,
+	.rates =                SNDRV_PCM_RATE_8000_192000,
 	.rate_min =             8000,
-	.rate_max =             48000,
+	.rate_max =             192000,
 	.channels_min =         1,
 	.channels_max =         4,
 	.buffer_bytes_max =     CAPTURE_MAX_NUM_PERIODS *
@@ -89,11 +89,11 @@ static struct snd_pcm_hardware msm_pcm_hardware_playback = {
 				SNDRV_PCM_INFO_INTERLEAVED |
 				SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME),
 	.formats =              (SNDRV_PCM_FMTBIT_S16_LE |
-				SNDRV_PCM_FMTBIT_S24_LE |
-				SNDRV_PCM_FMTBIT_S24_3LE),
-	.rates =                SNDRV_PCM_RATE_8000_192000,
+				SNDRV_PCM_FMTBIT_S24_LE |SNDRV_PCM_FMTBIT_S24_3LE |
+				SNDRV_PCM_FMTBIT_S32_LE),
+	.rates =                SNDRV_PCM_RATE_8000_384000,
 	.rate_min =             8000,
-	.rate_max =             192000,
+	.rate_max =             384000,
 	.channels_min =         1,
 	.channels_max =         8,
 	.buffer_bytes_max =     PLAYBACK_MAX_NUM_PERIODS *
@@ -108,7 +108,7 @@ static struct snd_pcm_hardware msm_pcm_hardware_playback = {
 /* Conventional and unconventional sample rate supported */
 static unsigned int supported_sample_rates[] = {
 	8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000,
-	88200, 96000, 176400, 192000
+	88200, 96000, 176400, 192000, 352800, 384000
 };
 
 static struct snd_pcm_hw_constraint_list constraints_sample_rates = {
@@ -309,6 +309,10 @@ static int msm_pcm_playback_prepare(struct snd_pcm_substream *substream)
 	pr_debug("%s: perf: %x\n", __func__, pdata->perf_mode);
 
 	switch (params_format(params)) {
+	case SNDRV_PCM_FORMAT_S32_LE:
+		bits_per_sample = 32;
+		sample_word_size = 32;
+		break;	
 	case SNDRV_PCM_FORMAT_S24_LE:
 		bits_per_sample = 24;
 		sample_word_size = 32;
@@ -526,7 +530,7 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 	struct snd_soc_pcm_runtime *soc_prtd = substream->private_data;
 	struct msm_audio *prtd;
 	int ret = 0;
-	static DEFINE_RATELIMIT_STATE(rl, HZ/2, 1);
+	static DEFINE_RATELIMIT_STATE(rl, 50, 1);
 
 	prtd = kzalloc(sizeof(struct msm_audio), GFP_KERNEL);
 	if (prtd == NULL) {
@@ -634,7 +638,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 	}
 
 	ret = wait_event_timeout(the_locks.write_wait,
-			(atomic_read(&prtd->out_count)), 5 * HZ);
+			(atomic_read(&prtd->out_count)), msecs_to_jiffies(500));
 	if (!ret) {
 		pr_err("%s: wait_event_timeout failed\n", __func__);
 		goto fail;
@@ -702,7 +706,7 @@ static int msm_pcm_playback_close(struct snd_pcm_substream *substream)
 			timeout = CMD_EOS_MIN_TIMEOUT_LENGTH;
 		} else {
 			timeout = (runtime->period_size *
-					CMD_EOS_TIMEOUT_MULTIPLIER) /
+					msecs_to_jiffies(CMD_EOS_TIMEOUT_MULTIPLIER)) /
 					((runtime->frame_bits / 8) *
 					 runtime->rate);
 			if (timeout < CMD_EOS_MIN_TIMEOUT_LENGTH)
@@ -757,7 +761,7 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 		return -ENETRESET;
 	}
 	ret = wait_event_timeout(the_locks.read_wait,
-			(atomic_read(&prtd->in_count)), 5 * HZ);
+			(atomic_read(&prtd->in_count)), msecs_to_jiffies(500));
 	if (!ret) {
 		pr_debug("%s: wait_event_timeout failed\n", __func__);
 		goto fail;

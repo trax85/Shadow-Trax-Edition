@@ -1,4 +1,5 @@
-/* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
+
+/* Copyright (c) 2014-2016, 2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -654,7 +655,7 @@ static void cpe_notify_cmi_client(struct cpe_info *t_info, u8 *payload,
 	hdr = CMI_GET_HEADER(payload);
 	service = CMI_HDR_GET_SERVICE(hdr);
 
-	notif.event = CPE_SVC_CMI_MSG;
+	notif.event = CMI_API_MSG;
 	notif.result = result;
 	notif.message = payload;
 
@@ -1101,7 +1102,7 @@ static void cpe_clk_plan_work(struct work_struct *work)
 
 	/* Wait for clk plan command to complete */
 	rc = wait_for_completion_timeout(&t_info->core_svc_cmd_compl,
-					 (10 * HZ));
+					 msecs_to_jiffies(10000));
 	if (!rc) {
 		pr_err("%s: clk plan cmd timed out\n",
 			__func__);
@@ -1156,7 +1157,7 @@ static enum cpe_process_result cpe_boot_complete(
 	}
 
 	pr_debug("%s: boot complete\n", __func__);
-	return CPE_SVC_SUCCESS;
+	return CPE_PROC_SUCCESS;
 }
 
 static enum cpe_process_result cpe_process_send_msg(

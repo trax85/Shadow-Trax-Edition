@@ -108,6 +108,9 @@ static int msm_routing_send_device_pp_params(int port_id,  int copp_idx);
 static int msm_routing_get_bit_width(unsigned int format) {
 	int bit_width;
 	switch (format) {
+	case SNDRV_PCM_FORMAT_S32_LE:
+		bit_width = 32;
+		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
 	case SNDRV_PCM_FORMAT_S24_3LE:
 		bit_width = 24;
@@ -6344,9 +6347,10 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 						fdai->event_info.priv_data);
 				fdai->be_srate = 0; /* might not need it */
 			}
-			if (bedai->format == SNDRV_PCM_FORMAT_S24_LE)
+			if (bedai->format == SNDRV_PCM_FORMAT_S32_LE)
 				bits_per_sample = 32;
-                        else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE || SNDRV_PCM_FORMAT_S24_3LE))
+			else if (bedai->format == (SNDRV_PCM_FORMAT_S24_LE | SNDRV_PCM_FORMAT_S24_3LE))
+				bits_per_sample = 24;
 
 			app_type = playback ?
 				   fe_dai_app_type_cfg[i].app_type : 0;
