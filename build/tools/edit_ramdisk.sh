@@ -207,11 +207,18 @@ echo "# FSYNC" >> $CONFIGFILE
 echo "write /sys/module/sync/parameters/fsync_enabled $FS" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 BDM=`grep "item.0.3" /tmp/aroma/mods.prop | cut -d '=' -f2`
-if [ $DFSC = 1 ]; then
+if [ $BDM = 1 ]; then
+	echo "#BACKLIGHT DIMMER" >> $CONFIGFILE
 	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer Y" >> $CONFIGFILE
-elif [ $DFSC = 0 ]; then
-	echo "write /sys/module/mdss_fb/parameters/backlight_dimmer N" >> $CONFIGFILE
 fi
+echo "" >> $CONFIGFILE
+AUDIO=`grep "item.0.4" /tmp/aroma/mods.prop | cut -d '=' -f2`
+if [ $AUDIO = 1 ]; then
+	echo "#AUDIO MODS" >> $CONFIGFILE
+	echo "write /sys/module/snd_soc_msm8x16_wcd/parameters/huwifi_mode 1" >> $CONFIGFILE
+	echo "write /sys/module/snd_soc_msm8x16_wcd/parameters/low_distort_amp 1" >> $CONFIGFILE
+fi
+echo "" >> $CONFIGFILE
 echo "write /sys/block/mmcblk0/queue/iostats 0" >> $CONFIGFILE
 echo "write /sys/block/mmcblk1/queue/iostats 0" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
