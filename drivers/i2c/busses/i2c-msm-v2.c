@@ -107,7 +107,7 @@ static void i2c_msm_dbg_dump_diag(struct i2c_msm_ctrl *ctrl,
 	}
 
 	/* dump xfer details */
-	dev_err(ctrl->dev,
+	dev_printk(KERN_DEBUG, ctrl->dev,
 		"%s: msgs(n:%d cur:%d %s) bc(rx:%zu tx:%zu) mode:%s slv_addr:0x%0x MSTR_STS:0x%08x OPER:0x%08x\n",
 		str, xfer->msg_cnt, xfer->cur_buf.msg_idx,
 		xfer->cur_buf.is_rx ? "rx" : "tx", xfer->rx_cnt, xfer->tx_cnt,
@@ -1175,9 +1175,6 @@ static int i2c_msm_dma_xfer_process(struct i2c_msm_ctrl *ctrl)
 	struct i2c_msm_dma_buf             *buf_itr;
 	int  i;
 	int  ret = 0;
-
-	i2c_msm_dbg(ctrl, MSM_DBG, "Going to enqueue %zu buffers in DMA",
-							dma->buf_arr_cnt);
 
 	/* Set the QUP State to pause while DMA completes the txn */
 	ret = i2c_msm_qup_state_set(ctrl, QUP_STATE_PAUSE);
@@ -2759,9 +2756,6 @@ static void i2c_msm_pm_rt_init(struct device *dev)
  */
 static int i2c_msm_pm_rt_suspend(struct device *dev)
 {
-	struct i2c_msm_ctrl *ctrl = dev_get_drvdata(dev);
-
-	i2c_msm_dbg(ctrl, MSM_DBG, "pm_runtime: suspending...");
 	i2c_msm_pm_suspend(dev);
 	return 0;
 }
@@ -2771,9 +2765,6 @@ static int i2c_msm_pm_rt_suspend(struct device *dev)
  */
 static int i2c_msm_pm_rt_resume(struct device *dev)
 {
-	struct i2c_msm_ctrl *ctrl = dev_get_drvdata(dev);
-
-	i2c_msm_dbg(ctrl, MSM_DBG, "pm_runtime: resuming...");
 	return  i2c_msm_pm_resume(dev);
 }
 
