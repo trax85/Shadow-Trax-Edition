@@ -19,6 +19,8 @@ echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
 echo "80 960000:30 1017600:40 1190400:50 1305600:60 1401600:75 1799040:80" > /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
 echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load
 echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane
+echo 50 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane_threshold
 #A72
 echo interactive > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 883200 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 
@@ -31,6 +33,8 @@ echo 20000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
 echo "50 1190400:35 1382400:50 1612800:60 1747200:70 1804800:75" > /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
 echo 45000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/max_freq_hysteresis
 echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif
+echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane
+echo 50 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane_threshold
 echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load
 #Cpu-Boost
 echo 20000 > /sys/module/cpu_boost/parameters/input_boost_enabled 0

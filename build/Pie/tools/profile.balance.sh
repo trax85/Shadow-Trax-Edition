@@ -23,6 +23,8 @@ echo 15000 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
 echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
 echo 99 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads 
 echo 25000 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
+echo 1 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane
+echo 35 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane_threshold
 echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif
 echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load
 echo 0 > /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
@@ -35,7 +37,9 @@ echo 95 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
 echo 20000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
 echo "60 883000:70 940000:75 1056000:80 " > /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
-echo 40000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time 
+echo 40000 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
+echo 1 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane
+echo 20 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane_threshold
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load
 echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost

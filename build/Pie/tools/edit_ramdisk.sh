@@ -137,19 +137,27 @@ echo "# VARIABLES FOR SH" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 
 ZRAM=$(cat /tmp/aroma/ram.prop | cut -d '=' -f2)
-
+ALMK=`grep "item.0.6" /tmp/aroma/mods.prop | cut -d '=' -f2`
 ROM=$(cat /tmp/aroma/rom.prop | cut -d '=' -f2)
 echo "# USER TWEAKS" >> $CONFIGFILE
 if [ $ROM -eq 2 ] || [ $ROM -eq 1 ]; then
-if [ $ZRAM -eq 1 ]; then
+ if [ $ZRAM -eq 1 ]; then
     echo "service usertweaks /system/bin/sh /system/etc/shadow.sh" >> $CONFIGFILE
-else
+ else
     echo "service usertweaks /system/bin/sh /system/etc/shadow-zram.sh" >> $CONFIGFILE
-fi
+ fi
 	echo "class main" >> $CONFIGFILE
 	echo "group root" >> $CONFIGFILE
 	echo "user root" >> $CONFIGFILE
 	echo "oneshot" >> $CONFIGFILE
+	echo "" >> $CONFIGFILE
+	if [ $ALMK -eq 1 ]; then
+	echo "service override /system/bin/sh /system/etc/lmk.sh" >> $CONFIGFILE
+    echo "class late_start" >> $CONFIGFILE
+    echo "user root" >> $CONFIGFILE
+    echo "disabled" >> $CONFIGFILE
+    echo "oneshot" >> $CONFIGFILE
+ fi
 	echo "" >> $CONFIGFILE
 	echo "service spectrum /system/bin/sh /init.spectrum.sh" >> $CONFIGFILE
 	echo "class late_start" >> $CONFIGFILE
@@ -161,15 +169,23 @@ fi
 	echo "" >> $CONFIGFILE
 	echo "on property:sys.boot_completed=1" >> $CONFIGFILE
 else
-if [ $ZRAM -eq 1 ]; then
+ if [ $ZRAM -eq 1 ]; then
     echo "service usertweaks /system/bin/sh /vendor/etc/shadow.sh" >> $CONFIGFILE
-else
+ else
     echo "service usertweaks /system/bin/sh /vendor/etc/shadow-zram.sh" >> $CONFIGFILE
-fi
+ fi
 	echo "class main" >> $CONFIGFILE
 	echo "group root" >> $CONFIGFILE
 	echo "user root" >> $CONFIGFILE
 	echo "oneshot" >> $CONFIGFILE
+	echo "" >> $CONFIGFILE
+	if [ $ALMK -eq 1 ]; then
+    echo "service override /system/bin/sh /vendor/etc/lmk.sh" >> $CONFIGFILE
+    echo "class late_start" >> $CONFIGFILE
+    echo "user root" >> $CONFIGFILE
+    echo "disabled" >> $CONFIGFILE
+    echo "oneshot" >> $CONFIGFILE
+ fi
 	echo "" >> $CONFIGFILE
 	echo "class late_start" >> $CONFIGFILE
 	echo "user root" >> $CONFIGFILE
@@ -332,6 +348,7 @@ echo "" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "# RUN USERTWEAKS SERVICE" >> $CONFIGFILE
 echo "start usertweaks" >> $CONFIGFILE
+echo "start override" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 echo "" >> $CONFIGFILE
 if [ $ROM -eq 2 ] || [ $ROM -eq 1 ]; then

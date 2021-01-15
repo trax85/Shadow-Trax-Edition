@@ -47,6 +47,8 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 0
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 0
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 0
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane 1
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane_threshold 30
 	#A72
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor "interactive"
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 400000
@@ -60,6 +62,8 @@ on property:persist.spectrum.profile=0
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 0
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 0
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 0
+	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane 1
+	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane_threshold 20
 	#Cpu-Boost
 	write /sys/module/cpu_boost/parameters/input_boost_enabled 0
 	write /sys/module/cpu_boost/parameters/input_boost_freq "0:0 1:0 2:0 3:0 4:0 5:0"
@@ -131,6 +135,8 @@ on property:persist.spectrum.profile=1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time 45000
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost 1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane 1
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane_threshold 50
 	#A72
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor "interactive"
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 883200
@@ -144,6 +150,8 @@ on property:persist.spectrum.profile=1
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost 1
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1
+	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane 1
+	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane_threshold 50
 	#Cpu-Boost
 	write /sys/module/cpu_boost/parameters/boost_ms 250
 	write /sys/module/cpu_boost/parameters/input_boost_enabled 1
@@ -292,6 +300,8 @@ on property:persist.spectrum.profile=3
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads "80 960000:30 1017600:40 1190400:50 1305600:60 1401600:75 1799040:80"
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_sched_load 1
 	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/use_migration_notif 1
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane 1
+	write /sys/devices/system/cpu/cpu0/cpufreq/interactive/fastlane_threshold 50
 	#A72
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor "interactive"
 	write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 883200
@@ -305,6 +315,8 @@ on property:persist.spectrum.profile=3
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/max_freq_hysteresis 45000
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_migration_notif 1
 	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/use_sched_load 1
+	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane 1
+	write /sys/devices/system/cpu/cpu4/cpufreq/interactive/fastlane_threshold 50
 	#Cpu-Boost
 	write /sys/module/cpu_boost/parameters/input_boost_enabled 1
 	write /sys/module/cpu_boost/parameters/input_boost_freq "0:1305600 1:1305600 2:1305600 3:1305600 		4:1190400 5:1190400"
