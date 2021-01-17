@@ -43,7 +43,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	#Core-A72 
 	echo schedutil > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 	echo 400000 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
-	echo 1382400 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+	echo 1612800 > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
 	echo 3000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/up_rate_limit_us
 	echo 1000 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/down_rate_limit_us
 	echo 0 > /sys/devices/system/cpu/cpu4/cpufreq/schedutil/io_wait_boost
@@ -51,7 +51,7 @@ if [[ $(getprop sys.boot_completed) -eq 1 ]]; then
 	#Cpu-Boost
 	echo 1 > /sys/module/cpu_boost/parameters/input_boost_enabled
 	echo 0:0 1:0 2:0 3:0 4:0 5:0 > /sys/module/cpu_boost/parameters/input_boost_freq
-	echo 100 > /sys/module/cpu_boost/parameters/input_boost_ms
+	echo 1000 > /sys/module/cpu_boost/parameters/input_boost_ms
 	echo 1 > /sys/module/cpu_boost/parameters/input_devfreq_boost
 	echo 0 > /sys/module/cpu_boost/parameters/dynamic_stune_boost
 	#Frame-Boost

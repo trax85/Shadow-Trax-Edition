@@ -182,3 +182,42 @@ V5.7:-
 * Add 1.7Ghz option for users to risk their life or not.
 * Add support for Android 10.
 * Add Support form Android ver 7.1-10 MIUI not supported if it works be happy if it doesnt well fek:(
+
+----------------------------------------------------------
+
+V5.8:-
+
+-Binder
+* Sync with 4.9.
+* Lots of fixes and improvements.
+
+-Sdcardfs
+* Allocate temporary name buffer on the stack.
+* Fix potential crash when reserved_mb is not zero.
+* Use lower getattr times/size.
+* Fix sdcardfs to stop creating cases-sensitive duplicate entries.
+* General fixs and improvements.
+
+-Sound
+* Nuke Pdesire driver.
+* Re-tune Voltage steps.
+* Merge agni kernel audio mods.
+* Add proper 24bit 192khz support.
+* Remove White noise due to amp in headphones.
+* General audio Improvements.
+
+-MM
+* Keep page cache radix tree nodes in check.
+* Add add a new LRU list type for 4.19 binder sync.
+* Add list_lru per-node list infrastructure.
+
+-Kernel
+* Increase hash table size for better performance
+* Replace barrier() in unqueue_me() with READ_ONCE()
+* Other Futex Improvements.
+* Remove selinux and init spams in dmesg
+
+Aroma
+* Improve Readabilty.
+* Increase balance profile max freq to 1.6Ghz helps reduce latency in google chorme with small hit to battery life.
+* Decrease boost period for cpu bus to 1000ms.
