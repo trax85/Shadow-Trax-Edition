@@ -1,0 +1,223 @@
+V5.6-
+* EAS initial port
+* EAS energy module fixup.
+* Sched boost feature initial import.
+* Sched improvements code rectification and removal of hanging functions and hooks.
+-Audio:
+* 24bit default packed audio output on kernel side(needs shox audio libs to work on roms).
+* Add Audio Wizard, DTS ainur module import. Allow 320k AAC encoding, APTX Encoding, add G711 Audio encoding Rebalance gains in headphone(L-R).
+* Fine Tune WCD9326 reduce Static Noise, reduce voltage output for better audio quality and less crackles in audio.
+* Add high End AW8738 Amp driver from agni kernel(Lot of thnx to psndna88).
+-Device tree changes:
+* GPU oc to 753MHz, Add Gpll3 clocks, Improve ddr bus clocks.
+* Sound and oc slimbus changes.
+* Panel oc for Boe, Tianma, Sharp(66Hz,64Hz,64Hz Respectively), Add Analog dim for panel for smoother transition.
+-Other:
+* Gpu flags and other flag optimization.
+* Remove unnecessary stuff and nuke stuff that dont work and not required anymore.
+* Add mdss triple buffering support(Testing).
+* Add Wakeboost interface, Dynamic fsync.
+* Initial HDR feature import from 4.4 and 3.18 kernel.
+
+----------------------------------------------------------
+
+V5.7:-
+
+-EAS Scheduler
+* Upstream EAS scheduler.
+* Add Walt & Pelt Load Tracking(Pelt 8ms).
+* Add New fair and core codes for better Cpu capacity calculation and load transistion to cores.
+* Add CpuGovernors Based on Schedutil,Blu_Schedutil,Electroutil,Pwrutilx,Energy-DCFC,HelixSchedutil,Darkutil,Schedhorizon.
+* Add Proper Energy-model For kenzo and Update Them to Freq-Power Style Tuples.
+* Add Dynamic Schedtune boost(DSB) Enabled for top-app.
+* Add Simple Waitqueue (swait) implementation.
+* Add Scheduler Enhancements(Pelt,Walt,Fair,RT) To improve UI and General Perfromance.
+* Add bits from NGK, HANA Cl, AGNi Whyred Sources.
+* Preempt backport from 3.18 Kernel.
+* Fix Clang warnings.
+
+-ARM64
+* Add vDSO 32bit support.
+* Enable Dcache and word access.
+* Topology upstream now uses the em table data to calculate load-freq.
+* Disable tracing.
+* Strcmp align to 64B cache line.
+* Remove hack in mmap randomize layout.
+* Move post_ttbr_update_workaround to C code.
+* Optimize our setup for A53 Cluster.
+* arch_timer simplify accessors.
+* Reduce log spam.
+
+-GPU Driver
+* Remove existing flags and Add New flags for better Perfromance.
+* Increase priority of RT threads And remove deadlocks.
+* Increase Data Processing limit.
+* Fix Race conditions and remove lockups.
+* Skip unnessary calls and remove files  from compilation which are not required(a3xx/a4xx).
+* Remove spams and Debug msgs.
+
+-Cpufreq Drvier
+* Upstream and Inline with 3.18 kernel.
+* Add New cpu_boost Driver complient with our EAS.
+* Other Fixes and Optimizations.
+* Add Cpufreq Driver Enhancements from HANA Cl Kernel.
+
+-Devfreq Driver
+* Add Devfreq Boost Driver For boosting cpubw Bus Frequencies.
+* Add More Fixes and optimizations.
+
+-Sound
+* Fix some memory leaks and compiler warnings.
+* Add build optimizations for sound driver.
+* Convert many kenzo & qcom drivers to use msecs_to_jiffies insted of HZ
+* Stop log spam.
+
+-Media
+* Enable Decoder DCVS for vp9.
+* kill opening/closing video instance logspam.
+* Clean session when failed to open instance.
+
+-Video
+* Make Refreshrate Varible(VRR) and export it to userspace (/sys/module/mdss_dsi/parameters/refresh_rate).
+* Add Frame Boost (Disbled by Default).
+* Mdss Save state of vsync handler.
+* Speed up MDP interrupt processing
+* Silence mdss log spams and Fix Derps.
+
+-Lowmemeorykiller
+* Replace with stock Shadow lmk module.
+* Impliment a few fixes for better memory management.
+* Disable lmk_run_fast by default as it leads to killing of our running tasks.
+
+-Prima
+* Downgrade prima to LA.BR.1.3.6_rb1.25.
+* Fixes for clang.
+* Misc fixes for GCC 5 and 6.
+* Kill logspam.
+
+-Android Binder
+* Disable logging and tracing.
+* Other misc optimization and fixes.
+
+-ZRAM
+* Revert to older version.
+* Import Facebooks Zstd compression.
+* Misc fixes and improvements.
+* Add Zstd support.
+
+-LZ4
+* Update LZ4 Compressor module
+* Add related Fixes.
+
+-FileSystem
+* Add sealing API.
+* Sync with 3.18 Ext4 and F2FS.
+* Optimize Ext4 and F2FS read speeds.
+* Mbcache2 reimplement mbcache.
+* Make fync as default.
+* Disable tracing.
+* Properly fix use of uninitialized variables.
+* Nuke a lot of warnings and errors being thrown in dmesg logs.
+* Other optimization and stuff
+
+-Crypto
+* Add crypto_crc32_arm64.
+* Add a generic ChaCha20 stream cipher implementation.
+* Integrate OpenSSL implementations of SHA256/SHA512.
+* Crypto add NEON-accelerated implementation of Speck-XTS add add test vectors for Speck64-XTS and Speck128-XTS.
+* Update LZ4 module to work with new LZ4 decompressor
+* Add Zstd Crypto module.
+* Crypto Optimise flags for arm a72 and a53.
+
+-Kernel
+* Compiled with Latest Proton Clang 12.
+* Compiled with Link Time Optimization and ThinLTO support.
+* Add API to mark IRQs and kthreads as performance-critical and low-power.
+* Make kernel tick rate as 256Hz.
+* Add API to create kthreads bound to low-power CPUs.
+* Fix GCC 9.X ,7.x and 6.x warnings ,Uninitializeed Warnings , Duplicate Const warnings all sorts of stuff.
+* Implement lockless wakeups In futex.
+* Add Devfreq boosting and Cpu-Boosting at various points to improve performance and reduce latency.
+* Add missing crc32-arm64 hw acclerted module.
+* Reduce priority of core AES cipher.
+* Schedutil is default governor.
+* Random Backport from linux-4.2.
+* Timer Backport from linux-3.18.
+* Optimise timer for performace.
+* Add Thinlto support.
+* MM-Increase ratelimit pages value.
+* Increase vmstat interval to 10 seconds.
+* Nuke unused and old modules from our configs and disable logging of many modules in kernel logs.
+
+-Device Tree
+* Remove Useless OC freqs and bring vedio playback ,mdss , hapatic and other modules Votages to stock.
+* Nuke Unwanted Intermediate Cpu Freqs And add 672Mhz and 960Mhz Intermediates to get smoother transistion.
+* Correct Voltage values for Both CPU & GPU.
+* Add Current values for New freqs and adjust them a bit.
+* Reduce Gpu OC to 710Mhz as 753Mhz and anything higher than 710 causes kgsl faults and FC's in game.
+* Optimize Gpu Pwrlvl.
+* Add DFPS for Boe,Tinema ,Sharp panels.
+* Add missing Nodes and blobs for our dt.
+* Add 1.79Ghz and 1.63Ghz clock for a53 cores.
+* Reduce memory utilizations.
+* Lots of Tuning for best performance with less impact on battery.
+* Fix LPM values , Temprature threshold and UV all GPU and CPU ceil and floor values.
+
+-Makefile
+* Disable a few warinings for Clang.
+* Remove few hardware optimizations flags and optimize for A53 only.
+* Compile with O2.
+* Add ThinLTO support.
+* Remove redundant Flag optimizations.
+* Support for GCC 9.x ,7.xx. and 8.xx and Clang 12.
+* Add Clang Polly Optimization.
+* Disable stack conservation.
+
+-Aroma & Other
+* Script Changes and New theme for our Shadow .
+* Spectrum New implimentaion as many modules had trouble with our traditional Spectrum implimentation.
+* Spectrum Modification to accomodate our new changes.
+* Rework Thermals for better Gaming and less throttling.
+* Add Refresh rate option.
+* Add 1.7Ghz option for users to risk their life or not.
+* Add support for Android 10.
+* Add Support form Android ver 7.1-10 MIUI not supported if it works be happy if it doesnt well fek:(
+
+----------------------------------------------------------
+
+V5.8:-
+
+-Binder
+* Sync with 4.9.
+* Lots of fixes and improvements.
+
+-Sdcardfs
+* Allocate temporary name buffer on the stack.
+* Fix potential crash when reserved_mb is not zero.
+* Use lower getattr times/size.
+* Fix sdcardfs to stop creating cases-sensitive duplicate entries.
+* General fixs and improvements.
+
+-Sound
+* Nuke Pdesire driver.
+* Re-tune Voltage steps.
+* Merge agni kernel audio mods.
+* Add proper 24bit 192khz support.
+* Remove White noise due to amp in headphones.
+* General audio Improvements.
+
+-MM
+* Keep page cache radix tree nodes in check.
+* Add add a new LRU list type for 4.19 binder sync.
+* Add list_lru per-node list infrastructure.
+
+-Kernel
+* Increase hash table size for better performance
+* Replace barrier() in unqueue_me() with READ_ONCE()
+* Other Futex Improvements.
+* Remove selinux and init spams in dmesg
+
+Aroma
+* Improve Readabilty.
+* Increase balance profile max freq to 1.6Ghz helps reduce latency in google chorme with small hit to battery life.
+* Decrease boost period for cpu bus to 1000ms.
