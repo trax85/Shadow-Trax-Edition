@@ -1983,13 +1983,13 @@ static ssize_t snd_timer_user_read(struct file *file, char __user *buffer,
 					 sizeof(struct snd_timer_tread))){
 				mutex_unlock(&tu->ioctl_lock);
 				err = -EFAULT;
- 			}
+			}
 		} else {
 			if (copy_to_user(buffer, &tu->queue[qhead],
 					 sizeof(struct snd_timer_read))){
 				mutex_unlock(&tu->ioctl_lock);
 				err = -EFAULT;
-       			}      
+			}
 		}
 		mutex_unlock(&tu->ioctl_lock);
 

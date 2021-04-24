@@ -1638,4 +1638,3 @@ void msm_dts_eagle_pcm_free(struct snd_pcm *pcm)
 
 MODULE_DESCRIPTION("DTS EAGLE platform driver");
 MODULE_LICENSE("GPL v2");
-

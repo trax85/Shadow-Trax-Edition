@@ -49,19 +49,13 @@ struct snd_msm {
 #define CMD_EOS_MIN_TIMEOUT_LENGTH  50
 #define CMD_EOS_TIMEOUT_MULTIPLIER  50000
 
-#if defined(CONFIG_TRACING) && defined(DEBUG)
-#define msm_trace_printk(...) trace_printk(__VA_ARGS__)
-#else
-#define msm_trace_printk(...)
-#endif
-
 #define ATRACE_END() \
-	msm_trace_printk("tracing_mark_write: E\n")
+	trace_printk("tracing_mark_write: E\n")
 #define ATRACE_BEGIN(name) \
-	msm_trace_printk("tracing_mark_write: B|%d|%s\n", current->tgid, name)
+	trace_printk("tracing_mark_write: B|%d|%s\n", current->tgid, name)
 #define ATRACE_FUNC() ATRACE_BEGIN(__func__)
 #define ATRACE_INT(name, value) \
-	msm_trace_printk("tracing_mark_write: C|%d|%s|%d\n", \
+	trace_printk("tracing_mark_write: C|%d|%s|%d\n", \
 			current->tgid, name, (int)(value))
 
 #define SIO_PLAYBACK_MAX_PERIOD_SIZE PLAYBACK_MAX_PERIOD_SIZE
@@ -94,10 +88,11 @@ static struct snd_pcm_hardware msm_pcm_hardware_playback = {
 				SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME),
 	.formats =              (SNDRV_PCM_FMTBIT_S16_LE |
 				SNDRV_PCM_FMTBIT_S24_LE |
-				SNDRV_PCM_FMTBIT_S24_3LE),
-	.rates =                SNDRV_PCM_RATE_8000_192000,
+				SNDRV_PCM_FMTBIT_S24_3LE |
+				SNDRV_PCM_FMTBIT_S32_LE),
+	.rates =                SNDRV_PCM_RATE_8000_384000,
 	.rate_min =             8000,
-	.rate_max =             192000,
+	.rate_max =             384000,
 	.channels_min =         1,
 	.channels_max =         8,
 	.buffer_bytes_max =     SIO_PLAYBACK_MAX_NUM_PERIODS *
@@ -119,9 +114,9 @@ static struct snd_pcm_hardware msm_pcm_hardware_capture = {
 	.formats =              (SNDRV_PCM_FMTBIT_S16_LE |
 				SNDRV_PCM_FMTBIT_S24_LE |
 				SNDRV_PCM_FMTBIT_S24_3LE),
-	.rates =                SNDRV_PCM_RATE_8000_48000,
+	.rates =                SNDRV_PCM_RATE_8000_192000,
 	.rate_min =             8000,
-	.rate_max =             48000,
+	.rate_max =             192000,
 	.channels_min =         1,
 	.channels_max =         4,
 	.buffer_bytes_max =     SIO_CAPTURE_MAX_NUM_PERIODS *
@@ -136,7 +131,7 @@ static struct snd_pcm_hardware msm_pcm_hardware_capture = {
 /* Conventional and unconventional sample rate supported */
 static unsigned int supported_sample_rates[] = {
 	8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000,
-	88200, 96000, 176400, 192000
+	88200, 96000, 176400, 192000, 352800, 384000
 };
 
 static struct snd_pcm_hw_constraint_list constraints_sample_rates = {
@@ -288,6 +283,10 @@ static int msm_pcm_hw_params(struct snd_pcm_substream *substream,
 		return 0;
 
 	switch (runtime->format) {
+	case SNDRV_PCM_FORMAT_S32_LE:
+		bits_per_sample = 32;
+		sample_word_size = 32;
+		break;	
 	case SNDRV_PCM_FORMAT_S24_LE:
 		bits_per_sample = 24;
 		sample_word_size = 32;
@@ -501,7 +500,7 @@ static int msm_pcm_close(struct snd_pcm_substream *substream)
 			timeout = CMD_EOS_MIN_TIMEOUT_LENGTH;
 		} else {
 			timeout = (runtime->period_size *
-					msecs_to_jiffies(CMD_EOS_TIMEOUT_MULTIPLIER)) /
+					CMD_EOS_TIMEOUT_MULTIPLIER) /
 					((runtime->frame_bits / 8) *
 					 runtime->rate);
 			if (timeout < CMD_EOS_MIN_TIMEOUT_LENGTH)

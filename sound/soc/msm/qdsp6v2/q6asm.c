@@ -2481,9 +2481,6 @@ static int __q6asm_open_write(struct audio_client *ac, uint32_t format,
         case FORMAT_APTX:
  		open.dec_fmt_id = ASM_MEDIA_FMT_APTX;
  		break;
-	case FORMAT_APTXHD:
-		open.dec_fmt_id = ASM_MEDIA_FMT_APTX_HD;
-		break;
 	default:
 		pr_err("%s: Invalid format 0x%x\n", __func__, format);
 		goto fail_cmd;
@@ -5708,7 +5705,7 @@ int q6asm_dts_eagle_set(struct audio_client *ac, int param_id, uint32_t size,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), 1*HZ);
+			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(1000));
 	if (!rc) {
 		pr_err("DTS_EAGLE_ASM - %s: timeout, set-params paramid[0x%x]\n",
 			__func__, ad->data.param_id);
@@ -5819,7 +5816,7 @@ int q6asm_dts_eagle_get(struct audio_client *ac, int param_id, uint32_t size,
 	}
 
 	rc = wait_event_timeout(ac->cmd_wait,
-			(atomic_read(&ac->cmd_state) >= 0), 1*HZ);
+			(atomic_read(&ac->cmd_state) >= 0), msecs_to_jiffies(1000));
 	if (!rc) {
 		pr_err("DTS_EAGLE_ASM - %s: timeout in get\n",
 			__func__);

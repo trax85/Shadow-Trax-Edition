@@ -10,7 +10,7 @@
 */
 
 #ifndef _MSM_PCM_ROUTING_DEVDEP_H_
-#define _MSM_PCM_ROUTING_DEVDEP_H__
+#define _MSM_PCM_ROUTING_DEVDEP_H_
 
 #include <sound/soc.h>
 #include "msm-pcm-routing-v2.h"

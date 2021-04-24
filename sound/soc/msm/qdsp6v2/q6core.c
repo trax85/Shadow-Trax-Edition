@@ -529,7 +529,6 @@ fail_cmd_2:
 	return rc;
 }
 
-
 uint32_t core_set_dolby_manufacturer_id(int manufacturer_id)
 {
 	struct adsp_dolby_manufacturer_id payload;
