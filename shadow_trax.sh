@@ -39,22 +39,17 @@ fi
 #
 # Do Kenzo Configs
 #
-make shadow_trax_defconfig
 export ARCH=arm64
+make shadow_trax_defconfig
 #
 # Export Clang path
 #
-export PATH="${PATH}:/home/nesara/proton-clang-master/bin/"
+export CROSS_COMPILE="/home/nesara/aarch64-elf-gcc/bin/aarch64-elf-" CROSS_COMPILE_ARM32="/home/nesara/aarch32-gcc/bin/arm-eabi-"
 export KBUILD_BUILD_USER="trax85"
 #
 # Build Shadow Kernel
 #
-make	-j4 \
-	CC=clang \
-	CROSS_COMPILE=aarch64-linux-gnu- \
-	CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-	OBJDUMP=llvm-objdump STRIP=llvm-strip \
-	AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy
+make	-j4
 #
 # Append date,time and Export Image and device tree
 #
