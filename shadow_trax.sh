@@ -32,6 +32,8 @@ cd $KERNEL_DIR
 Start=$(date +"%s")
 DTBTOOL=$KERNEL_DIR/dtbTool
 cd $KERNEL_DIR
+#
+#
 if [ $qc == 1 ]; then
 echo -e "$yellow Running make clean before compiling \n$white"
 make clean > /dev/null
@@ -39,12 +41,12 @@ fi
 #
 # Do Kenzo Configs
 #
-make shadow_trax_defconfig
 export ARCH=arm64
+make shadow_trax_defconfig
 #
 # Export Clang path
 #
-export PATH="${PATH}:/home/nesara/proton-clang-master/bin/"
+export PATH="${PATH}:/home/nesara/proton-clang/bin/"
 export KBUILD_BUILD_USER="trax85"
 #
 # Build Shadow Kernel
@@ -60,12 +62,15 @@ make	-j4 \
 #
 time=$(date +"%d-%m-%y-%T")
 date=$(date +"%d-%m-%y")
+#
+#
 $DTBTOOL -2 -o $KERNEL_DIR/arch/arm64/boot/dt.img -s 2048 -p $KERNEL_DIR/scripts/dtc/ $KERNEL_DIR/arch/arm/boot/dts/
 mv $KERNEL_DIR/arch/arm64/boot/dt.img $KERNEL_DIR/build/tools/dt.img
 cp $KERNEL_DIR/arch/arm64/boot/Image $KERNEL_DIR/build/tools/Image
+#
+#
 zimage=$KERNEL_DIR/arch/arm64/boot/Image
-if ! [ -a $zimage ];
-then
+if ! [ $zimage ]; then
 echo -e "$red << Failed to compile zImage, fix the errors first >>$white"
 else
 cd $KERNEL_DIR/build
@@ -74,6 +79,7 @@ rm *.zip > /dev/null 2>&1
 # Zip Flash Tools and make shadow zip
 #
 echo -e "$yellow\n Build succesful, generating flashable zip now \n $white"
+#
 zip -r Shadow-Trax-Kernel-$date.zip * > /dev/null
 End=$(date +"%s")
 Diff=$(($End - $Start))
